@@ -1,0 +1,7 @@
+### This file contains some sample tables to illustrate various problems or features we need to account for when extracting coordinates ##
+
+# Illustrates the need to handle grouping better in cases where two grouping rows occur:
+http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T2&doi=10.1162%2Fjocn_a_00371
+
+# Illustrates problems when same region label applies to multiple rows but is only listedx once
+http://www.jneurosci.org/content/29/12/3930/T3.expansion.html

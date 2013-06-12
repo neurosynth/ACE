@@ -1,0 +1,10 @@
+{
+  "name": "Frontiers",
+  "identifiers": [
+    "<publisher-name>Frontiers Research Foundation</publisher-name>"
+  ],
+  "entities": {
+  	"&#x02212;": "-",
+  	"&#x02009;": " "
+  }
+}
