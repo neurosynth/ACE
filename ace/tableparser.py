@@ -20,10 +20,10 @@ def identify_standard_columns(labels):
     standardized = [None] * len(labels)
     found_coords = False
     for i, lab in enumerate(labels):
-        if regex.search('region|anatom|location|area', lab):
-            s = 'region'
         if regex.search('(^\s*ba$)|brodmann', lab):
             s = 'ba'
+        elif regex.search('region|anatom|location|area', lab):
+            s = 'region'
         elif regex.search('sphere|(^\s*h$)|^\s*hem|^\s*side', lab):
             s = 'hemisphere'
         elif regex.search('(^k$)|(mm.*?3)|volume|voxels|size|extent', lab):
@@ -47,7 +47,7 @@ def identify_standard_columns(labels):
             continue
         elif lab == 't' or regex.search('^(z|t).*(score|value)', lab):
             s = 'statistic'
-        elif regex.search('p.*val', lab):
+        elif regex.search('p[\-\s]+.*val', lab):
             s = 'p_value'
         else:
             s = None
