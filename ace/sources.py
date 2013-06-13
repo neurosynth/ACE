@@ -309,3 +309,36 @@ class JournalOfCognitiveNeuroscienceSource(Source):
     def parse_table(self, table):
         return super(JournalOfCognitiveNeuroscienceSource, self).parse_table(table)
 
+
+
+class WileySource(Source):
+
+    def parse_article(self, html):
+
+        html = super(WileySource, self).parse_article(html)  # Do some preprocessing
+        soup = BeautifulSoup(html)
+
+        # Extract tables
+        tables = []
+        table_containers = soup.findAll('div', {'class': 'table', 'id': lambda x: x.startswith('tbl')})
+        for tc in table_containers:
+            table_html = tc.find('table')
+            try:
+                table_html.tfoot.extract()  # Remove footer, which appears inside table
+            except: pass
+            t = self.parse_table(table_html)
+            # If Table instance is returned, add other properties
+            if t:
+                t.number = int(tc['id'][3::])
+                t.title = tc.find('span', class_='label').get_text()
+                t.caption = tc.find('caption').get_text()
+                try:
+                    t.notes = tc.find('tfoot').get_text()
+                except: pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def parse_table(self, table):
+        return super(WileySource, self).parse_table(table)    

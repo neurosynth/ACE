@@ -3,6 +3,9 @@ logger = logging.getLogger('ace')
 logging.basicConfig()
 
 class DataTable:
+    ''' Simple class to represent the contents of an HTML table.
+        Basically just a grid with array accessor methods and 
+        some extra validation. '''
 
     def __init__(self, n_rows, n_cols):
         self.data = [[None] * n_cols for n in range(n_rows)]
@@ -24,12 +27,8 @@ class DataTable:
     def n_rows(self):
         return len(self.data)
 
-    # def n_cols(self):
-    #   return len(self.data[0] or 0)
-    # Find next open position and add values to grid
     def add_val(self, val, rows=1, cols=1):
-
-        # val = str(val)
+        ''' Find next open position and add values to grid '''
 
         # Flatten list and find next open position
         flat = [item for l in self.data for item in l]
