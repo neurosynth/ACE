@@ -62,6 +62,13 @@ class Database:
         if commit:
             self.save()
 
+    def print_stats(self):
+        ''' Summarize the current state of the DB. '''
+        n_articles = self.session.query(Article).count()
+        n_tables = self.session.query(Table).count()
+        n_activations = self.session.query(Activation).count()
+        print "The database currently contains:\n\t%d articles\n\t%d tables\n\t%d activations" % (n_articles, n_tables, n_activations)
+
 
 
 # Create a JSONString column type for convenience
