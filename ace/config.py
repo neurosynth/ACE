@@ -9,6 +9,11 @@ SILENT_ERRORS = False
 # The filename to save the SQLite database to.
 DATABASE_FILE = 'ACE_db.sqlite'
 
+# When True, any processed articles will be saved to DB, whether or not they 
+# contain any extracted activations. When False, only articles from which 
+# at least one activation was extracted will be saved.
+SAVE_ARTICLES_WITHOUT_ACTIVATIONS = False
+
 
 ''' SOURCE PROCESSING SETTINGS '''
 

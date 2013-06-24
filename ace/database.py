@@ -57,7 +57,8 @@ class Database:
             html = open(f).read()
             source = manager.identify_source(html)
             article = source.parse_article(html)
-            self.add(article)
+            if config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables:
+                self.add(article)
 
         if commit:
             self.save()
