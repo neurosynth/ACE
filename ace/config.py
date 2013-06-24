@@ -5,6 +5,11 @@
 SILENT_ERRORS = False
 
 
+''' DATABASE SETTINGS '''
+# The filename to save the SQLite database to.
+DATABASE_FILE = 'ACE_db.sqlite'
+
+
 ''' SOURCE PROCESSING SETTINGS '''
 
 # If True, will exercise greater care when parsing (e.g., when estimating 

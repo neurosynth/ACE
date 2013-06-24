@@ -2,7 +2,7 @@
 # ex: set sts=4 ts=4 sw=4 et:
 """ACE -- Automated Coordinate Extraction.
 """
-__all__ = ["config", "database", "datatable", "set_logging_level", "sources", "tableparser", "tests", "__version__"]
+__all__ = ["config", "database", "datatable", "set_logging_level", "scrapers", "sources", "tableparser", "tests", "__version__"]
 
 import logging
 import sys

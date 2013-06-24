@@ -7,11 +7,7 @@ import json
 import abc
 import importlib
 from glob import glob
-import datatable
-import tableparser
-import scrapers
-import config
-import database
+import datatable, tableparser, scrapers, config, database
 
 
 class SourceManager:
@@ -86,14 +82,20 @@ class Source:
     @abc.abstractmethod
     def parse_article(self, html):
         ''' Takes HTML article as input and returns an Article. '''
-        self.article = database.Article()
         html = html.decode('utf-8')   # Make sure we're working with unicode
         html = self.decode_html_entities(html)
-        return html
+        soup = BeautifulSoup(html)
+        pmid = self.extract_pmid(soup)
+        self.article = database.Article(pmid)
+        return soup
 
     @abc.abstractmethod
     def parse_table(self, table):
         ''' Takes HTML for a single table and returns a Table. '''
+
+        # Formatting issues sometimes prevent table extraction, so just return
+        if table is None:
+            return False
         
         # Count columns. Check either just one row, or all of them.
         def n_cols_in_row(row):
@@ -134,6 +136,11 @@ class Source:
                 if not config.IGNORE_BAD_ROWS: raise
         return tableparser.parse_table(data)
 
+    @abc.abstractmethod
+    def extract_pmid(self, soup):
+        ''' Every Source subclass must be able to extract its PMID. '''
+        return
+
     def decode_html_entities(self, html):
         ''' Re-encode HTML entities as innocuous little Unicode characters. '''
         # Any entities BeautifulSoup passes through thatwe don't like, e.g., &nbsp/x0a
@@ -147,8 +154,7 @@ class Source:
 class HighWireSource(Source):
 
     def parse_article(self, html):
-        html = super(HighWireSource, self).parse_article(html)
-        soup = BeautifulSoup(html)
+        soup = super(HighWireSource, self).parse_article(html)
 
         # To download tables, we need the content URL and the number of tables
         content_url = soup.find('meta', {'name': 'citation_public_url'})['content']
@@ -183,13 +189,15 @@ class HighWireSource(Source):
     def parse_table(self, table):
         return super(HighWireSource, self).parse_table(table)
 
+    def extract_pmid(self, soup):
+        return soup.find('meta', {'name': 'citation_pmid'})['content']
+
 
 
 class ScienceDirectSource(Source):
 
     def parse_article(self, html):
-        html = super(ScienceDirectSource, self).parse_article(html)  # Do some preprocessing
-        soup = BeautifulSoup(html)
+        soup = super(ScienceDirectSource, self).parse_article(html)  # Do some preprocessing
 
         # Extract tables
         tables = []
@@ -213,13 +221,16 @@ class ScienceDirectSource(Source):
     def parse_table(self, table):
         return super(ScienceDirectSource, self).parse_table(table)
 
+    def extract_pmid(self, soup):
+        doi = soup.find('a', {'id': 'ddDoi'})['href'].replace('http://dx.doi.org/', '')
+        return scrapers.get_pmid_from_doi(doi)
+
 
 
 class PlosSource(Source):
 
     def parse_article(self, html):
-        html = super(PlosSource, self).parse_article(html)  # Do some preprocessing
-        soup = BeautifulSoup(html)
+        soup = super(PlosSource, self).parse_article(html)  # Do some preprocessing
 
         # Extract tables
         tables = []
@@ -243,14 +254,17 @@ class PlosSource(Source):
     def parse_table(self, table):
         return super(PlosSource, self).parse_table(table)
 
+    def extract_pmid(self, soup):
+        doi = soup.find('article-id', {'pub-id-type': 'doi'}).text
+        return scrapers.get_pmid_from_doi(doi)
+
 
 
 class FrontiersSource(Source):
 
     def parse_article(self, html):
 
-        html = super(FrontiersSource, self).parse_article(html)  # Do some preprocessing
-        soup = BeautifulSoup(html)
+        soup = super(FrontiersSource, self).parse_article(html)  # Do some preprocessing
 
         # Extract tables
         tables = []
@@ -276,13 +290,16 @@ class FrontiersSource(Source):
     def parse_table(self, table):
         return super(FrontiersSource, self).parse_table(table)
 
+    def extract_pmid(self, soup):
+        doi = soup.find('article-id', {'pub-id-type': 'doi'}).text
+        return scrapers.get_pmid_from_doi(doi)
+
 
 
 class JournalOfCognitiveNeuroscienceSource(Source):
 
     def parse_article(self, html):
-        html = super(JournalOfCognitiveNeuroscienceSource, self).parse_article(html)
-        soup = BeautifulSoup(html)
+        soup = super(JournalOfCognitiveNeuroscienceSource, self).parse_article(html)
 
         # To download tables, we need the DOI and the number of tables
         m = re.search('\<meta.*content="http://dx.doi.org/(10.1162/jocn_a_00371)["\s]+', html)
@@ -309,14 +326,16 @@ class JournalOfCognitiveNeuroscienceSource(Source):
     def parse_table(self, table):
         return super(JournalOfCognitiveNeuroscienceSource, self).parse_table(table)
 
+    def extract_pmid(self, soup):
+        doi = soup.find('meta', { 'name': 'dc.Identifier', 'scheme': 'doi'})['content']
+        return scrapers.get_pmid_from_doi(doi)
 
 
 class WileySource(Source):
 
     def parse_article(self, html):
 
-        html = super(WileySource, self).parse_article(html)  # Do some preprocessing
-        soup = BeautifulSoup(html)
+        soup = super(WileySource, self).parse_article(html)  # Do some preprocessing
 
         # Extract tables
         tables = []
@@ -341,4 +360,9 @@ class WileySource(Source):
         return self.article
 
     def parse_table(self, table):
-        return super(WileySource, self).parse_table(table)    
+        return super(WileySource, self).parse_table(table)
+
+    def extract_pmid(self, soup):
+        doi = soup.find('meta', { 'name': 'citation_doi'})['content']
+        return scrapers.get_pmid_from_doi(doi)
+
