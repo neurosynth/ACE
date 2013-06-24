@@ -14,6 +14,13 @@ DATABASE_FILE = 'ACE_db.sqlite'
 # at least one activation was extracted will be saved.
 SAVE_ARTICLES_WITHOUT_ACTIVATIONS = False
 
+# By default, ACE will ignore any articles that already exist in the DB 
+# when processing new HTML files. If OVERWRITE is set to True, ACE will 
+# always overwrite existing records. This is useful when the extraction 
+# code has improved substantially and you want to re-extract all data, 
+# but should otherwise be left off for the sake of efficiency.
+OVERWRITE_EXISTING_ROWS = False
+
 
 ''' SOURCE PROCESSING SETTINGS '''
 

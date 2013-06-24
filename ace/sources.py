@@ -8,20 +8,22 @@ import abc
 import importlib
 from glob import glob
 import datatable, tableparser, scrapers, config, database
+import logging
 
+logger = logging.getLogger('ace')
 
 class SourceManager:
     ''' Loads all the available Source subclasses from this module and the 
     associated directory of JSON config files and uses them to determine which parser
     to call when a new HTML file is passed. '''
 
-    def __init__(self):
+    def __init__(self, database):
         module = importlib.import_module('ace.sources')
         self.sources = {}
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
         for config_file in glob('%s/*json' % source_dir):
             class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(config_file)
+            cls = getattr(module, class_name + 'Source')(config_file, database)
             self.sources[class_name] = cls
 
     def identify_source(self, html):
@@ -62,9 +64,10 @@ class Source:
 
     }
 
-    def __init__(self, config):
+    def __init__(self, config, database):
 
         config = json.load(open(config, 'rb'))
+        self.database = database
 
         valid_keys = ['name', 'identifiers', 'entities']
 
@@ -86,6 +89,11 @@ class Source:
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html)
         pmid = self.extract_pmid(soup)
+        if self.database.article_exists(pmid):
+            if config.OVERWRITE_EXISTING_ROWS:
+                self.database.delete_article(pmid)
+            else:
+                return False
         self.article = database.Article(pmid)
         return soup
 
@@ -155,6 +163,7 @@ class HighWireSource(Source):
 
     def parse_article(self, html):
         soup = super(HighWireSource, self).parse_article(html)
+        if not soup: return False
 
         # To download tables, we need the content URL and the number of tables
         content_url = soup.find('meta', {'name': 'citation_public_url'})['content']
@@ -166,7 +175,7 @@ class HighWireSource(Source):
         for i in range(n_tables):
             t_num = i+1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_html = parse_utils.get_url(url)
+            table_html = scrapers.get_url(url)
             table_html = self.decode_html_entities(table_html)
             table_soup = BeautifulSoup(table_html)
             tc = table_soup.find(class_='table-expansion')
@@ -198,6 +207,7 @@ class ScienceDirectSource(Source):
 
     def parse_article(self, html):
         soup = super(ScienceDirectSource, self).parse_article(html)  # Do some preprocessing
+        if not soup: return False
 
         # Extract tables
         tables = []
@@ -231,6 +241,7 @@ class PlosSource(Source):
 
     def parse_article(self, html):
         soup = super(PlosSource, self).parse_article(html)  # Do some preprocessing
+        if not soup: return False
 
         # Extract tables
         tables = []
@@ -265,6 +276,7 @@ class FrontiersSource(Source):
     def parse_article(self, html):
 
         soup = super(FrontiersSource, self).parse_article(html)  # Do some preprocessing
+        if not soup: return False
 
         # Extract tables
         tables = []
@@ -300,6 +312,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
     def parse_article(self, html):
         soup = super(JournalOfCognitiveNeuroscienceSource, self).parse_article(html)
+        if not soup: return False
 
         # To download tables, we need the DOI and the number of tables
         m = re.search('\<meta.*content="http://dx.doi.org/(10.1162/jocn_a_00371)["\s]+', html)
@@ -313,7 +326,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         # Now download each table and parse it
         for i in range(n_tables):
             url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (i+1, doi)
-            table_html = parse_utils.get_url(url)
+            table_html = scrapers.get_url(url)
             table_html = self.decode_html_entities(table_html)
             table_soup = BeautifulSoup(table_html)
             t = table_soup.find('table').find('table')  # JCogNeuro nests tables 2-deep
@@ -336,6 +349,7 @@ class WileySource(Source):
     def parse_article(self, html):
 
         soup = super(WileySource, self).parse_article(html)  # Do some preprocessing
+        if not soup: return False
 
         # Extract tables
         tables = []

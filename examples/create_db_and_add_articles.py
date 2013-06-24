@@ -7,7 +7,7 @@ import ace
 from ace import database
 
 ## Uncomment the next line to seem more information
-# ace.set_logging_level('info')
+ace.set_logging_level('info')
 
 # Change this to a valid path to a set of html files.
 PATH_TO_FILES = "/Users/tal/tmp/html/*.html"

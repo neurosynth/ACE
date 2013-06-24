@@ -3,6 +3,7 @@ import os
 from ace import sources, database, datatable
 import json
 from os.path import dirname, join, sep as pathsep
+import os
 
 
 def get_test_data_path():
@@ -14,10 +15,11 @@ def get_test_data_path():
 class TestACE(unittest.TestCase):
 
     def setUp(self):
-        self.manager = sources.SourceManager()
+        self.db = database.Database('ace_test_database.tmp')
+        self.manager = sources.SourceManager(self.db)
 
     def tearDown(self):
-        pass
+        os.remove('ace_test_database.tmp')
 
     # Just run some very basic tests for now, one per Source.
     # Make sure that the right number of tables, activations,
@@ -57,6 +59,11 @@ class TestACE(unittest.TestCase):
         self.assertEqual(t.number, 1)
         self.assertIsNotNone(t.caption)
         self.assertEqual(t.n_activations, 12)
+
+    def testBatchArticleAddition(self):
+        self.db.add_articles(get_test_data_path() + '*.html')
+        self.assertEqual(len(self.db.articles), 6)
+
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestACE)

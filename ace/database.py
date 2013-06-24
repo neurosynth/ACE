@@ -46,7 +46,7 @@ class Database:
             commit: Whether or not to save records to DB file after adding them.
         '''
 
-        manager = sources.SourceManager()
+        manager = sources.SourceManager(self)
 
         if isinstance(files, basestring):
             from glob import glob
@@ -56,12 +56,18 @@ class Database:
             logger.info("Processing article %s..." % f)
             html = open(f).read()
             source = manager.identify_source(html)
-            article = source.parse_article(html)
-            if config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables:
-                self.add(article)
+            try:
+                article = source.parse_article(html)
+                if config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables:
+                    self.add(article)
+            except: pass
 
         if commit:
             self.save()
+
+    def delete_article(pmid):
+        self.session.query(Article).filter_by(id=pmid).delete()
+        self.session.commit()
 
     def print_stats(self):
         ''' Summarize the current state of the DB. '''
@@ -70,7 +76,13 @@ class Database:
         n_activations = self.session.query(Activation).count()
         print "The database currently contains:\n\t%d articles\n\t%d tables\n\t%d activations" % (n_articles, n_tables, n_activations)
 
+    def article_exists(self, pmid):
+        ''' Check if an article already exists in the database. '''
+        return True if self.session.query(Article).filter_by(id=int(pmid)).first() else False
 
+    @property
+    def articles(self):
+        return self.session.query(Article).all()
 
 # Create a JSONString column type for convenience
 class JsonString(TypeDecorator):
@@ -102,8 +114,8 @@ class Article(Base):
     citation = Column(Text)
     pubmed_metadata = Column(JsonString)
 
-    tables = relationship('Table', backref='article')
-    activations = relationship('Activation', backref='article')
+    tables = relationship('Table', cascade="all,delete", backref='article')
+    activations = relationship('Activation', cascade="all,delete", backref='article')
     features = association_proxy('tags', 'feature')
 
     def __init__(self, pmid=None):
@@ -127,7 +139,7 @@ class Table(Base):
 
     id = Column(Integer, primary_key=True)
     article_id = Column(Integer, ForeignKey('articles.id'))
-    activations = relationship('Activation', backref='table')
+    activations = relationship('Activation', cascade="all,delete", backref='table')
     number = Column(Integer)
     title = Column(String)
     caption = Column(Text)
