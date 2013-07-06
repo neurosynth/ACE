@@ -398,5 +398,52 @@ class WileySource(Source):
     def extract_pmid(self, soup):
         return scrapers.get_pmid_from_doi(self.extract_doi(soup))
 
+# Note: the SageSource is largely useless and untested because Sage renders tables
+# as images.
+class SageSource(Source):
+
+    def parse_article(self, html):
+
+        soup = super(SageSource, self).parse_article(html)  # Do some preprocessing
+        if not soup: return False
+
+        # To download tables, we need the content URL and the number of tables
+        content_url = soup.find('meta', {'name': 'citation_public_url'})['content']
+
+        n_tables = len(soup.find_all('span', class_='table-label'))
+
+        # Now download each table and parse it
+        tables = []
+        for i in range(n_tables):
+            t_num = i+1
+            url = '%s/T%d.expansion.html' % (content_url, t_num)
+            table_html = scrapers.get_url(url)
+            table_html = self.decode_html_entities(table_html)
+            table_soup = BeautifulSoup(table_html)
+            tc = table_soup.find(class_='table-expansion')
+            t = tc.find('table', {'id': 'table-%d' % (t_num)})
+            t = self.parse_table(t)
+            if t: 
+                t.number = t_num
+                t.title = tc.find(class_='table-label').text
+                try:
+                    t.caption = tc.find(class_='table-caption').get_text()
+                except: pass
+                try:
+                    t.notes = tc.find(class_='table-footnotes').get_text()
+                except: pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def parse_table(self, table):
+        return super(SageSource, self).parse_table(table)
+
+    def extract_doi(self, soup):
+        return soup.find('meta', {'name': 'citation_doi'})['content']
+
+    def extract_pmid(self, soup):
+        return soup.find('meta', {'name': 'citation_pmid'})['content']
 
 
