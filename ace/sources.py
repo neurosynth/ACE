@@ -140,9 +140,14 @@ class Source:
                         c_num += n_cols - cols_found_in_row
                     data.add_val(c.get_text(), r_num, c_num)
             except Exception as e:
-                if not config.SILENT_ERRORS: print e.message
+                if not config.SILENT_ERRORS: logger.error(e.message)
                 if not config.IGNORE_BAD_ROWS: raise
         return tableparser.parse_table(data)
+
+    @abc.abstractmethod
+    def extract_doi(self, soup):
+        ''' Every Source subclass must be able to extract its doi. '''
+        return
 
     @abc.abstractmethod
     def extract_pmid(self, soup):
@@ -198,6 +203,9 @@ class HighWireSource(Source):
     def parse_table(self, table):
         return super(HighWireSource, self).parse_table(table)
 
+    def extract_doi(self, soup):
+        return soup.find('meta', {'name': 'citation_doi'})['content']        
+
     def extract_pmid(self, soup):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
@@ -231,9 +239,11 @@ class ScienceDirectSource(Source):
     def parse_table(self, table):
         return super(ScienceDirectSource, self).parse_table(table)
 
+    def extract_doi(self, soup):
+        return soup.find('a', {'id': 'ddDoi'})['href'].replace('http://dx.doi.org/', '')
+
     def extract_pmid(self, soup):
-        doi = soup.find('a', {'id': 'ddDoi'})['href'].replace('http://dx.doi.org/', '')
-        return scrapers.get_pmid_from_doi(doi)
+        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
 
 
 
@@ -265,9 +275,11 @@ class PlosSource(Source):
     def parse_table(self, table):
         return super(PlosSource, self).parse_table(table)
 
+    def extract_doi(self, soup):
+        return soup.find('article-id', {'pub-id-type': 'doi'}).text
+
     def extract_pmid(self, soup):
-        doi = soup.find('article-id', {'pub-id-type': 'doi'}).text
-        return scrapers.get_pmid_from_doi(doi)
+        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
 
 
 
@@ -302,9 +314,11 @@ class FrontiersSource(Source):
     def parse_table(self, table):
         return super(FrontiersSource, self).parse_table(table)
 
+    def extract_doi(self, soup):
+        return soup.find('article-id', {'pub-id-type': 'doi'}).text
+
     def extract_pmid(self, soup):
-        doi = soup.find('article-id', {'pub-id-type': 'doi'}).text
-        return scrapers.get_pmid_from_doi(doi)
+        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
 
 
 
@@ -339,9 +353,11 @@ class JournalOfCognitiveNeuroscienceSource(Source):
     def parse_table(self, table):
         return super(JournalOfCognitiveNeuroscienceSource, self).parse_table(table)
 
+    def extract_doi(self, soup):
+        return soup.find('meta', { 'name': 'dc.Identifier', 'scheme': 'doi'})['content']
+
     def extract_pmid(self, soup):
-        doi = soup.find('meta', { 'name': 'dc.Identifier', 'scheme': 'doi'})['content']
-        return scrapers.get_pmid_from_doi(doi)
+        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
 
 
 class WileySource(Source):
@@ -376,7 +392,11 @@ class WileySource(Source):
     def parse_table(self, table):
         return super(WileySource, self).parse_table(table)
 
+    def extract_doi(self, soup):
+        return soup.find('meta', { 'name': 'citation_doi'})['content']
+
     def extract_pmid(self, soup):
-        doi = soup.find('meta', { 'name': 'citation_doi'})['content']
-        return scrapers.get_pmid_from_doi(doi)
+        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
+
+
 
