@@ -9,7 +9,7 @@ from datetime import datetime
 import simplejson as json
 import logging
 import sys
-import config, sources, scrapers
+import config, sources, scrape, extract
 
 logger = logging.getLogger('ace')
 
@@ -106,6 +106,7 @@ class Article(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String)
+    text = Column(Text)
     journal = Column(String)
     space = Column(String)
     publisher = Column(String)
@@ -119,13 +120,15 @@ class Article(Base):
     activations = relationship('Activation', cascade="all,delete", backref='article')
     features = association_proxy('tags', 'feature')
 
-    def __init__(self, pmid=None, doi=None):
+    def __init__(self, text, pmid=None, doi=None):
+        self.text = text
+        self.space = extract.guess_space(text)
         self.doi = doi
         if pmid is not None:
             self.update_metadata_from_pubmed(pmid)
 
     def update_metadata_from_pubmed(self, pmid):
-        pmd = scrapers.get_pubmed_metadata(pmid)
+        pmd = scrape.get_pubmed_metadata(pmid)
         self.id = int(pmid)
         self.title = pmd['title']
         self.journal = pmd['journal']

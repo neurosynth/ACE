@@ -7,7 +7,7 @@ import json
 import abc
 import importlib
 from glob import glob
-import datatable, tableparser, scrapers, config, database
+import datatable, tableparser, scrape, config, database
 import logging
 
 logger = logging.getLogger('ace')
@@ -90,12 +90,13 @@ class Source:
         soup = BeautifulSoup(html)
         doi = self.extract_doi(soup)
         pmid = self.extract_pmid(soup)
+        text = soup.get_text()
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
                 self.database.delete_article(pmid)
             else:
                 return False
-        self.article = database.Article(pmid=pmid, doi=doi)
+        self.article = database.Article(text, pmid=pmid, doi=doi)
         return soup
 
     @abc.abstractmethod
@@ -181,7 +182,7 @@ class HighWireSource(Source):
         for i in range(n_tables):
             t_num = i+1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_html = scrapers.get_url(url)
+            table_html = scrape.get_url(url)
             table_html = self.decode_html_entities(table_html)
             table_soup = BeautifulSoup(table_html)
             tc = table_soup.find(class_='table-expansion')
@@ -244,7 +245,7 @@ class ScienceDirectSource(Source):
         return soup.find('a', {'id': 'ddDoi'})['href'].replace('http://dx.doi.org/', '')
 
     def extract_pmid(self, soup):
-        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
+        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 
 
@@ -280,7 +281,7 @@ class PlosSource(Source):
         return soup.find('article-id', {'pub-id-type': 'doi'}).text
 
     def extract_pmid(self, soup):
-        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
+        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 
 
@@ -319,7 +320,7 @@ class FrontiersSource(Source):
         return soup.find('article-id', {'pub-id-type': 'doi'}).text
 
     def extract_pmid(self, soup):
-        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
+        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 
 
@@ -341,7 +342,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         # Now download each table and parse it
         for i in range(n_tables):
             url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (i+1, doi)
-            table_html = scrapers.get_url(url)
+            table_html = scrape.get_url(url)
             table_html = self.decode_html_entities(table_html)
             table_soup = BeautifulSoup(table_html)
             t = table_soup.find('table').find('table')  # JCogNeuro nests tables 2-deep
@@ -358,7 +359,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         return soup.find('meta', { 'name': 'dc.Identifier', 'scheme': 'doi'})['content']
 
     def extract_pmid(self, soup):
-        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
+        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 
 class WileySource(Source):
@@ -397,7 +398,7 @@ class WileySource(Source):
         return soup.find('meta', { 'name': 'citation_doi'})['content']
 
     def extract_pmid(self, soup):
-        return scrapers.get_pmid_from_doi(self.extract_doi(soup))
+        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 # Note: the SageSource is largely useless and untested because Sage renders tables
 # as images.
@@ -418,7 +419,7 @@ class SageSource(Source):
         for i in range(n_tables):
             t_num = i+1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_html = scrapers.get_url(url)
+            table_html = scrape.get_url(url)
             table_html = self.decode_html_entities(table_html)
             table_soup = BeautifulSoup(table_html)
             tc = table_soup.find(class_='table-expansion')
