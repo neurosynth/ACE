@@ -107,6 +107,7 @@ class Article(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String)
     journal = Column(String)
+    space = Column(String)
     publisher = Column(String)
     doi  = Column(String)
     year = Column(Integer)
@@ -118,7 +119,8 @@ class Article(Base):
     activations = relationship('Activation', cascade="all,delete", backref='article')
     features = association_proxy('tags', 'feature')
 
-    def __init__(self, pmid=None):
+    def __init__(self, pmid=None, doi=None):
+        self.doi = doi
         if pmid is not None:
             self.update_metadata_from_pubmed(pmid)
 

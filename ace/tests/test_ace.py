@@ -1,8 +1,8 @@
 import unittest
 import os
-from ace import sources, database, datatable
+from ace import sources, database, datatable, exporter
 import json
-from os.path import dirname, join, sep as pathsep
+from os.path import dirname, join, exists, sep as pathsep
 import os
 
 
@@ -60,9 +60,12 @@ class TestACE(unittest.TestCase):
         self.assertIsNotNone(t.caption)
         self.assertEqual(t.n_activations, 12)
 
-    def testBatchArticleAddition(self):
+    def testDatabaseProcessingStream(self):
         self.db.add_articles(get_test_data_path() + '*.html')
         self.assertEqual(len(self.db.articles), 6)
+        exporter.export_database(self.db, 'exported_db.txt')
+        self.assertTrue(exists('exported_db.txt'))
+        os.remove('exported_db.txt')
 
 
 

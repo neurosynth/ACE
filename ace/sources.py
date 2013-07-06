@@ -88,13 +88,14 @@ class Source:
         html = html.decode('utf-8')   # Make sure we're working with unicode
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html)
+        doi = self.extract_doi(soup)
         pmid = self.extract_pmid(soup)
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
                 self.database.delete_article(pmid)
             else:
                 return False
-        self.article = database.Article(pmid)
+        self.article = database.Article(pmid=pmid, doi=doi)
         return soup
 
     @abc.abstractmethod
