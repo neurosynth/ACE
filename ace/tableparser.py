@@ -5,17 +5,18 @@ from __future__ import unicode_literals  # use unicode everywhere
 import regex  # Note: we're using features in the new regex module, not re!
 import logging
 import config, database
+from collections import Counter, defaultdict
 
 
 logger = logging.getLogger('ace')
-logging.basicConfig()
 
 
 def identify_standard_columns(labels):
     ''' Takes a set of column labels and returns an equal-length list with names
     of any standard columns detected. Unknown columns are assigned None.
     E.g., passing in ['p value', 'brain region', 'unknown_col'] would return
-    ['p_value', 'region', None]. '''
+    ['p_value', 'region', None].
+    '''
     standardized = [None] * len(labels)
     found_coords = False
     for i, lab in enumerate(labels):
@@ -70,18 +71,72 @@ def identify_repeating_groups(labels):
     keys can be used to directly look up names stored in a
     multicolumn_label dictionary.
     '''
-    target = '###'.join(unicode(x) for x in labels)
-    pattern = regex.compile(r'(.+?###.+?)(###\1)+')
-    matches = pattern.finditer(target)
+    # OLD ALGORITHM: MUCH SIMPLER AND FASTER BUT DOESN'T WORK PROPERLY
+    # FOR NON-CONTIGUOUS COLUMN GROUPS
+    # target = '###'.join(unicode(x) for x in labels)
+    # pattern = regex.compile(r'(.+?###.+?)(###\1)+')
+    # matches = pattern.finditer(target)
+    # groups = []
+    # for m in matches:
+    #     sp = m.span()
+    #     n_cols_in_group = len(m.group(1).split('###'))
+    #     start = len(target[0:sp[0]].split('###'))-1
+    #     n_matches = len(m.group(0).split('###'))
+    #     for i in range(n_matches/n_cols_in_group):
+    #         groups.append('%d/%d' % ((i*n_cols_in_group)+start, n_cols_in_group))
+    # return list(set(groups))
+
     groups = []
-    for m in matches:
-        sp = m.span()
-        n_cols_in_group = len(m.group(1).split('###'))
-        start = len(target[0:sp[0]].split('###'))-1
-        n_matches = len(m.group(0).split('###'))
-        for i in range(n_matches/n_cols_in_group):
-            groups.append('%d/%d' % ((i*n_cols_in_group)+start, n_cols_in_group))
-    return list(set(groups))
+    n_labels = len(labels)
+    label_counts = Counter(labels)
+    rep_labels = set([k for k, v in label_counts.items() if v > 1])
+    # Track multi-label sequences. Key/value = sequence/onset
+    label_seqs = defaultdict(list)
+
+    # Loop over labels and identify any sequences made up entirely of labels with 
+    # 2 or more occurrences in the list and without the starting label repeating.
+    for i, lab in enumerate(labels):
+        if lab not in rep_labels:
+            continue
+        current_seq = [lab]
+        for j in range(i+1, n_labels):
+            lab_j = labels[j]
+            if lab_j not in rep_labels or lab_j == lab:
+                break
+            current_seq.append(lab_j)
+        if len(current_seq) > 1:
+            label_seqs['###'.join(current_seq)].append(i)
+
+    # Keep only sequences that occur two or more times
+    label_seqs = { k: v for k, v in label_seqs.items() if len(v) > 1}
+    
+    # Invert what's left into a list where the sequence occurs at its start pos
+    seq_starts = [None] * n_labels
+    for k, v in label_seqs.items():
+        for start in v:
+            seq_starts[start] = k.split('###')
+
+    # Create boolean array to track whether each element has already been used
+    labels_used = [False] * n_labels
+
+    # Loop through labels and add a group if we find a sequence that starts at 
+    # the current position and spans at least one currently unused cell.
+    # This is necessary to account for cases where one sequence isn't always 
+    # part of the same supersequence, e.g., the y/z in x/y/z could also be a 
+    # part of a/y/z or b/y/z.
+    for i, lab in enumerate(labels):
+        if seq_starts[i] is not None:
+            seq_size = len(seq_starts[i])
+            if not all(labels_used[i:(i+seq_size)]):
+                labels_used[i:(i+seq_size)] = [True] * seq_size
+
+                # We need to make sure the group contains x/y/z information, 
+                # otherwise we'll end up duplicating a lot of activations.
+                # This is not a very good place to put this check; eventually
+                # we need to refactor much of this class.
+                groups.append('%d/%d' % (i, seq_size))
+
+    return groups
 
 
 
@@ -114,7 +169,6 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
                 if not regex.match('(-*\d+)\.*\d*$', col):
                     logging.debug("Value %s in %s column is not valid" % (col, sc))
                     activation.problems.append("Value in %s column is not valid" % sc)
-                    # col = regex.search('(-*\d+)', col).group(1)
                     return activation
                 col = (float(col))
 
@@ -125,7 +179,6 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 
             setattr(activation, sc, col)
 
-
         # Always include all columns in record
         activation.add_col(labels[i], col)
       
@@ -135,7 +188,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
         # Also need to remove space between minus sign and numbers; some ScienceDirect
         # journals leave a gap.
         if not i in standard_cols:
-            cs = '([\-\.\s]*\d{1,3})'
+            cs = '([\-\.\s]*\d{1,3}\.*\d{0,2})'
             m = regex.search('%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), unicode(col).strip())
             if m:
                 x, y, z = [regex.sub('-\s+', '-', c) for c in [m.group(1), m.group(2), m.group(3)]]
@@ -157,8 +210,9 @@ def parse_table(data):
     labels = [None] * n_cols
     multicol_labels = {}
 
-    for i in range(data.n_rows()):
+    for i in range(data.n_rows):
         r = data[i]
+        found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
         for j, val in enumerate(r):
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
             # there is no current label assigned to this column...
@@ -170,7 +224,7 @@ def parse_table(data):
                 # denotes regions. Otherwise assume this is a regular column name.
                 # Note: this heuristic is known to fail in the presence of multiple
                 # unlabeled region columns. See e.g., CerCor bhl081, table 2.
-                if j == 0 and (None not in labels[1::] or regex.search('\d+.*\d+.*\d+', '/'.join(r))):
+                if j == 0 and (None not in labels[1::] or found_xyz):
                     labels[j] = 'region'
                 else:
                     labels[j] = val

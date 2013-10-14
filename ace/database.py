@@ -9,7 +9,10 @@ from datetime import datetime
 import simplejson as json
 import logging
 import sys
-import config, sources, scrape, extract
+import config
+import sources
+import scrape
+import extract
 
 logger = logging.getLogger('ace')
 
@@ -40,8 +43,8 @@ class Database:
     def add_articles(self, files, commit=True):
         ''' Process articles and add their data to the DB.
         Args:
-            files: The path to the article(s) to process. Can be a single 
-                filename (string), a list of filenames, or a path to pass 
+            files: The path to the article(s) to process. Can be a single
+                filename (string), a list of filenames, or a path to pass
                 to glob (e.g., "article_dir/NIMG*html")
             commit: Whether or not to save records to DB file after adding them.
         '''
@@ -60,7 +63,8 @@ class Database:
                 article = source.parse_article(html)
                 if config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables:
                     self.add(article)
-            except: pass
+            except:
+                pass
 
         if commit:
             self.save()
@@ -85,8 +89,11 @@ class Database:
         return self.session.query(Article).all()
 
 # Create a JSONString column type for convenience
+
+
 class JsonString(TypeDecorator):
     impl = String
+
     def process_result_value(self, value, dialect):
         if value is None:
             return None
@@ -110,14 +117,16 @@ class Article(Base):
     journal = Column(String)
     space = Column(String)
     publisher = Column(String)
-    doi  = Column(String)
+    doi = Column(String)
     year = Column(Integer)
+    authors = Column(String)
     abstract = Column(Text)
     citation = Column(Text)
     pubmed_metadata = Column(JsonString)
 
     tables = relationship('Table', cascade="all,delete", backref='article')
-    activations = relationship('Activation', cascade="all,delete", backref='article')
+    activations = relationship(
+        'Activation', cascade="all,delete", backref='article')
     features = association_proxy('tags', 'feature')
 
     def __init__(self, text, pmid=None, doi=None):
@@ -134,6 +143,7 @@ class Article(Base):
         self.journal = pmd['journal']
         self.pubmed_metadata = pmd
         self.year = pmd['year']
+        self.authors = pmd['authors']
         self.abstract = pmd['abstract']
         self.citation = pmd['citation']
 
@@ -144,15 +154,30 @@ class Table(Base):
 
     id = Column(Integer, primary_key=True)
     article_id = Column(Integer, ForeignKey('articles.id'))
-    activations = relationship('Activation', cascade="all,delete", backref='table')
-    number = Column(Integer)
-    title = Column(String)
+    activations = relationship(
+        'Activation', cascade="all,delete", backref='table')
+    position = Column(Integer)   # The serial position of occurrence
+    number = Column(String)   # The stated table ID (e.g., 1, 2b)
+    label = Column(String)  # The full label (e.g., Table 1, Table 2b)
     caption = Column(Text)
     notes = Column(Text)
     n_activations = Column(Integer)
     n_columns = Column(Integer)
 
     def finalize(self):
+        ''' Any cleanup and updating operations we need to do before saving. '''
+
+        # # Remove duplicate activations--most commonly produced by problems with
+        # # the grouping code.
+        # act_defs = set()
+        # to_keep = []
+        # for a in self.activations:
+        #     definition = json.dumps([a.x, a.y, a.z, a.groups])
+        #     if definition not in act_defs:
+        #         act_defs.add(definition)
+        #         to_keep.append(a)
+        # self.activations = to_keep
+
         self.n_activations = len(self.activations)
 
 
@@ -178,17 +203,16 @@ class Activation(Base):
     statistic = Column(String)
     p_value = Column(String)
 
-
     def __init__(self):
         self.problems = []
         self.columns = {}
 
     def set_coords(self, x, y, z):
-        self.x, self.y, self.z = [float(e) for e in [x,y,z]]
-    
+        self.x, self.y, self.z = [float(e) for e in [x, y, z]]
+
     def add_col(self, key, val):
         self.columns[key] = val
-  
+
     # Validates Peak. Considers peak invalid if:
     # * At least one of X, Y, Z is nil or missing
     # * Any |coordinate| > 100
@@ -200,11 +224,13 @@ class Activation(Base):
 
         for c in [self.x, self.y, self.z]:
             if c == '' or c is None:
-                logger.debug('Missing x, y, or z coordinate information: [%s, %s, %s]' % tuple([str(e) for e in [self.x, self.y, self.z]]))
+                logger.debug('Missing x, y, or z coordinate information: [%s, %s, %s]' % tuple(
+                    [str(e) for e in [self.x, self.y, self.z]]))
                 return False
             try:
                 if abs(c) >= 100:
-                    logger.debug('Invalid coordinates: at least one dimension (x,y,z) >= 100.')
+                    logger.debug(
+                        'Invalid coordinates: at least one dimension (x,y,z) >= 100.')
                     return False
             except:
                 print c
@@ -213,7 +239,8 @@ class Activation(Base):
 
         sorted_xyz = sorted([abs(self.x), abs(self.y), abs(self.z)])
         if sorted_xyz[0] == 0 and sorted_xyz[1] == 0:
-            logger.debug("At least two dimensions have value == 0; coordinate is probably not real.")
+            logger.debug(
+                "At least two dimensions have value == 0; coordinate is probably not real.")
             return False
 
         return True

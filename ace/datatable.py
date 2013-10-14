@@ -2,9 +2,11 @@ import logging
 logger = logging.getLogger('ace')
 logging.basicConfig()
 
+
 class DataTable:
+
     ''' Simple class to represent the contents of an HTML table.
-        Basically just a grid with array accessor methods and 
+        Basically just a grid with array accessor methods and
         some extra validation. '''
 
     def __init__(self, n_rows, n_cols):
@@ -24,6 +26,7 @@ class DataTable:
     def to_list(self):
         return self.data
 
+    @property
     def n_rows(self):
         return len(self.data)
 
@@ -32,19 +35,21 @@ class DataTable:
 
         # Flatten list and find next open position
         flat = [item for l in self.data for item in l]
+        flat_set = set(flat)
 
-        if not None in flat:
-            open_pos = self.n_rows() * self.n_cols
+        if not None in flat_set:
+            open_pos = self.n_rows * self.n_cols
             for i in range(rows):
                 self.data.append([None] * self.n_cols)
 
         else:
+            # This indexing operation consumes a lot of CPU time for large tables; need to refactor!
             open_pos = flat.index(None)
             ri = open_pos / self.n_cols
-            # print ri
-            if (ri + rows) > self.n_rows():
-                logging.error("Error: DataTable row has more columns than labels: [%d, %d, %d]" % (ri, rows, self.n_rows()))
-                for i in range((ri + rows) - self.n_rows()):
+            if (ri + rows) > self.n_rows:
+                logging.error("Error: DataTable row has more columns than labels: [%d, %d, %d]" % (
+                    ri, rows, self.n_rows))
+                for i in range((ri + rows) - self.n_rows):
                     self.data.append([None] * self.n_cols)
 
         ri = open_pos / self.n_cols

@@ -1,6 +1,6 @@
 import unittest
 import os
-from ace import sources, database, datatable, exporter
+from ace import sources, database, datatable, export
 import json
 from os.path import dirname, join, exists, sep as pathsep
 import os
@@ -18,6 +18,7 @@ class TestACE(unittest.TestCase):
         self.db = database.Database('ace_test_database.tmp')
         self.manager = sources.SourceManager(self.db)
 
+
     def tearDown(self):
         os.remove('ace_test_database.tmp')
 
@@ -32,7 +33,7 @@ class TestACE(unittest.TestCase):
         tables = article.tables
         self.assertEqual(len(tables), 3)
         t = tables[2]
-        self.assertEqual(t.number, 5)
+        self.assertEqual(t.number, '5')
         self.assertIsNotNone(t.caption)
         self.assertEqual(t.n_activations, 13)
 
@@ -44,7 +45,7 @@ class TestACE(unittest.TestCase):
         tables = article.tables
         self.assertEqual(len(tables), 3)
         t = tables[2]
-        self.assertEqual(t.number, 4)
+        self.assertEqual(t.number, '4')
         self.assertIsNotNone(t.caption)
         self.assertEqual(t.n_activations, 30)
 
@@ -56,14 +57,18 @@ class TestACE(unittest.TestCase):
         tables = article.tables
         self.assertEqual(len(tables), 1)
         t = tables[0]
-        self.assertEqual(t.number, 1)
+        self.assertEqual(t.number, '1')
         self.assertIsNotNone(t.caption)
-        self.assertEqual(t.n_activations, 12)
+        for a in t.activations:
+            print [a.x, a.y, a.z]
+        # Note: only 12 regions, but there are data for 2 experiments,
+        # so it's appropriate to treat as 24 activations.
+        self.assertEqual(t.n_activations, 24)
 
     def testDatabaseProcessingStream(self):
         self.db.add_articles(get_test_data_path() + '*.html')
         self.assertEqual(len(self.db.articles), 6)
-        exporter.export_database(self.db, 'exported_db.txt')
+        export.export_database(self.db, 'exported_db.txt')
         self.assertTrue(exists('exported_db.txt'))
         os.remove('exported_db.txt')
 
