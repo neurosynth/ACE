@@ -40,7 +40,7 @@ class Database:
         ''' Commit all stored records to file. '''
         self.session.commit()
 
-    def add_articles(self, files, commit=True):
+    def add_articles(self, files, commit=True, table_dir=None):
         ''' Process articles and add their data to the DB.
         Args:
             files: The path to the article(s) to process. Can be a single
@@ -49,7 +49,7 @@ class Database:
             commit: Whether or not to save records to DB file after adding them.
         '''
 
-        manager = sources.SourceManager(self)
+        manager = sources.SourceManager(self, table_dir)
 
         if isinstance(files, basestring):
             from glob import glob

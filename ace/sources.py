@@ -23,13 +23,20 @@ class SourceManager:
     associated directory of JSON config files and uses them to determine which parser
     to call when a new HTML file is passed. '''
 
-    def __init__(self, database):
+    def __init__(self, database, table_dir=None):
+        ''' SourceManager constructor.
+        Args:
+            database: A Database instance to use with all Sources.
+            table_dir: An optional directory name to save any downloaded tables to.
+                When table_dir is None, nothing will be saved (requiring new scraping
+                each time the article is processed).
+        '''
         module = importlib.import_module('ace.sources')
         self.sources = {}
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
         for config_file in glob('%s/*json' % source_dir):
             class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(config_file, database)
+            cls = getattr(module, class_name + 'Source')(config_file, database, table_dir)
             self.sources[class_name] = cls
 
     def identify_source(self, html):
@@ -70,10 +77,11 @@ class Source:
 
     }
 
-    def __init__(self, config, database):
+    def __init__(self, config, database, table_dir=None):
 
         config = json.load(open(config, 'rb'))
         self.database = database
+        self.table_dir = table_dir
 
         valid_keys = ['name', 'identifiers', 'entities']
 
@@ -179,6 +187,24 @@ class Source:
         return patterns.sub(replacements, html)
         # return html
 
+    def _download_table(self, url):
+        ''' For Sources that have tables in separate files, a helper for 
+        downloading and extracting the table data. Also saves to file if desired.
+        '''
+        if self.table_dir is not None:
+            filename = '%s/%s' % (self.table_dir, url.replace('/', '_'))
+            if os.path.exists(filename):
+                table_html = open(filename).read().decode('utf-8')
+            else:
+                table_html = scrape.get_url(url)
+                open(filename, 'w').write(table_html.encode('utf-8'))
+        else:
+            table_html = scrape.get_url(url)
+
+        table_html = self.decode_html_entities(table_html)
+        return(BeautifulSoup(table_html))
+
+
 
 class HighWireSource(Source):
 
@@ -198,9 +224,7 @@ class HighWireSource(Source):
         for i in range(n_tables):
             t_num = i + 1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_html = scrape.get_url(url)
-            table_html = self.decode_html_entities(table_html)
-            table_soup = BeautifulSoup(table_html)
+            table_soup = self._download_table(url)
             tc = table_soup.find(class_='table-expansion')
             t = tc.find('table', {'id': 'table-%d' % (t_num)})
             t = self.parse_table(t)
@@ -377,9 +401,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         for i in range(n_tables):
             url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (
                 i + 1, doi)
-            table_html = scrape.get_url(url)
-            table_html = self.decode_html_entities(table_html)
-            table_soup = BeautifulSoup(table_html)
+            table_soup = self._download_table(url)
             t = table_soup.find('table').find(
                 'table')  # JCogNeuro nests tables 2-deep
             t = self.parse_table(t)
@@ -468,9 +490,7 @@ class SageSource(Source):
         for i in range(n_tables):
             t_num = i + 1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_html = scrape.get_url(url)
-            table_html = self.decode_html_entities(table_html)
-            table_soup = BeautifulSoup(table_html)
+            table_soup = self._download_table(url)
             tc = table_soup.find(class_='table-expansion')
             t = tc.find('table', {'id': 'table-%d' % (t_num)})
             t = self.parse_table(t)
