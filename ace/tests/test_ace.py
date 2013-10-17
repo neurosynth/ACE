@@ -1,9 +1,10 @@
 import unittest
 import os
-from ace import sources, database, datatable, export
+from ace import sources, database, datatable, export, scrape
 import json
 from os.path import dirname, join, exists, sep as pathsep
 import os
+import shutil
 
 
 def get_test_data_path():
@@ -71,6 +72,19 @@ class TestACE(unittest.TestCase):
         export.export_database(self.db, 'exported_db.txt')
         self.assertTrue(exists('exported_db.txt'))
         os.remove('exported_db.txt')
+
+    def testJournalScraping(self):
+        scrape_path = join(get_test_data_path(), 'scrape_test')
+        os.mkdir(scrape_path)
+        # Test with PLoS ONE because it's OA
+        scraper = scrape.Scraper(scrape_path)
+        scraper.retrieve_journal_articles('PLoS ONE', delay=5.0, mode='browser', 
+            search='fmri', limit=2)
+        # For now just check to make sure we have expected number of files in the directory
+        plos_dir = scrape_path + '/PLoS ONE/'
+        n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
+        self.assertEqual(n_files, 2)
+        shutil.rmtree(scrape_path)
 
 
 

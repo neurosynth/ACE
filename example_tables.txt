@@ -8,3 +8,6 @@ http://www.jneurosci.org/content/29/12/3930/T3.expansion.html
 
 # Table 1 is broken: instead of starting a new <tr> for a new group, an entire <table> is used
 http://www.sciencedirect.com/science/article/pii/S1053811911007609
+
+# Doesn't detect x/y/z in Table 1 correctly
+http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0068494

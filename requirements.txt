@@ -3,3 +3,4 @@ regex
 requests
 simplejson
 sqlalchemy
+selenium
