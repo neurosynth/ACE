@@ -40,13 +40,18 @@ class Database:
         ''' Commit all stored records to file. '''
         self.session.commit()
 
-    def add_articles(self, files, commit=True, table_dir=None):
+    def add_articles(self, files, commit=True, table_dir=None, limit=None):
         ''' Process articles and add their data to the DB.
         Args:
             files: The path to the article(s) to process. Can be a single
                 filename (string), a list of filenames, or a path to pass
                 to glob (e.g., "article_dir/NIMG*html")
             commit: Whether or not to save records to DB file after adding them.
+            table_dir: Directory to store downloaded tables in (if None, tables 
+                will not be saved.)
+            limit: Optional integer indicating max number of articles to add 
+                (selected randomly from all available). When None, will add all
+                available articles.
         '''
 
         manager = sources.SourceManager(self, table_dir)
@@ -54,6 +59,10 @@ class Database:
         if isinstance(files, basestring):
             from glob import glob
             files = glob(files)
+            if limit is not None:
+                from random import shuffle
+                shuffle(files)
+                files = files[:limit]
 
         for f in files:
             logger.info("Processing article %s..." % f)
