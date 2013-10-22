@@ -105,7 +105,7 @@ class Scraper:
         return doc
 
 
-    def get_html(self, url, ):
+    def get_html(self, url):
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
@@ -116,6 +116,13 @@ class Scraper:
             # The ?np=y bit is only useful for ScienceDirect, but doesn't hurt elsewhere.
             url = driver.current_url + '?np=y'
             driver.get(url)
+
+            # Check for URL substitution and get the new one if it's changed
+            url = driver.current_url  # After the redirect from PubMed
+            new_url = self.check_for_substitute_url(url)
+            if url != new_url:
+                driver.get(new_url)
+
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             ## Uncomment next line and insert ID to search for specific element.
@@ -133,8 +140,8 @@ class Scraper:
             r = requests.get(url, headers=headers)
             # For some journals, we can do better than the returned HTML, so get the final URL and 
             # substitute a better one.
-            if self.journal.lower() in ['plos one']:
-                url = self.check_for_substitute_url(r.url)
+            url = self.check_for_substitute_url(r.url)
+            if url != r.url:
                 r = requests.get(url, headers=headers)
             return r.text
 
@@ -164,7 +171,7 @@ class Scraper:
 
 
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
-                                limit=None, overwrite=False):
+                                limit=None, overwrite=False, min_pmid=None):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -181,6 +188,9 @@ class Scraper:
                 have been added.
             overwrite: When True, all articles returned from PubMed query will be 
                 fetched, irrespective of whether or not they already exist on disk.
+            min_pmid: When a PMID is provided, only articles with PMIDs greater than 
+                this will be processed. Primarily useful for excluding older articles 
+                that aren't available in full-text HTML format.
         '''
         self.journal = journal
         self.delay = delay
@@ -201,6 +211,7 @@ class Scraper:
 
         for id in ids:
 
+            if min_pmid is not None and int(id) < min_pmid: continue
             if limit is not None and articles_found >= limit: break
             
             logger.info("Processing %s..." % id)
