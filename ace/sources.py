@@ -44,6 +44,7 @@ class SourceManager:
         for source in self.sources.values():
             for patt in source.identifiers:
                 if re.search(patt, html):
+                    logger.debug('Matched article to Source: %s' % source.__class__.__name__)
                     return source
 
 
@@ -83,7 +84,7 @@ class Source:
         self.database = database
         self.table_dir = table_dir
 
-        valid_keys = ['name', 'identifiers', 'entities']
+        valid_keys = ['name', 'identifiers', 'entities', 'delay']
 
         for k, v in config.items():
             if k in valid_keys:
@@ -191,15 +192,18 @@ class Source:
         ''' For Sources that have tables in separate files, a helper for 
         downloading and extracting the table data. Also saves to file if desired.
         '''
+
+        delay = self.delay if hasattr(self, 'delay') else 0
+
         if self.table_dir is not None:
             filename = '%s/%s' % (self.table_dir, url.replace('/', '_'))
             if os.path.exists(filename):
                 table_html = open(filename).read().decode('utf-8')
             else:
-                table_html = scrape.get_url(url)
+                table_html = scrape.get_url(url, delay=delay)
                 open(filename, 'w').write(table_html.encode('utf-8'))
         else:
-            table_html = scrape.get_url(url)
+            table_html = scrape.get_url(url, delay=delay)
 
         table_html = self.decode_html_entities(table_html)
         return(BeautifulSoup(table_html))

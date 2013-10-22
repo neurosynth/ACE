@@ -3,7 +3,7 @@
 # Illustrates the need to handle grouping better in cases where two grouping rows occur:
 http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T2&doi=10.1162%2Fjocn_a_00371
 
-# Illustrates problems when same region label applies to multiple rows but is only listedx once
+# Illustrates problems when same region label applies to multiple rows but is only listed once
 http://www.jneurosci.org/content/29/12/3930/T3.expansion.html
 
 # Table 1 is broken: instead of starting a new <tr> for a new group, an entire <table> is used
