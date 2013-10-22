@@ -151,9 +151,14 @@ class Scraper:
         URL passed from PubMed. E.g., we can get XML with embedded tables from PLoS ONE instead of 
         the standard HTML, which displays tables as images. '''
 
-        if self.journal.lower() == 'plos one':
+        j = self.journal.lower()
+        if j == 'plos one':
             doi_part = re.search('article\/(info.*)', url).group(1)
             return 'http://www.plosone.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
+        elif j == 'human brain mapping' or j == 'european journal of neuroscience':
+            return url.replace('abstract', 'full')
+        elif j == 'journal of cognitive neuroscience':
+            return url.replace('doi/abs', 'doi/full')
         else:
             return url
 
