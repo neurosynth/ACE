@@ -78,7 +78,7 @@ class TestACE(unittest.TestCase):
         os.mkdir(scrape_path)
         # Test with PLoS ONE because it's OA
         scraper = scrape.Scraper(scrape_path)
-        scraper.retrieve_journal_articles('PLoS ONE', delay=5.0, mode='browser', 
+        scraper.retrieve_journal_articles('PLoS ONE', delay=5.0, mode='direct', 
             search='fmri', limit=2)
         # For now just check to make sure we have expected number of files in the directory
         plos_dir = scrape_path + '/PLoS ONE/'
