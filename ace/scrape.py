@@ -4,7 +4,6 @@ import re
 import requests
 from time import sleep
 import config
-import simplejson as json
 from bs4 import BeautifulSoup
 import logging
 import os
@@ -113,15 +112,17 @@ class Scraper:
         if self.mode == 'browser':
             driver = webdriver.Chrome()
             driver.get(url)
-            # The ?np=y bit is only useful for ScienceDirect, but doesn't hurt elsewhere.
+            # The ?np=y bit is only useful for ScienceDirect
+            # if 'sciencedirect' in url.lower():
             url = driver.current_url + '?np=y'
             driver.get(url)
 
             # Check for URL substitution and get the new one if it's changed
             url = driver.current_url  # After the redirect from PubMed
-            new_url = self.check_for_substitute_url(url)
+            html = driver.page_source
+            new_url = self.check_for_substitute_url(url, html)
             if url != new_url:
-                driver.get(new_url)
+                html = driver.get(new_url).page_source
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -131,7 +132,6 @@ class Scraper:
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
             sleep(3.0)
-            html = driver.page_source
             driver.quit()
             return html
 
@@ -140,9 +140,13 @@ class Scraper:
             r = requests.get(url, headers=headers)
             # For some journals, we can do better than the returned HTML, so get the final URL and 
             # substitute a better one.
-            url = self.check_for_substitute_url(r.url)
+            url = self.check_for_substitute_url(r.url, r.text)
             if url != r.url:
                 r = requests.get(url, headers=headers)
+                # XML content is usually misidentified as ISO-8859-1, so we need to manually set utf-8.
+                # Unfortunately this can break other documents. Need to eventually change this to inspect the 
+                # encoding attribute of the document header.
+                r.encoding = 'utf-8'
             return r.text
 
 
@@ -153,20 +157,27 @@ class Scraper:
         return self.get_html(query)
 
 
-    def check_for_substitute_url(self, url):
+    def check_for_substitute_url(self, url, html):
         ''' For some journals/publishers, we can get a better document version by modifying the 
         URL passed from PubMed. E.g., we can get XML with embedded tables from PLoS ONE instead of 
-        the standard HTML, which displays tables as images. '''
+        the standard HTML, which displays tables as images. For some journals (e.g., Frontiers),  
+        it's easier to get the URL by searching the source, so pass the html in as well. '''
 
         j = self.journal.lower()
-        if j == 'plos one':
-            doi_part = re.search('article\/(info.*)', url).group(1)
-            return 'http://www.plosone.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
-        elif j == 'human brain mapping' or j == 'european journal of neuroscience':
-            return url.replace('abstract', 'full')
-        elif j == 'journal of cognitive neuroscience':
-            return url.replace('doi/abs', 'doi/full')
-        else:
+        try:
+            if j == 'plos one':
+                doi_part = re.search('article\/(info.*)', url).group(1)
+                return 'http://www.plosone.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
+            elif j == 'human brain mapping' or j == 'european journal of neuroscience':
+                return url.replace('abstract', 'full')
+            elif j == 'journal of cognitive neuroscience':
+                return url.replace('doi/abs', 'doi/full')
+            elif j.startswith('frontiers in'):
+                m = re.search('(http://www\.frontiersin\.org/Journal/DownloadFile\.ashx\?xml.*?Finalxml\.xml)', html)
+                return m.group(1).replace('&amp;', '&') if m else url
+            else:
+                return url
+        except Exception, e:
             return url
 
 

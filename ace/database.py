@@ -13,6 +13,7 @@ import config
 import sources
 import scrape
 import extract
+from os import path
 
 logger = logging.getLogger('ace')
 
@@ -40,7 +41,7 @@ class Database:
         ''' Commit all stored records to file. '''
         self.session.commit()
 
-    def add_articles(self, files, commit=True, table_dir=None, limit=None):
+    def add_articles(self, files, commit=True, table_dir=None, limit=None, pmid_filenames=False):
         ''' Process articles and add their data to the DB.
         Args:
             files: The path to the article(s) to process. Can be a single
@@ -52,6 +53,10 @@ class Database:
             limit: Optional integer indicating max number of articles to add 
                 (selected randomly from all available). When None, will add all
                 available articles.
+            pmid_filenames: When True, assume that the file basename is a PMID.
+                This saves us from having to retrieve metadata from PubMed When
+                checking if a file is already in the DB, and greatly speeds up 
+                batch processing when overwrite is off.
         '''
 
         manager = sources.SourceManager(self, table_dir)
@@ -69,7 +74,8 @@ class Database:
             html = open(f).read()
             source = manager.identify_source(html)
             try:
-                article = source.parse_article(html)
+                pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
+                article = source.parse_article(html, pmid)
                 if config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables:
                     self.add(article)
             except:

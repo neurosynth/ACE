@@ -98,13 +98,15 @@ class Source:
             self.entities.update(Source.ENTITIES)
 
     @abc.abstractmethod
-    def parse_article(self, html):
-        ''' Takes HTML article as input and returns an Article. '''
+    def parse_article(self, html, pmid=None):
+        ''' Takes HTML article as input and returns an Article. PMID Can also be 
+        passed, which prevents having to scrape it from the article and/or look it 
+        up in PubMed. '''
         html = html.decode('utf-8')   # Make sure we're working with unicode
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html)
         doi = self.extract_doi(soup)
-        pmid = self.extract_pmid(soup)
+        pmid = self.extract_pmid(soup) if pmid is None else pmid
         text = soup.get_text()
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
@@ -121,6 +123,8 @@ class Source:
         # Formatting issues sometimes prevent table extraction, so just return
         if table is None:
             return False
+
+        logger.debug("\t\tFound a table...")
 
         # Count columns. Check either just one row, or all of them.
         def n_cols_in_row(row):
@@ -166,6 +170,7 @@ class Source:
                     logger.error(e.message)
                 if not config.IGNORE_BAD_ROWS:
                     raise
+        logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data)
 
     @abc.abstractmethod
@@ -212,8 +217,8 @@ class Source:
 
 class HighWireSource(Source):
 
-    def parse_article(self, html):
-        soup = super(HighWireSource, self).parse_article(html)
+    def parse_article(self, html, pmid=None):
+        soup = super(HighWireSource, self).parse_article(html, pmid)
         if not soup:
             return False
 
@@ -261,7 +266,7 @@ class HighWireSource(Source):
 
 class ScienceDirectSource(Source):
 
-    def parse_article(self, html):
+    def parse_article(self, html, pmid=None):
         soup = super(ScienceDirectSource, self).parse_article(
             html)  # Do some preprocessing
         if not soup:
@@ -301,7 +306,7 @@ class ScienceDirectSource(Source):
 
 class PlosSource(Source):
 
-    def parse_article(self, html):
+    def parse_article(self, html, pmid=None):
         soup = super(PlosSource, self).parse_article(
             html)  # Do some preprocessing
         if not soup:
@@ -341,7 +346,7 @@ class PlosSource(Source):
 
 class FrontiersSource(Source):
 
-    def parse_article(self, html):
+    def parse_article(self, html, pmid=None):
 
         soup = super(FrontiersSource, self).parse_article(
             html)  # Do some preprocessing
@@ -385,20 +390,17 @@ class FrontiersSource(Source):
 
 class JournalOfCognitiveNeuroscienceSource(Source):
 
-    def parse_article(self, html):
+    def parse_article(self, html, pmid=None):
         soup = super(
-            JournalOfCognitiveNeuroscienceSource, self).parse_article(html)
+            JournalOfCognitiveNeuroscienceSource, self).parse_article(html, pmid)
         if not soup:
             return False
 
         # To download tables, we need the DOI and the number of tables
-        m = re.search(
-            '\<meta.*content="http://dx.doi.org/(10.1162/jocn_a_00371)["\s]+', html)
-        doi = m.group(1)
-
+        doi = self.extract_doi(soup)
         pattern = re.compile('^T\d+$')
         n_tables = len(soup.find_all('table', {'id': pattern}))
-
+        logger.debug("Found %d tables!" % n_tables)
         tables = []
 
         # Now download each table and parse it
@@ -406,8 +408,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
             url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (
                 i + 1, doi)
             table_soup = self._download_table(url)
-            t = table_soup.find('table').find(
-                'table')  # JCogNeuro nests tables 2-deep
+            t = table_soup.find('table').find('table')  # JCogNeuro nests tables 2-deep
             t = self.parse_table(t)
             if t:
                 tables.append(t)
@@ -427,17 +428,19 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
 class WileySource(Source):
 
-    def parse_article(self, html):
+    def parse_article(self, html, pmid=None):
 
         soup = super(WileySource, self).parse_article(
             html)  # Do some preprocessing
         if not soup:
+            print "NO SOUP FOR YOU!"
             return False
 
         # Extract tables
         tables = []
         table_containers = soup.findAll('div', {
-                                        'class': 'table', 'id': lambda x: x.startswith('tbl')})
+                                        'class': 'table', 'id': re.compile('^t(bl)*\d+$')})
+        print "Found %d tables." % len(table_containers)
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             try:
@@ -476,7 +479,7 @@ class WileySource(Source):
 
 class SageSource(Source):
 
-    def parse_article(self, html):
+    def parse_article(self, html, pmid=None):
 
         soup = super(SageSource, self).parse_article(
             html)  # Do some preprocessing

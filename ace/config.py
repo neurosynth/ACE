@@ -12,7 +12,7 @@ DATABASE_FILE = 'ACE_db.sqlite'
 # When True, any processed articles will be saved to DB, whether or not they 
 # contain any extracted activations. When False, only articles from which 
 # at least one activation was extracted will be saved.
-SAVE_ARTICLES_WITHOUT_ACTIVATIONS = False
+SAVE_ARTICLES_WITHOUT_ACTIVATIONS = True
 
 # By default, ACE will ignore any articles that already exist in the DB 
 # when processing new HTML files. If OVERWRITE is set to True, ACE will 
