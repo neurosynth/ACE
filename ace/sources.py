@@ -107,6 +107,7 @@ class Source:
         soup = BeautifulSoup(html)
         doi = self.extract_doi(soup)
         pmid = self.extract_pmid(soup) if pmid is None else pmid
+        # TODO: add Source-specific delimiting of salient text boundaries--e.g., exclude References
         text = soup.get_text()
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:

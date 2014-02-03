@@ -1,6 +1,7 @@
 bs4
 regex
 requests
+scikit-learn
 simplejson
 sqlalchemy
 selenium
