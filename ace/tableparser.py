@@ -42,7 +42,7 @@ def identify_standard_columns(labels):
             # an alternative approach would be to check if the case of the 'z' column
             # matches the case of the 'x' column and make determination that
             # way.
-            s = 'z' if found_coords or labels[i - 1] == 'y' else 'statistic'
+            s = 'statistic' if not found_coords or labels[i - 1] != 'y' else 'z'
         elif regex.search('rdinate', lab):
             continue
         elif lab == 't' or regex.search('^(z|t).*(score|value)', lab):
