@@ -98,7 +98,7 @@ class Source:
             self.entities.update(Source.ENTITIES)
 
     @abc.abstractmethod
-    def parse_article(self, html, pmid=None):
+    def parse_article(self, html, pmid=None, metadata_dir=None):
         ''' Takes HTML article as input and returns an Article. PMID Can also be 
         passed, which prevents having to scrape it from the article and/or look it 
         up in PubMed. '''
@@ -107,6 +107,8 @@ class Source:
         soup = BeautifulSoup(html)
         doi = self.extract_doi(soup)
         pmid = self.extract_pmid(soup) if pmid is None else pmid
+        metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
+
         # TODO: add Source-specific delimiting of salient text boundaries--e.g., exclude References
         text = soup.get_text()
         if self.database.article_exists(pmid):
@@ -114,7 +116,7 @@ class Source:
                 self.database.delete_article(pmid)
             else:
                 return False
-        self.article = database.Article(text, pmid=pmid, doi=doi)
+        self.article = database.Article(text, pmid=pmid, doi=doi, metadata=metadata)
         return soup
 
     @abc.abstractmethod
@@ -218,8 +220,8 @@ class Source:
 
 class HighWireSource(Source):
 
-    def parse_article(self, html, pmid=None):
-        soup = super(HighWireSource, self).parse_article(html, pmid)
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(HighWireSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
             return False
 
@@ -267,9 +269,8 @@ class HighWireSource(Source):
 
 class ScienceDirectSource(Source):
 
-    def parse_article(self, html, pmid=None):
-        soup = super(ScienceDirectSource, self).parse_article(
-            html)  # Do some preprocessing
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(ScienceDirectSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
             return False
 
@@ -307,9 +308,8 @@ class ScienceDirectSource(Source):
 
 class PlosSource(Source):
 
-    def parse_article(self, html, pmid=None):
-        soup = super(PlosSource, self).parse_article(
-            html)  # Do some preprocessing
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(PlosSource, self).parse_article(html, pmid, **kwargs)  # Do some preprocessing
         if not soup:
             return False
 
@@ -347,10 +347,9 @@ class PlosSource(Source):
 
 class FrontiersSource(Source):
 
-    def parse_article(self, html, pmid=None):
+    def parse_article(self, html, pmid=None, **kwargs):
 
-        soup = super(FrontiersSource, self).parse_article(
-            html)  # Do some preprocessing
+        soup = super(FrontiersSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
             return False
 
@@ -391,9 +390,9 @@ class FrontiersSource(Source):
 
 class JournalOfCognitiveNeuroscienceSource(Source):
 
-    def parse_article(self, html, pmid=None):
+    def parse_article(self, html, pmid=None, **kwargs):
         soup = super(
-            JournalOfCognitiveNeuroscienceSource, self).parse_article(html, pmid)
+            JournalOfCognitiveNeuroscienceSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
             return False
 
@@ -429,10 +428,9 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
 class WileySource(Source):
 
-    def parse_article(self, html, pmid=None):
+    def parse_article(self, html, pmid=None, **kwargs):
 
-        soup = super(WileySource, self).parse_article(
-            html)  # Do some preprocessing
+        soup = super(WileySource, self).parse_article(html, pmid, **kwargs)  # Do some preprocessing
         if not soup:
             print "NO SOUP FOR YOU!"
             return False
@@ -480,10 +478,9 @@ class WileySource(Source):
 
 class SageSource(Source):
 
-    def parse_article(self, html, pmid=None):
+    def parse_article(self, html, pmid=None, **kwargs):
 
-        soup = super(SageSource, self).parse_article(
-            html)  # Do some preprocessing
+        soup = super(SageSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
             return False
 

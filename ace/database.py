@@ -9,6 +9,7 @@ from datetime import datetime
 import simplejson as json
 import logging
 import sys
+import traceback
 import config
 import sources
 import scrape
@@ -41,7 +42,8 @@ class Database:
         ''' Commit all stored records to file. '''
         self.session.commit()
 
-    def add_articles(self, files, commit=True, table_dir=None, limit=None, pmid_filenames=False):
+    def add_articles(self, files, commit=True, table_dir=None, limit=None, pmid_filenames=False, 
+         metadata_dir=None):
         ''' Process articles and add their data to the DB.
         Args:
             files: The path to the article(s) to process. Can be a single
@@ -57,6 +59,10 @@ class Database:
                 This saves us from having to retrieve metadata from PubMed When
                 checking if a file is already in the DB, and greatly speeds up 
                 batch processing when overwrite is off.
+            metadata_dir: Location to read/write PubMed metadata for articles.
+                When None (default), retrieves new metadata each time. If a 
+                path is provided, will check there first before querying PubMed,
+                and will save the result of the query if it doesn't already exist.
         '''
 
         manager = sources.SourceManager(self, table_dir)
@@ -75,14 +81,16 @@ class Database:
             source = manager.identify_source(html)
             try:
                 pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
-                article = source.parse_article(html, pmid)
-                if config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables:
+                article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
+                if article and (config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables):
                     self.add(article)
-            except:
-                pass
+                    if commit:
+                        self.save()
+            except Exception, err:
+                print traceback.format_exc()
 
-        if commit:
-            self.save()
+        # if commit:
+        #     self.save()
 
     def delete_article(pmid):
         self.session.query(Article).filter_by(id=pmid).delete()
@@ -144,23 +152,24 @@ class Article(Base):
         'Activation', cascade="all,delete", backref='article')
     features = association_proxy('tags', 'feature')
 
-    def __init__(self, text, pmid=None, doi=None):
+    def __init__(self, text, pmid=None, doi=None, metadata=None):
+        self.id = int(pmid)
         self.text = text
         self.space = extract.guess_space(text)
         self.doi = doi
-        if pmid is not None:
-            self.update_metadata_from_pubmed(pmid)
+        self.pubmed_metadata = metadata
+        self.update_from_metadata()
 
-    def update_metadata_from_pubmed(self, pmid):
-        pmd = scrape.get_pubmed_metadata(pmid)
-        self.id = int(pmid)
-        self.title = pmd['title']
-        self.journal = pmd['journal']
-        self.pubmed_metadata = pmd
-        self.year = pmd['year']
-        self.authors = pmd['authors']
-        self.abstract = pmd['abstract']
-        self.citation = pmd['citation']
+    def update_from_metadata(self):
+        if self.pubmed_metadata is not None:
+            pmd = self.pubmed_metadata
+            self.title = pmd['title']
+            self.journal = pmd['journal']
+            self.pubmed_metadata = pmd
+            self.year = pmd['year']
+            self.authors = pmd['authors']
+            self.abstract = pmd['abstract']
+            self.citation = pmd['citation']
 
 
 class Table(Base):

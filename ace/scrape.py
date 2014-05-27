@@ -17,7 +17,7 @@ logger = logging.getLogger('ace')
 def get_url(url, delay=0.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
     sleep(delay)
-    r = requests.get(url, headers=headers)
+    r = requests.get(url, headers=headers, timeout=5.0)
     return r.text
 
 
@@ -31,12 +31,32 @@ def get_pmid_from_doi(doi):
     return pmid
 
 
-def get_pubmed_metadata(pmid):
-    ''' Get metadata for article from PubMed '''
-    logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-    text = get_url(
-        'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s&retmode=text&rettype=medline' % pmid)
-    return parse_PMID_text(text)
+def get_pubmed_metadata(pmid, parse=True, store=None, save=True):
+    ''' Get PubMed metadata for article.
+    Args:
+        pmid: The article's PubMed ID
+        parse: if True, parses the text and returns a dictionary. if False, returns raw text.
+        store: optional string path to PubMed metadata files. If passed, first checks the passed
+            folder for the corresponding ID, and only queries PubMed if not found.
+        save: if store is passed, save is True, and the file does not already exist, 
+            will save the result of the new PubMed query to the store.
+    '''
+    if store is not None:
+        md_file = os.path.join(store, pmid)
+
+    if store is not None and os.path.exists(md_file):
+        logger.info("Retrieving metadata from file %s..." % os.path.join(store, pmid))
+        text = open(md_file).read()
+    else:
+        logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
+        text = get_url(
+            'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s&retmode=text&rettype=medline' % pmid)
+        if store is not None and save and text is not None:
+            if not os.path.exists(store):
+                os.makedirs(store)
+            open(md_file, 'w').write(text)
+
+    return parse_PMID_text(text) if (parse and text is not None) else text
 
 
 def parse_PMID_text(text, doi=None):
@@ -54,9 +74,8 @@ def parse_PMID_text(text, doi=None):
 
     # Extra processing
     if doi is None:
-        if 'AID' in data:
-            doi = filter(lambda x: 'doi' in x, data[
-                         'AID'].split('; '))[0].split(' ')[0]
+        if 'AID' in data and '[doi]' in data['AID']:
+            doi = filter(lambda x: 'doi' in x, data['AID'].split('; '))[0].split(' ')[0]
         else:
             doi = ''
     year = data['DP'].split(' ')[0]
@@ -182,7 +201,7 @@ class Scraper:
 
 
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
-                                limit=None, overwrite=False, min_pmid=None):
+                                limit=None, overwrite=False, min_pmid=None, save_metadata=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -202,6 +221,8 @@ class Scraper:
             min_pmid: When a PMID is provided, only articles with PMIDs greater than 
                 this will be processed. Primarily useful for excluding older articles 
                 that aren't available in full-text HTML format.
+            save_metadata: When True, retrieves metadata from PubMed and saves it to 
+                the pubmed/ folder below the root storage folder.
         '''
         self.journal = journal
         self.delay = delay
@@ -214,9 +235,9 @@ class Scraper:
         logger.info("Found %d records.\n" % len(ids))
 
         # Make directory if it doesn't exist
-        journal_path = '%s/%s' % (self.store, journal)
+        journal_path = os.path.join(self.store, 'html', journal)
         if not os.path.exists(journal_path):
-            os.mkdir(journal_path)
+            os.makedirs(journal_path)
 
         articles_found = 0
 
@@ -232,6 +253,7 @@ class Scraper:
                 logger.info("\tAlready exists! Skipping...")
                 continue
 
+            # Save the HTML
             doc = self.get_html_by_pmid(id)
             if doc:
                 outf = open(filename, 'w')
