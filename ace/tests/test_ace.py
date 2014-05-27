@@ -81,7 +81,7 @@ class TestACE(unittest.TestCase):
         scraper.retrieve_journal_articles('PLoS ONE', delay=5.0, mode='direct', 
             search='fmri', limit=2)
         # For now just check to make sure we have expected number of files in the directory
-        plos_dir = scrape_path + '/PLoS ONE/'
+        plos_dir = join(scrape_path, 'html/PLoS ONE/')
         n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
         self.assertEqual(n_files, 2)
         shutil.rmtree(scrape_path)
