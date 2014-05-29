@@ -102,6 +102,11 @@ class Source:
         ''' Takes HTML article as input and returns an Article. PMID Can also be 
         passed, which prevents having to scrape it from the article and/or look it 
         up in PubMed. '''
+
+        # Skip rest of processing if this record already exists
+        if pmid is not None and self.database.article_exists(pmid) and not config.OVERWRITE_EXISTING_ROWS:
+            return False
+
         html = html.decode('utf-8')   # Make sure we're working with unicode
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html)
@@ -261,7 +266,10 @@ class HighWireSource(Source):
         return super(HighWireSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('meta', {'name': 'citation_doi'})['content']
+        try:
+            return soup.find('meta', {'name': 'citation_doi'})['content']
+        except:
+            return ''
 
     def extract_pmid(self, soup):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
