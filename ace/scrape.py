@@ -131,9 +131,7 @@ class Scraper:
         if self.mode == 'browser':
             driver = webdriver.Chrome()
             driver.get(url)
-            # The ?np=y bit is only useful for ScienceDirect
-            # if 'sciencedirect' in url.lower():
-            url = driver.current_url + '?np=y'
+            url = driver.current_url
             driver.get(url)
 
             # Check for URL substitution and get the new one if it's changed
@@ -141,7 +139,8 @@ class Scraper:
             html = driver.page_source
             new_url = self.check_for_substitute_url(url, html)
             if url != new_url:
-                html = driver.get(new_url).page_source
+                driver.get(new_url)
+                html = driver.page_source
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -150,7 +149,7 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-            sleep(3.0)
+            sleep(1.5)
             driver.quit()
             return html
 
@@ -192,8 +191,9 @@ class Scraper:
             elif j == 'journal of cognitive neuroscience':
                 return url.replace('doi/abs', 'doi/full')
             elif j.startswith('frontiers in'):
-                m = re.search('(http://www\.frontiersin\.org/Journal/DownloadFile\.ashx\?xml.*?Finalxml\.xml)', html)
-                return m.group(1).replace('&amp;', '&') if m else url
+                return re.sub('(full|abstract)\/*$', 'xml\/nlm', url)
+            elif 'sciencedirect' in url:
+                return url + '?np=y'
             else:
                 return url
         except Exception, e:
