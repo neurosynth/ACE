@@ -14,7 +14,7 @@ import config
 import database
 import logging
 
-logger = logging.getLogger('ace')
+logger = logging.getLogger(__name__)
 
 
 class SourceManager:
@@ -248,7 +248,7 @@ class HighWireSource(Source):
             if t:
                 t.position = t_num
                 t.label = tc.find(class_='table-label').text
-                t.number = t.label.split(' ')[-1]
+                t.number = t.label.split(' ')[-1].strip()
                 try:
                     t.caption = tc.find(class_='table-caption').get_text()
                 except:
@@ -289,7 +289,7 @@ class ScienceDirectSource(Source):
             t = self.parse_table(table_html)
             if t:
                 t.position = i + 1
-                t.number = tc['data-label'].split(' ')[-1]
+                t.number = tc['data-label'].split(' ')[-1].strip()
                 t.label = tc.find('span', class_='label').text.strip()
                 try:
                     t.caption = tc.find('p', class_='caption').get_text()
@@ -329,7 +329,7 @@ class PlosSource(Source):
             if t:
                 t.position = i + 1
                 t.label = tc.find('label').text
-                t.number = t.label.split(' ')[-1]
+                t.number = t.label.split(' ')[-1].strip()
                 try:
                     t.caption = tc.find('title').get_text()
                 except:
@@ -371,7 +371,7 @@ class FrontiersSource(Source):
             # If Table instance is returned, add other properties
             if t:
                 t.position = i + 1
-                t.number = tc['id'][1::]
+                t.number = tc['id'][1::].strip()
                 t.label = tc.find('label').get_text()
                 try:
                     t.caption = tc.find('caption').get_text()
@@ -459,7 +459,7 @@ class WileySource(Source):
             # If Table instance is returned, add other properties
             if t:
                 t.position = i + 1
-                t.number = tc['id'][3::]
+                t.number = tc['id'][3::].strip()
                 t.label = tc.find('span', class_='label').get_text()
                 t.caption = tc.find('caption').get_text()
                 try:
@@ -510,7 +510,7 @@ class SageSource(Source):
             if t:
                 t.position = t_num
                 t.label = tc.find(class_='table-label').text
-                t.number = t.label.split(' ')[-1]
+                t.number = t.label.split(' ')[-1].strip()
                 try:
                     t.caption = tc.find(class_='table-caption').get_text()
                 except:
