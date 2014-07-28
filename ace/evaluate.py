@@ -16,5 +16,4 @@ def proportion_integer_values(database):
 	This should generally be close to 0--typically around 0.02 or so if everything 
 	is working properly. '''
 	data = pd.read_csv(database,sep='\t')
-
-	print 1 - data[['x','y','z']].apply(lambda x: np.mean(x == x.round()))
+	return 1 - data[['x','y','z']].apply(lambda x: np.mean(x == x.round()))
