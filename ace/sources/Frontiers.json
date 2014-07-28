@@ -1,7 +1,7 @@
 {
   "name": "Frontiers",
   "identifiers": [
-    "<publisher-name>Frontiers Research Foundation</publisher-name>"
+    "<article-id pub-id-type=\"doi\">10.3389"
   ],
   "entities": {
   	"&#x02212;": "-",
