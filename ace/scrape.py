@@ -11,7 +11,7 @@ from random import random, shuffle
 from selenium import webdriver
 import selenium.webdriver.support.ui as ui
 
-logger = logging.getLogger('ace')
+logger = logging.getLogger(__name__)
 
 
 def get_url(url, delay=0.0, verbose=False):

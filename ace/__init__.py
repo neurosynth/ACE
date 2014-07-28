@@ -10,9 +10,7 @@ import os
 
 from version import __version__
 
-logger = logging.getLogger("ace")
-
-def set_logging_level(level='warn'):
+def set_logging_level(level=None):
     """Set package-wide logging level
 
     Args
@@ -31,4 +29,5 @@ def _setup_logger(logger):
     set_logging_level()
 
 # Set up logger
+logger = logging.getLogger("ace")
 _setup_logger(logger)

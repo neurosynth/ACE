@@ -8,7 +8,7 @@ import config, database
 from collections import Counter, defaultdict
 
 
-logger = logging.getLogger('ace')
+logger = logging.getLogger(__name__)
 
 
 def identify_standard_columns(labels):
