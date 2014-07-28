@@ -1,6 +1,6 @@
 # Database stuff and models
 
-from sqlalchemy import TypeDecorator, Table, Column, Text, Integer, Float, String, ForeignKey, Boolean, DateTime
+from sqlalchemy import TypeDecorator, Table, Column, Integer, Float, String, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -16,7 +16,7 @@ import scrape
 import extract
 from os import path
 
-logger = logging.getLogger('ace')
+logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -89,9 +89,6 @@ class Database:
             except Exception, err:
                 print traceback.format_exc()
 
-        # if commit:
-        #     self.save()
-
     def delete_article(pmid):
         self.session.query(Article).filter_by(id=pmid).delete()
         self.session.commit()
@@ -112,10 +109,8 @@ class Database:
         return self.session.query(Article).all()
 
 # Create a JSONString column type for convenience
-
-
 class JsonString(TypeDecorator):
-    impl = String
+    impl = Text
 
     def process_result_value(self, value, dialect):
         if value is None:
@@ -135,21 +130,20 @@ class Article(Base):
     __tablename__ = 'articles'
 
     id = Column(Integer, primary_key=True)
-    title = Column(String)
+    title = Column(String(200))
     text = Column(Text)
-    journal = Column(String)
-    space = Column(String)
-    publisher = Column(String)
-    doi = Column(String)
+    journal = Column(String(100))
+    space = Column(String(20))
+    publisher = Column(String(200))
+    doi = Column(String(200))
     year = Column(Integer)
-    authors = Column(String)
+    authors = Column(Text)
     abstract = Column(Text)
     citation = Column(Text)
     pubmed_metadata = Column(JsonString)
 
     tables = relationship('Table', cascade="all,delete", backref='article')
-    activations = relationship(
-        'Activation', cascade="all,delete", backref='article')
+    activations = relationship('Activation', cascade="all,delete", backref='article')
     features = association_proxy('tags', 'feature')
 
     def __init__(self, text, pmid=None, doi=None, metadata=None):
@@ -178,11 +172,10 @@ class Table(Base):
 
     id = Column(Integer, primary_key=True)
     article_id = Column(Integer, ForeignKey('articles.id'))
-    activations = relationship(
-        'Activation', cascade="all,delete", backref='table')
+    activations = relationship('Activation', cascade="all,delete", backref='table')
     position = Column(Integer)   # The serial position of occurrence
-    number = Column(String)   # The stated table ID (e.g., 1, 2b)
-    label = Column(String)  # The full label (e.g., Table 1, Table 2b)
+    number = Column(String(2))   # The stated table ID (e.g., 1, 2b)
+    label = Column(String(200))  # The full label (e.g., Table 1, Table 2b)
     caption = Column(Text)
     notes = Column(Text)
     n_activations = Column(Integer)
@@ -220,12 +213,12 @@ class Activation(Base):
     y = Column(Float)
     z = Column(Float)
     number = Column(Integer)
-    region = Column(String)
-    hemisphere = Column(String)
-    ba = Column(String)
-    size = Column(String)
-    statistic = Column(String)
-    p_value = Column(String)
+    region = Column(String(100))
+    hemisphere = Column(String(4))
+    ba = Column(String(10))
+    size = Column(String(10))
+    statistic = Column(String(100))
+    p_value = Column(String(100))
 
     def __init__(self):
         self.problems = []
@@ -270,22 +263,22 @@ class Activation(Base):
         return True
 
 
-class Feature(Base):
+# class Feature(Base):
 
-    __tablename__ = 'features'
+#     __tablename__ = 'features'
 
-    id = Column(String, primary_key=True)
-    name = Column(String)
+#     id = Column(String, primary_key=True)
+#     name = Column(String)
 
 
-class Tag(Base):
+# class Tag(Base):
 
-    __tablename__ = 'tags'
+#     __tablename__ = 'tags'
 
-    feature_id = Column(Integer, ForeignKey('features.id'), primary_key=True)
-    article_id = Column(Integer, ForeignKey('articles.id'), primary_key=True)
-    weight = Column(Float)
+#     feature_id = Column(Integer, ForeignKey('features.id'), primary_key=True)
+#     article_id = Column(Integer, ForeignKey('articles.id'), primary_key=True)
+#     weight = Column(Float)
 
-    article = relationship(Article, backref=backref(
-        "tags", cascade="all, delete-orphan"))
-    feature = relationship("Feature")
+#     article = relationship(Article, backref=backref(
+#         "tags", cascade="all, delete-orphan"))
+#     feature = relationship("Feature")
