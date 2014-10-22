@@ -28,7 +28,7 @@ def extract_ngram_features(db, tfidf=True, save=None, vocabulary=None, require_a
 
     # Instantiate vectorizer--either simple counts, or tf-idf
     vectorizer = TfidfVectorizer if tfidf else CountVectorizer
-    vectorizer = vectorizer(stop_words='english', vocabulary=vocabulary, **kwargs)
+    vectorizer = vectorizer(vocabulary=vocabulary, **kwargs)
 
     # Transform texts
     weights = vectorizer.fit_transform(corpus).toarray()
