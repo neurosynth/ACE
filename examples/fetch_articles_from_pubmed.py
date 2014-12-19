@@ -29,7 +29,16 @@ journals = {
         'search': 'fmri',
         'min_pmid': None,
         'limit': 100  # We can limit to only N new articles
-    }
+    },
+    'Frontiers in Cellular Neuroscience': {
+        'delay': 10,
+        #'search':'neuron',
+        'search': '((neuron electrophysiology) OR (neurophysiology) OR ("input resistance") ',
+        'mode': 'direct',  # Frontiers sends nice usable XML directly
+        'min_pmid': None,
+        'limit': 10,  # We can limit to only N new articles
+        'search_db': 'pmc' #searches pubmed central instead of pubmed
+    },
 }
 
 # Verbose output
@@ -38,7 +47,7 @@ ace.set_logging_level('debug')
 # Create temporary output dir
 output_dir = '/tmp/articles'
 if not os.path.exists(output_dir):
-	os.makedirs(output_dir)
+    os.makedirs(output_dir)
 
 # Initialize Scraper
 scraper = Scraper('/tmp/articles')
