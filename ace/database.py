@@ -1,11 +1,15 @@
 # Database stuff and models
 
-from sqlalchemy import TypeDecorator, Table, Column, Integer, Float, String, ForeignKey, Boolean, DateTime, Text
+from sqlalchemy import (TypeDecorator, Table, Column, Integer, Float, String,
+                        ForeignKey, Boolean, DateTime, Text)
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
+from sqlalchemy.sql import exists
 from datetime import datetime
+from ace import config
 import simplejson as json
 import logging
 import sys
@@ -15,21 +19,39 @@ import sources
 import scrape
 import extract
 from os import path
+import datetime
 
 logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
+# Backend-dependent column for full text
+LongText = Text().with_variant(MEDIUMTEXT, 'mysql')
 
 # Handles all Database loading/saving stuff
 class Database:
 
-    def __init__(self, filename=None):
+    def __init__(self, adapter=None, db_name=None, user=None, password=None):
         ''' Connect to DB and initialize instance. '''
 
-        if filename is None:
-            filename = config.DATABASE_FILE
-        engine = create_engine('sqlite:///%s' % filename, echo=False)
+        # Default to settings in config file if none passed
+        if adapter is None: adapter = config.SQL_ADAPTER
+
+        # Generate DB URI
+        if adapter == 'sqlite':
+            db_uri = config.SQLITE_URI if db_name is not None else db_name
+        elif adapter == 'mysql':
+            db_name = config.MYSQL_DB if db_name is None else db_name
+            if user is None: user = config.MYSQL_USER
+            if password is None: password = config.MYSQL_PASSWORD
+            db_uri = 'mysql://%s:%s@localhost/%s' % (user, password, db_name)
+        else:
+            raise ValueError("Value of SQL_ADAPTER in settings must be either 'sqlite' or 'mysql'")
+
+        engine = create_engine(db_uri, echo=False)
+
+        if adapter == 'mysql': engine.execute("SET sql_mode=''")
+
         Session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
         self.session = Session()
@@ -42,8 +64,8 @@ class Database:
         ''' Commit all stored records to file. '''
         self.session.commit()
 
-    def add_articles(self, files, commit=True, table_dir=None, limit=None, pmid_filenames=False, 
-         metadata_dir=None):
+    def add_articles(self, files, commit=True, table_dir=None, limit=None,
+                     pmid_filenames=False, metadata_dir=None):
         ''' Process articles and add their data to the DB.
         Args:
             files: The path to the article(s) to process. Can be a single
@@ -62,7 +84,8 @@ class Database:
             metadata_dir: Location to read/write PubMed metadata for articles.
                 When None (default), retrieves new metadata each time. If a 
                 path is provided, will check there first before querying PubMed,
-                and will save the result of the query if it doesn't already exist.
+                and will save the result of the query if it doesn't already
+                exist.
         '''
 
         manager = sources.SourceManager(self, table_dir)
@@ -89,8 +112,9 @@ class Database:
             except Exception, err:
                 print traceback.format_exc()
 
-    def delete_article(pmid):
-        self.session.query(Article).filter_by(id=pmid).delete()
+    def delete_article(self, pmid):
+        article = self.session.query(Article).filter_by(id=pmid).first()
+        self.session.delete(article)
         self.session.commit()
 
     def print_stats(self):
@@ -102,7 +126,7 @@ class Database:
 
     def article_exists(self, pmid):
         ''' Check if an article already exists in the database. '''
-        return True if self.session.query(Article).filter_by(id=int(pmid)).first() else False
+        return self.session.query(exists().where(Article.id==pmid)).scalar()
 
     @property
     def articles(self):
@@ -131,8 +155,8 @@ class Article(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String(200))
-    text = Column(Text)
-    journal = Column(String(100))
+    text = Column(LongText)
+    journal = Column(String(200))
     space = Column(String(20))
     publisher = Column(String(200))
     doi = Column(String(200))
@@ -141,9 +165,14 @@ class Article(Base):
     abstract = Column(Text)
     citation = Column(Text)
     pubmed_metadata = Column(JsonString)
+    created_at =  Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow,
+                           onupdate=datetime.datetime.utcnow)
 
-    tables = relationship('Table', cascade="all,delete", backref='article')
-    activations = relationship('Activation', cascade="all,delete", backref='article')
+    tables = relationship('Table', cascade="all, delete-orphan",
+                          backref='article')
+    activations = relationship('Activation', cascade="all, delete-orphan",
+                                backref='article')
     features = association_proxy('tags', 'feature')
 
     def __init__(self, text, pmid=None, doi=None, metadata=None):
@@ -172,9 +201,10 @@ class Table(Base):
 
     id = Column(Integer, primary_key=True)
     article_id = Column(Integer, ForeignKey('articles.id'))
-    activations = relationship('Activation', cascade="all,delete", backref='table')
+    activations = relationship('Activation', cascade="all, delete-orphan",
+                                backref='table')
     position = Column(Integer)   # The serial position of occurrence
-    number = Column(String(2))   # The stated table ID (e.g., 1, 2b)
+    number = Column(String(10))   # The stated table ID (e.g., 1, 2b)
     label = Column(String(200))  # The full label (e.g., Table 1, Table 2b)
     caption = Column(Text)
     notes = Column(Text)
@@ -214,9 +244,9 @@ class Activation(Base):
     z = Column(Float)
     number = Column(Integer)
     region = Column(String(100))
-    hemisphere = Column(String(4))
-    ba = Column(String(10))
-    size = Column(String(10))
+    hemisphere = Column(String(100))
+    ba = Column(String(100))
+    size = Column(String(100))
     statistic = Column(String(100))
     p_value = Column(String(100))
 

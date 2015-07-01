@@ -1,6 +1,6 @@
 import unittest
 import os
-from ace import sources, database, datatable, export, scrape
+from ace import sources, database, datatable, export, scrape, config
 import json
 from os.path import dirname, join, exists, sep as pathsep
 import os
@@ -16,7 +16,7 @@ def get_test_data_path():
 class TestACE(unittest.TestCase):
 
     def setUp(self):
-        self.db = database.Database('ace_test_database.tmp')
+        self.db = database.Database(adapter='sqlite', db_name='ace_test_database.tmp')
         self.manager = sources.SourceManager(self.db)
 
 
