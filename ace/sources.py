@@ -398,6 +398,8 @@ class FrontiersSource(Source):
 
 class JournalOfCognitiveNeuroscienceSource(Source):
 
+    delay = 10
+
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(
             JournalOfCognitiveNeuroscienceSource, self).parse_article(html, pmid, **kwargs)
@@ -446,26 +448,29 @@ class WileySource(Source):
         # Extract tables
         tables = []
         table_containers = soup.findAll('div', {
-                                        'class': 'table', 'id': re.compile('^t(bl)*\d+$')})
+                                        'class': 'table', 'id': re.compile('^(.*?)\-tbl\-\d+$|^t(bl)*\d+$')})
         print "Found %d tables." % len(table_containers)
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             try:
-                table_html.tfoot.extract(
-                )  # Remove footer, which appears inside table
+                # Remove footer, which appears inside table
+                footer = table_html.tfoot.extract()
+                print footer.get_text()
             except:
                 pass
             t = self.parse_table(table_html)
             # If Table instance is returned, add other properties
             if t:
                 t.position = i + 1
-                t.number = tc['id'][3::].strip()
+                # t.number = tc['id'][3::].strip()
+                t.number = re.search('t[bl0\-]+(\d+)$', tc['id']).group(1)
                 t.label = tc.find('span', class_='label').get_text()
                 t.caption = tc.find('caption').get_text()
                 try:
-                    t.notes = tc.find('tfoot').get_text()
+                    t.notes = footer.get_text()
                 except:
                     pass
+                print t.position, t.number, t.label, t.caption, t.notes
                 tables.append(t)
 
         self.article.tables = tables
