@@ -39,7 +39,7 @@ class Database:
 
         # Generate DB URI
         if adapter == 'sqlite':
-            db_uri = config.SQLITE_URI if db_name is not None else db_name
+            db_uri = config.SQLITE_URI if db_name is None else db_name
         elif adapter == 'mysql':
             db_name = config.MYSQL_DB if db_name is None else db_name
             if user is None: user = config.MYSQL_USER

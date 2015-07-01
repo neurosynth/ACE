@@ -442,7 +442,6 @@ class WileySource(Source):
 
         soup = super(WileySource, self).parse_article(html, pmid, **kwargs)  # Do some preprocessing
         if not soup:
-            print "NO SOUP FOR YOU!"
             return False
 
         # Extract tables
@@ -455,7 +454,6 @@ class WileySource(Source):
             try:
                 # Remove footer, which appears inside table
                 footer = table_html.tfoot.extract()
-                print footer.get_text()
             except:
                 pass
             t = self.parse_table(table_html)
@@ -470,7 +468,6 @@ class WileySource(Source):
                     t.notes = footer.get_text()
                 except:
                     pass
-                print t.position, t.number, t.label, t.caption, t.notes
                 tables.append(t)
 
         self.article.tables = tables

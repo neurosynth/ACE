@@ -16,9 +16,8 @@ def get_test_data_path():
 class TestACE(unittest.TestCase):
 
     def setUp(self):
-        self.db = database.Database(adapter='sqlite', db_name='ace_test_database.tmp')
+        self.db = database.Database(adapter='sqlite', db_name='sqlite:///ace_test_database.tmp')
         self.manager = sources.SourceManager(self.db)
-
 
     def tearDown(self):
         os.remove('ace_test_database.tmp')
