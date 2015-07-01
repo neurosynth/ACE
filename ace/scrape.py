@@ -217,6 +217,9 @@ class Scraper:
                 return re.sub('(full|abstract)\/*$', 'xml\/nlm', url)
             elif 'sciencedirect' in url:
                 return url + '?np=y'
+            elif j in ['cognitive, affective and behavioral neuroscience',
+                        'brain imaging and behavior']:
+                return url + '/fulltext.html'
             else:
                 return url
         except Exception, e:

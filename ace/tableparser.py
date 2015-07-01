@@ -206,7 +206,7 @@ def parse_table(data):
     n_cols = data.n_cols
 
     # Identify column names: first occurrence of unique (i.e. colspan=1) label.
-      # Also track multi-column labels for gurroup names.
+      # Also track multi-column labels for group names.
     labels = [None] * n_cols
     multicol_labels = {}
 
@@ -214,6 +214,7 @@ def parse_table(data):
         r = data[i]
         found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
         for j, val in enumerate(r):
+            val = val.strip()
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
             # there is no current label assigned to this column...
             if val != '' and not val.startswith('@@') and labels[j] is None:
