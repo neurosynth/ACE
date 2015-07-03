@@ -398,8 +398,6 @@ class FrontiersSource(Source):
 
 class JournalOfCognitiveNeuroscienceSource(Source):
 
-    delay = 10
-
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(
             JournalOfCognitiveNeuroscienceSource, self).parse_article(html, pmid, **kwargs)
@@ -415,12 +413,22 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
         # Now download each table and parse it
         for i in range(n_tables):
+            num = i + 1
             url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (
-                i + 1, doi)
+                num, doi)
             table_soup = self._download_table(url)
-            t = table_soup.find('table').find('table')  # JCogNeuro nests tables 2-deep
-            t = self.parse_table(t)
+            tc = table_soup.find('table').find('table')  # JCogNeuro nests tables 2-deep
+            t = self.parse_table(tc)
             if t:
+                t.position = num
+                t.number = num
+                cap = tc.caption.find('span', class_='title')
+                t.label = cap.b.get_text()
+                t.caption = cap.get_text()
+                try:
+                    t.notes = table_soup.find('div', class_="footnote").p.get_text()
+                except:
+                    pass
                 tables.append(t)
 
         self.article.tables = tables
