@@ -98,7 +98,7 @@ class Database:
                 shuffle(files)
                 files = files[:limit]
 
-        for f in files:
+        for i, f in enumerate(files):
             logger.info("Processing article %s..." % f)
             html = open(f).read()
             source = manager.identify_source(html)
@@ -107,7 +107,7 @@ class Database:
                 article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
                 if article and (config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables):
                     self.add(article)
-                    if commit:
+                    if commit and (i % 100 == 0 or i == len(files) - 1):
                         self.save()
             except Exception, err:
                 print traceback.format_exc()
