@@ -469,7 +469,7 @@ class WileySource(Source):
             if t:
                 t.position = i + 1
                 # t.number = tc['id'][3::].strip()
-                t.number = re.search('t[bl0\-]+(\d+)$', tc['id']).group(1)
+                t.number = re.search('t[bl0\-]*(\d+)$', tc['id']).group(1)
                 t.label = tc.find('span', class_='label').get_text()
                 t.caption = tc.find('caption').get_text()
                 try:
