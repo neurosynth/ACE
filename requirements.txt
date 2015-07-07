@@ -1,6 +1,8 @@
 beautifulsoup4
+pandas
 regex
 requests
+scikit-learn
+selenium
 simplejson
 sqlalchemy
-selenium
