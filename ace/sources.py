@@ -236,13 +236,34 @@ class HighWireSource(Source):
 
         n_tables = len(soup.find_all('span', class_='table-label'))
 
-        # Now download each table and parse it
+        # Now get each table and parse it
         tables = []
         for i in range(n_tables):
             t_num = i + 1
-            url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_soup = self._download_table(url)
-            tc = table_soup.find(class_='table-expansion')
+
+            url = None
+
+            # Sometimes the tables are embedded (e.g., Brain)
+            try:
+                tc = soup.find(id='T%d' % t_num, class_='table-expansion')
+                # If they're not embedded, but we've found a table anyway,
+                # we need to follow the link.
+                if not tc:
+                    url = soup.find(id='T%d' % t_num, class_='table') \
+                              .find(class_='table-expand-inline')['data-table-url']
+                    if url is not None and 'expansion' in url:
+                        url = content_url.split('content')[0] + \
+                              re.match('(.*?expansion)', url).group(1)
+
+            # If the above failed, we're staring at a journal that uses more
+            # predictable naming conventions, so just grab the table source.
+            except:
+                url = '%s/T%d.expansion.html' % (content_url, t_num)
+
+            if url is not None:
+                table_soup = self._download_table(url)
+                tc = table_soup.find(class_='table-expansion')
+
             t = tc.find('table', {'id': 'table-%d' % (t_num)})
             t = self.parse_table(t)
             if t:
@@ -422,9 +443,12 @@ class JournalOfCognitiveNeuroscienceSource(Source):
             if t:
                 t.position = num
                 t.number = num
-                cap = tc.caption.find('span', class_='title')
-                t.label = cap.b.get_text()
-                t.caption = cap.get_text()
+                try:
+                    cap = tc.caption.find('span', class_='title')
+                    t.label = cap.b.get_text()
+                    t.caption = cap.get_text()
+                except:
+                    pass
                 try:
                     t.notes = table_soup.find('div', class_="footnote").p.get_text()
                 except:
