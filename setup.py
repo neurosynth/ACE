@@ -2,7 +2,7 @@ import os
 import sys
 
 # Borrowing a trick from nibabel
-if len(set(('test', 'easy_install')).intersection(sys.argv)) > 0:
+if len(set(('test', 'easy_install', 'develop')).intersection(sys.argv)) > 0:
     import setuptools
 
 from distutils.core import setup

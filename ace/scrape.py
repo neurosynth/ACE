@@ -10,6 +10,10 @@ import os
 from random import random, shuffle
 from selenium import webdriver
 import selenium.webdriver.support.ui as ui
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 
 logger = logging.getLogger(__name__)
 
@@ -177,14 +181,32 @@ class Scraper:
             url = driver.current_url  # After the redirect from PubMed
             html = driver.page_source
             new_url = self.check_for_substitute_url(url, html)
+
             if url != new_url:
                 driver.get(new_url)
+                if self.journal.lower() in ['human brain mapping',
+                                            'european journal of neuroscience',
+                                            'brain and behavior','epilepsia']:
+                    sleep(0.5 + random() * 1)
+                    try:
+                        WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'relatedArticles')))
+                    except TimeoutException:
+                        print "Loading Wiley page took too much time!"
+
+                # Sometimes we get annoying alerts (e.g., Flash animation
+                # timeouts), so we dismiss them if present.
+                try:
+                    alert = driver.switch_to_alert()
+                    alert.dismiss()
+                except:
+                    pass
+
                 html = driver.page_source
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             ## Uncomment next line and insert ID to search for specific element.
-            # driver.findElement(By.Id()).sendKeys(Keys.Tab) 
+            # driver.find_element_by_id('relatedArticles').send_keys('\t')
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
@@ -224,22 +246,28 @@ class Scraper:
         j = self.journal.lower()
         try:
             if j == 'plos one':
-                doi_part = re.search('article\/(info.*)', url).group(1)
-                return 'http://www.plosone.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
-            elif j == 'plos computational biology':
-                doi_part = re.search('article\/(info.*)', url).group(1)
-                return 'http://www.ploscompbiol.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
-            elif j == 'plos biology':
-                doi_part = re.search('article\/(info.*)', url).group(1)
-                return 'http://www.plosbiology.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
-            elif j == 'human brain mapping' or j == 'european journal of neuroscience' or j == 'eur j neurosci' or j == 'glia' or j == 'hippocampus':
-                return url.replace('abstract', 'full')
+#                 doi_part = re.search('article\/(info.*)', url).group(1)
+#                 return 'http://www.plosone.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
+#             elif j == 'plos computational biology':
+#                 doi_part = re.search('article\/(info.*)', url).group(1)
+#                 return 'http://www.ploscompbiol.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
+#             elif j == 'plos biology':
+#                 doi_part = re.search('article\/(info.*)', url).group(1)
+#                 return 'http://www.plosbiology.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
+                doi_part = re.search('article\?id\=(.*)', url).group(1)
+                return 'http://journals.plos.org/plosone/article/asset?id=%s.XML' % doi_part
+            elif j in ['human brain mapping', 'european journal of neuroscience',
+                       'brain and behavior', 'epilepsia', 'journal of neuroimaging',
+                       'glia', 'hippocampus', 'eur j neurosci']:
+                return url.replace('abstract', 'full').split(';')[0]
             elif j == 'journal of cognitive neuroscience':
                 return url.replace('doi/abs', 'doi/full')
             elif j.startswith('frontiers in'):
                 return re.sub('(full|abstract)\/*$', 'xml\/nlm', url)
             elif 'sciencedirect' in url:
                 return url + '?np=y'
+            elif 'springer.com' in url:
+                return url + '/fulltext.html'
             else:
                 return url
         except Exception, e:

@@ -6,12 +6,23 @@ SILENT_ERRORS = False
 
 
 ''' DATABASE SETTINGS '''
-# The filename to save the SQLite database to.
-DATABASE_FILE = 'ACE_db.sqlite'
+# Adapter to use--either 'mysql' or 'sqlite'
+SQL_ADAPTER = 'mysql'
+
+# SQLite path (when using sqlite adapter)
+SQLITE_URI = 'sqlite:///ace.db'
+
+# MySQL configuration
+MYSQL_USER = 'ace'
+MYSQL_PASSWORD = 'CHANGEME'
+MYSQL_DB = 'ace_test'
 
 # When True, any processed articles will be saved to DB, whether or not they 
 # contain any extracted activations. When False, only articles from which 
-# at least one activation was extracted will be saved.
+# at least one activation was extracted will be saved. Note that if this is set
+# to False, processing will be much slower, since every article not already in
+# the DB will be parsed, even if it contains no activations and has been
+# previously processed.
 SAVE_ARTICLES_WITHOUT_ACTIVATIONS = True
 
 # By default, ACE will ignore any articles that already exist in the DB 
