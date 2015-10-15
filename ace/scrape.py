@@ -139,7 +139,7 @@ class Scraper:
         self.store = store
 
 
-    def search_pubmed(self, journal, search_db='pubmed', retmax=20000, savelist=None):
+    def search_pubmed(self, journal, search_db='pubmed', retmax=100000, savelist=None):
         '''Args:
             journal: journal name to search
             retmax: max number of search hits to return
