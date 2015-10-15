@@ -34,6 +34,32 @@ def get_pmid_from_doi(doi):
     pmid = re.search('\<Id\>(\d+)\<\/Id\>', data).group(1)
     return pmid
 
+def pmc_id_to_pmid(pmc_id_list):
+    ''' Query PubMedCentral for the PMID of a paper based on its 
+    PubMedCentral ID. 
+    '''
+    if len(pmc_id_list) == 0:
+        pmc_id_list = [pmc_id_list]
+    # base url for id resolver service, requires 'tool', name of tool; and 'email', name of user's email
+    query_base = 'http://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?tool=ACE&email=stripat3@gmail.com&ids=%s&idtype=pmcid'
+
+    list_index = 0
+    max_pmcs = 200 # max number of pmcs that can be returned from id resolver service
+    num_pmcs = len(pmc_id_list)
+    pmid_list = []
+
+    while list_index < num_pmcs: # while loop to loop through input pmc ids
+        curr_last_index = min(list_index+max_pmcs,num_pmcs)
+        curr_pmc_ids = pmc_id_list[list_index:curr_last_index]
+        id_list_str = ','.join(curr_pmc_ids)
+        query = query_base % id_list_str
+        data = get_url(query, 2)
+        soup = BeautifulSoup(data)
+        for record in soup.find_all('record'):
+            if record.has_attr('pmid'):
+                pmid_list.append(record['pmid'])
+        list_index = list_index + max_pmcs
+    return pmid_list
 
 def get_pubmed_metadata(pmid, parse=True, store=None, save=True):
     ''' Get PubMed metadata for article.
@@ -113,11 +139,25 @@ class Scraper:
         self.store = store
 
 
-    def search_pubmed(self, journal, retmax=10000, savelist=None):
+    def search_pubmed(self, journal, search_db='pubmed', retmax=100000, savelist=None):
+        '''Args:
+            journal: journal name to search
+            retmax: max number of search hits to return
+            db: when 'pubmed', executes search using pubmed as search database
+                    when 'pmc', executes search using pubmed central - allowing more 
+                    fine-grained search capabilities
+        '''
         # query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal])+AND+(%s[Date+-+Publication])&retmax=%s" % (journal, str(year), str(retmax))
         journal = journal.replace(' ', '+')
         search = '+%s' % self.search if self.search is not None else ''
-        query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal]+journal+article[pt]%s)&retmax=%s" % (journal, search, str(retmax))
+
+        # if searching pubmed and not pubmed central, then specify to only find journal articles
+        if search_db == 'pubmed':
+            article_type = '+journal+article[pt]+'
+        else:
+            article_type = ''
+
+        query = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=%s&term=("%s"[Journal]%s%s)&retmax=%s' % (search_db, journal, article_type,search, str(retmax))
         logger.info("Query: %s" % query)
         doc = get_url(query)
         if savelist is not None:
@@ -131,7 +171,6 @@ class Scraper:
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
-
         if self.mode == 'browser':
             driver = webdriver.Chrome()
             driver.get(url)
@@ -190,12 +229,13 @@ class Scraper:
             return r.text
 
 
+
+
     def get_html_by_pmid(self, pmid, retmode='ref'):
 
         query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&cmd=prlinks&retmode=%s" % (pmid, retmode)
         logger.info(query)
         return self.get_html(query)
-
 
     def check_for_substitute_url(self, url, html):
         ''' For some journals/publishers, we can get a better document version by modifying the 
@@ -206,10 +246,19 @@ class Scraper:
         j = self.journal.lower()
         try:
             if j == 'plos one':
+#                 doi_part = re.search('article\/(info.*)', url).group(1)
+#                 return 'http://www.plosone.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
+#             elif j == 'plos computational biology':
+#                 doi_part = re.search('article\/(info.*)', url).group(1)
+#                 return 'http://www.ploscompbiol.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
+#             elif j == 'plos biology':
+#                 doi_part = re.search('article\/(info.*)', url).group(1)
+#                 return 'http://www.plosbiology.org/article/fetchObjectAttachment.action?uri=%s&representation=XML' % doi_part
                 doi_part = re.search('article\?id\=(.*)', url).group(1)
                 return 'http://journals.plos.org/plosone/article/asset?id=%s.XML' % doi_part
             elif j in ['human brain mapping', 'european journal of neuroscience',
-                       'brain and behavior', 'epilepsia', 'journal of neuroimaging']:
+                       'brain and behavior', 'epilepsia', 'journal of neuroimaging',
+                       'glia', 'hippocampus', 'eur j neurosci']:
                 return url.replace('abstract', 'full').split(';')[0]
             elif j == 'journal of cognitive neuroscience':
                 return url.replace('doi/abs', 'doi/full')
@@ -226,7 +275,8 @@ class Scraper:
 
 
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
-                                limit=None, overwrite=False, min_pmid=None, save_metadata=True):
+                                search_db='pubmed',limit=None, overwrite=False, min_pmid=None, 
+                                save_metadata=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -237,6 +287,9 @@ class Scraper:
                 'direct', attempts to fetch the HTML directly via requests module.
             search: An optional search string to append to the PubMed query.
                 Primarily useful for journals that are not specific to neuroimaging.
+            search_db: When 'pubmed' uses Pubmed as database for article searching.
+                When 'pmc' uses Pubmed Central as search database - allowing 
+                more fine-grained article search capabilities
             limit: Optional max number of articles to fetch. Note that only new articles 
                 are counted against this limit; e.g., if limit = 100 and 2,000 articles 
                 are found in PubMed, retrieval will continue until 100 new articles 
@@ -253,9 +306,17 @@ class Scraper:
         self.delay = delay
         self.mode = mode
         self.search = search
-        query = self.search_pubmed(journal)
+        self.search_db = search_db
+        query = self.search_pubmed(journal, search_db)
         soup = BeautifulSoup(query)
         ids = [t.string for t in soup.find_all('id')]
+        
+        # if search_db is pubmed central, then convert pmc_ids to pmids
+        if search_db == 'pmc':
+            #pmid_list = [pmc_id_to_pmid(int(pmc_id)) for pmc_id in ids]
+            pmid_list = pmc_id_to_pmid(ids)
+            ids = pmid_list
+
         shuffle(ids)
         logger.info("Found %d records.\n" % len(ids))
 
@@ -278,8 +339,18 @@ class Scraper:
                 logger.info("\tAlready exists! Skipping...")
                 continue
 
-            # Save the HTML
-            doc = self.get_html_by_pmid(id)
+            # Save the HTML, try up to 5 times due to timeouts
+            for i in range(0, 5):
+                try:
+                    doc = self.get_html_by_pmid(id)
+                except Exception, e:
+                    logger.info("Article id: %s has timed out, attempt number %s" % (id, i + 1))
+                    if delay is not None:
+                        sleep_time = random() * float(delay*2)
+                        sleep(sleep_time)
+                else:
+                    break
+             
             if doc:
                 outf = open(filename, 'w')
                 # Still having encoding issues with some journals (e.g., 
