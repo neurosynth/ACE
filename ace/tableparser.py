@@ -201,7 +201,6 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 
 def parse_table(data):
     ''' Takes a DataTable as input and returns a Table instance. '''
-
     table = database.Table()
     n_cols = data.n_cols
 
@@ -215,13 +214,13 @@ def parse_table(data):
         found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
         for j, val in enumerate(r):
             val = val.strip()
-            # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
-            # there is no current label assigned to this column...
+            # If a value is provided and the cell isn't an overflow cell (i.e.,
+            # '@@'), and there is no current label assigned to this column...
             if val != '' and not val.startswith('@@') and labels[j] is None:
                 # Handle the first column separately, because first value in table
                 # is often mistaken for label if label is left blank.
                 # If all other labels have been found, or if there are lots of numbers
-                # in the row, we must already be in contents, so assume the first row
+                # in the row, we must already be in contents, so assume the first col
                 # denotes regions. Otherwise assume this is a regular column name.
                 # Note: this heuristic is known to fail in the presence of multiple
                 # unlabeled region columns. See e.g., CerCor bhl081, table 2.
@@ -246,10 +245,13 @@ def parse_table(data):
     # Sometimes tables have a single "Coordinates" column name
     # despite breaking X/Y/Z up into 3 columns, so we account for this here.
     for k, v in multicol_labels.items():
-        if regex.search('(ordinate|x.*y.*z)', v):
+        if regex.search('(ordinate|MNI|x.*y.*z)', v):
             st, span = k.split('/')
             start, end = int(st), (int(st) + int(span))
-            if not regex.search('[a-zA-Z]', ''.join(labels[start:end])):
+            joined_labs = ''.join(labels[start:end])
+            # 'region' label may have been set above in first cell, so replace
+            joined_labs = joined_labs.replace('region', '')
+            if not regex.search('[a-zA-Z]', joined_labs):
                 logger.info(
                     "Possible multi-column coordinates found: %s, %s" % (k, v))
                 labels[start:end] = ['x', 'y', 'z']
@@ -295,7 +297,8 @@ def parse_table(data):
         # Skip row if any value matches the column label--assume we're in header
         match_lab = False
         for i in range(n_cells):
-            if r[i] == labels[i]: match_lab = True
+            if r[i] == labels[i]:
+                match_lab = True
         if match_lab: continue
 
         # If row is empty except for value in first column, assume the next few 

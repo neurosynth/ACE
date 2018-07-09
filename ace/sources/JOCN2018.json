@@ -1,0 +1,10 @@
+{
+  "name": "JOCN2018",
+  "identifiers": [
+    "Journal of Cognitive Neuroscience | MIT Press Journals</title>>"
+  ],
+  "entities": {
+  	"\u2002": " "
+  },
+  "delay": 10
+}

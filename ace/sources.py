@@ -115,16 +115,16 @@ class Source:
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
         # TODO: add Source-specific delimiting of salient text boundaries--e.g., exclude References
-        text = soup.get_text()
+        text = soup.get_text() if config.SAVE_ARTICLE_FULLTEXT else ''
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
                 self.database.delete_article(pmid)
             else:
                 return False
+
         self.article = database.Article(text, pmid=pmid, doi=doi, metadata=metadata)
         return soup
 
-    @abc.abstractmethod
     def parse_table(self, table):
         ''' Takes HTML for a single table and returns a Table. '''
 
@@ -134,22 +134,25 @@ class Source:
 
         logger.debug("\t\tFound a table...")
 
-        # Count columns. Check either just one row, or all of them.
-        def n_cols_in_row(row):
-            return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all('td')])
-
-        if config.CAREFUL_PARSING:
-            n_cols = max([n_cols_in_row(
-                row) for row in table.find('tbody').find_all('tr')])
-        else:
-            n_cols = n_cols_in_row(table.find('tbody').find('tr'))
-
-        # Initialize grid and populate
-        data = datatable.DataTable(0, n_cols)
+        # Extract rows, and all cells within each row
         rows = table.find_all('tr')
-        for (j, r) in enumerate(rows):
+        row_cells = [r.find_all(['th', 'td']) for r in rows]
+
+        # Count number of actual (including spanning) cells
+        # Check for 'NaN' value because it's bizarrely common
+        def n_cols_in_row(row):
+            return sum([int(td['colspan']) if td.has_attr('colspan') and
+                        td['colspan'] != 'NaN'
+                        else 1 for td in row])
+        row_n_cols = [n_cols_in_row(r) for r in row_cells]
+        table_n_cols = max(row_n_cols)
+
+        # Initialize grid
+        data = datatable.DataTable(0, table_n_cols)
+
+        # Populate
+        for (j, cols) in enumerate(row_cells):
             try:
-                cols = r.find_all(['td', 'th'])
                 cols_found_in_row = 0
                 n_cells = len(cols)
                 # Assign number of rows and columns this cell fills. We use these rules:
@@ -170,9 +173,11 @@ class Source:
                     #   rowspan > 1. So we have to check if there are None values left over
                     # in the DataTable's current row after we finish filling
                     # it.
-                    if i + 1 == n_cells and cols_found_in_row < n_cols and data[j].count(None) > c_num:
-                        c_num += n_cols - cols_found_in_row
-                    data.add_val(c.get_text(), r_num, c_num)
+                    if (i + 1 == n_cells and cols_found_in_row < table_n_cols
+                            and data[j].count(None) > c_num):
+                        c_num += table_n_cols - cols_found_in_row
+                    val = c.get_text().strip()
+                    data.add_val(val, r_num, c_num)
             except Exception as e:
                 if not config.SILENT_ERRORS:
                     logger.error(e.message)
@@ -181,15 +186,13 @@ class Source:
         logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data)
 
-    @abc.abstractmethod
     def extract_doi(self, soup):
         ''' Every Source subclass must be able to extract its doi. '''
-        return
+        return soup.find('meta', {'name': 'citation_doi'})['content']
 
-    @abc.abstractmethod
     def extract_pmid(self, soup):
         ''' Every Source subclass must be able to extract its PMID. '''
-        return
+        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
     def decode_html_entities(self, html):
         ''' Re-encode HTML entities as innocuous little Unicode characters. '''
@@ -220,7 +223,6 @@ class Source:
 
         table_html = self.decode_html_entities(table_html)
         return(BeautifulSoup(table_html))
-
 
 
 class HighWireSource(Source):
@@ -283,9 +285,6 @@ class HighWireSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(HighWireSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             return soup.find('meta', {'name': 'citation_doi'})['content']
@@ -325,14 +324,39 @@ class ScienceDirectSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(ScienceDirectSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         return soup.find('a', {'id': 'ddDoi'})['href'].replace('http://dx.doi.org/', '')
 
-    def extract_pmid(self, soup):
-        return scrape.get_pmid_from_doi(self.extract_doi(soup))
+
+class ScienceDirect2018Source(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(ScienceDirect2018Source, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+        for (i, tc) in enumerate(soup.find_all('div', {'class': 'tables'})):
+
+            table_html = tc.find('table')
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+                t.number = tc['id'].strip()[3:]
+                t.label = tc.find('div', class_='captions').text.strip()
+                try:
+                    t.caption = tc.find('p', class_='legend').get_text()
+                except:
+                    pass
+                try:
+                    t.notes = tc.find(class_='tblFootnote').get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
 
 
 class PlosSource(Source):
@@ -364,14 +388,8 @@ class PlosSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(PlosSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         return soup.find('article-id', {'pub-id-type': 'doi'}).text
-
-    def extract_pmid(self, soup):
-        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 
 class FrontiersSource(Source):
@@ -407,14 +425,8 @@ class FrontiersSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(FrontiersSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         return soup.find('article-id', {'pub-id-type': 'doi'}).text
-
-    def extract_pmid(self, soup):
-        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 
 class JournalOfCognitiveNeuroscienceSource(Source):
@@ -458,14 +470,52 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(JournalOfCognitiveNeuroscienceSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         return soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})['content']
 
-    def extract_pmid(self, soup):
-        return scrape.get_pmid_from_doi(self.extract_doi(soup))
+
+class JOCN2018Source(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(JOCN2018Source, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # To download tables, we need the DOI and the number of tables
+        doi = self.extract_doi(soup)
+        pattern = re.compile('^T\d+$')
+        n_tables = len(soup.find_all('table', {'id': pattern}))
+        logger.debug("Found %d tables!" % n_tables)
+        tables = []
+
+        # Now download each table and parse it
+        for i in range(n_tables):
+            num = i + 1
+            url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (
+                num, doi)
+            table_soup = self._download_table(url)
+            tc = table_soup.find('table').find('table')  # JCogNeuro nests tables 2-deep
+            t = self.parse_table(tc)
+            if t:
+                t.position = num
+                t.number = num
+                try:
+                    cap = tc.caption.find('span', class_='title')
+                    t.label = cap.b.get_text()
+                    t.caption = cap.get_text()
+                except:
+                    pass
+                try:
+                    t.notes = table_soup.find('div', class_="footnote").p.get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def extract_doi(self, soup):
+        return soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})['content']
 
 
 class WileySource(Source):
@@ -480,7 +530,7 @@ class WileySource(Source):
         tables = []
         table_containers = soup.findAll('div', {
                                         'class': 'table', 'id': re.compile('^(.*?)\-tbl\-\d+$|^t(bl)*\d+$')})
-        print "Found %d tables." % len(table_containers)
+        # print "Found %d tables." % len(table_containers)
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             try:
@@ -508,16 +558,9 @@ class WileySource(Source):
     def parse_table(self, table):
         return super(WileySource, self).parse_table(table)
 
-    def extract_doi(self, soup):
-        return soup.find('meta', {'name': 'citation_doi'})['content']
-
-    def extract_pmid(self, soup):
-        return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 # Note: the SageSource is largely useless and untested because Sage renders tables
 # as images.
-
-
 class SageSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):
@@ -558,12 +601,6 @@ class SageSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(SageSource, self).parse_table(table)
-
-    def extract_doi(self, soup):
-        return soup.find('meta', {'name': 'citation_doi'})['content']
-
     def extract_pmid(self, soup):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
@@ -601,13 +638,114 @@ class SpringerSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(SpringerSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         content = soup.find('p', class_='ArticleDOI').get_text()
-        print content
-        return content.split(' ')[1]
+        return content.split(' ')[-1]
 
-    def extract_pmid(self, soup):
-        return scrape.get_pmid_from_doi(self.extract_doi(soup))
+
+class Springer2018Source(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+
+        soup = super(Springer2018Source, self).parse_article(html, pmid,
+                                                             **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+        table_containers = soup.findAll(
+            'div', {'id': re.compile('^Tab\d+$')})
+        for (i, tc) in enumerate(table_containers):
+            table_html = tc.find('table')
+            t = self.parse_table(table_html)
+            # If Table instance is returned, add other properties
+            if t:
+                t.position = i + 1
+                t.number = tc['id'][3::].strip()
+                t.label = tc.find('span', class_='CaptionNumber').get_text()
+                try:
+                    t.caption = tc.find(class_='CaptionContent').p.get_text()
+                except:
+                    pass
+                try:
+                    t.notes = tc.find(class_='TableFooter').p.get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+
+class OxfordSource(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+
+        soup = super(OxfordSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+        table_containers = soup.findAll(
+            'div', {'class': "table-modal"})
+        counter = 0
+        for (i, tc) in enumerate(table_containers):
+            tc = tc.find(class_='table-wrap')
+            if tc is None:
+                continue
+            table_html = tc.find('table')
+            counter += 1
+            t = self.parse_table(table_html)
+            # If Table instance is returned, add other properties
+            if t:
+                t.position = counter
+                t.label = tc.find('div', class_='label').get_text()
+                t.number = t.label.strip().split(' ')[-1]
+                try:
+                    t.caption = tc.find(class_='table-wrap-title').get_text()
+                except:
+                    pass
+                try:
+                    t.notes = tc.find(class_='table-wrap-foot').p.get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+
+class AmPhysSocSource(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+
+        soup = super(AmPhysSoc, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+        table_containers = soup.findAll(
+            'div', {'class': "article-table-content"})
+        for (i, tc) in enumerate(table_containers):
+            table_html = tc.find('table')
+            t = self.parse_table(table_html)
+            # If Table instance is returned, add other properties
+            if t:
+                t.position = i + 1
+                t.number = tc['id'][1::].strip()
+                t.label = tc.find('span', class_='CaptionLabel').get_text()
+                try:
+                    t.caption = tc.find('caption').p.get_text()
+                except:
+                    pass
+                try:
+                    t.notes = tc.find(class_='TableFooter').p.get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article

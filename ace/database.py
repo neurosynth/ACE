@@ -10,7 +10,7 @@ from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.sql import exists
 from datetime import datetime
 from ace import config
-import simplejson as json
+import json
 import logging
 import sys
 import traceback
@@ -65,7 +65,7 @@ class Database:
         self.session.commit()
 
     def add_articles(self, files, commit=True, table_dir=None, limit=None,
-                     pmid_filenames=False, metadata_dir=None):
+                     pmid_filenames=False, metadata_dir=None, overwrite=False):
         ''' Process articles and add their data to the DB.
         Args:
             files: The path to the article(s) to process. Can be a single
@@ -88,6 +88,8 @@ class Database:
                 exist.
         '''
 
+        config.OVERWRITE_EXISTING_ROWS = overwrite
+
         manager = sources.SourceManager(self, table_dir)
 
         if isinstance(files, basestring):
@@ -98,10 +100,14 @@ class Database:
                 shuffle(files)
                 files = files[:limit]
 
+        records = open('parser_results.txt', 'a')
+
         for i, f in enumerate(files):
             logger.info("Processing article %s..." % f)
             html = open(f).read()
             source = manager.identify_source(html)
+            rec = [i, f, source, '', 0, 0]
+
             try:
                 pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
                 article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
@@ -109,8 +115,16 @@ class Database:
                     self.add(article)
                     if commit and (i % 100 == 0 or i == len(files) - 1):
                         self.save()
+                    rec[4] = len(article.tables)
+                    rec[5] = sum([len(t.activations) for t in article.tables])
+
             except Exception, err:
-                print traceback.format_exc()
+                msg = traceback.format_exc()
+                rec[3] = msg.replace('\n', '   ')
+                print(msg)
+
+            records.write('\t'.join([str(el) for el in rec]) + '\n')
+
 
     def delete_article(self, pmid):
         article = self.session.query(Article).filter_by(id=pmid).first()

@@ -11,3 +11,6 @@ http://www.sciencedirect.com/science/article/pii/S1053811911007609
 
 # Doesn't detect x/y/z in Table 1 correctly
 http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0068494
+
+# Coords on multiple rows within individual table cells are missed
+http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0177794
