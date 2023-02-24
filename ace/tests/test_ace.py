@@ -73,7 +73,7 @@ class TestACE(unittest.TestCase):
 
     def testJournalScraping(self):
         scrape_path = join(get_test_data_path(), 'scrape_test')
-        os.mkdir(scrape_path, exists_ok=True)
+        os.makedirs(scrape_path, exist_ok=True)
         # Test with PLoS ONE because it's OA
         scraper = scrape.Scraper(scrape_path)
         scraper.retrieve_journal_articles('PLoS ONE', delay=5.0, mode='direct', 

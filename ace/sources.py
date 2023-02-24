@@ -239,21 +239,22 @@ class HighWireSource(Source):
             url = '%s/T%d.expansion.html' % (content_url, t_num)
             table_soup = self._download_table(url)
             tc = table_soup.find(class_='table-expansion')
-            t = tc.find('table', {'id': 'table-%d' % (t_num)})
-            t = self.parse_table(t)
-            if t:
-                t.position = t_num
-                t.label = tc.find(class_='table-label').text
-                t.number = t.label.split(' ')[-1].strip()
-                try:
-                    t.caption = tc.find(class_='table-caption').get_text()
-                except:
-                    pass
-                try:
-                    t.notes = tc.find(class_='table-footnotes').get_text()
-                except:
-                    pass
-                tables.append(t)
+            if tc:
+                t = tc.find('table', {'id': 'table-%d' % (t_num)})
+                t = self.parse_table(t)
+                if t:
+                    t.position = t_num
+                    t.label = tc.find(class_='table-label').text
+                    t.number = t.label.split(' ')[-1].strip()
+                    try:
+                        t.caption = tc.find(class_='table-caption').get_text()
+                    except:
+                        pass
+                    try:
+                        t.notes = tc.find(class_='table-footnotes').get_text()
+                    except:
+                        pass
+                    tables.append(t)
 
         self.article.tables = tables
         return self.article
@@ -413,19 +414,22 @@ class JournalOfCognitiveNeuroscienceSource(Source):
             url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (
                 num, doi)
             table_soup = self._download_table(url)
-            tc = table_soup.find('table').find('table')  # JCogNeuro nests tables 2-deep
-            t = self.parse_table(tc)
-            if t:
-                t.position = num
-                t.number = num
-                cap = tc.caption.find('span', class_='title')
-                t.label = cap.b.get_text()
-                t.caption = cap.get_text()
-                try:
-                    t.notes = table_soup.find('div', class_="footnote").p.get_text()
-                except:
-                    pass
-                tables.append(t)
+            tc = table_soup.find('table')  # JCogNeuro nests tables 2-deep
+            if tc:
+                tc = tc.find('table')
+            if tc:
+                t = self.parse_table(tc)
+                if t:
+                    t.position = num
+                    t.number = num
+                    cap = tc.caption.find('span', class_='title')
+                    t.label = cap.b.get_text()
+                    t.caption = cap.get_text()
+                    try:
+                        t.notes = table_soup.find('div', class_="footnote").p.get_text()
+                    except:
+                        pass
+                    tables.append(t)
 
         self.article.tables = tables
         return self.article
@@ -511,21 +515,22 @@ class SageSource(Source):
             url = '%s/T%d.expansion.html' % (content_url, t_num)
             table_soup = self._download_table(url)
             tc = table_soup.find(class_='table-expansion')
-            t = tc.find('table', {'id': 'table-%d' % (t_num)})
-            t = self.parse_table(t)
-            if t:
-                t.position = t_num
-                t.label = tc.find(class_='table-label').text
-                t.number = t.label.split(' ')[-1].strip()
-                try:
-                    t.caption = tc.find(class_='table-caption').get_text()
-                except:
-                    pass
-                try:
-                    t.notes = tc.find(class_='table-footnotes').get_text()
-                except:
-                    pass
-                tables.append(t)
+            if tc:
+                t = tc.find('table', {'id': 'table-%d' % (t_num)})
+                t = self.parse_table(t)
+                if t:
+                    t.position = t_num
+                    t.label = tc.find(class_='table-label').text
+                    t.number = t.label.split(' ')[-1].strip()
+                    try:
+                        t.caption = tc.find(class_='table-caption').get_text()
+                    except:
+                        pass
+                    try:
+                        t.notes = tc.find(class_='table-footnotes').get_text()
+                    except:
+                        pass
+                    tables.append(t)
 
         self.article.tables = tables
         return self.article

@@ -284,7 +284,7 @@ class Scraper:
                 outf = open(filename, 'w')
                 # Still having encoding issues with some journals (e.g., 
                 # PLoS ONE). Why???
-                outf.write(doc.encode('utf-8'))
+                outf.write(doc)
                 outf.close()
                 articles_found += 1
 
