@@ -221,7 +221,7 @@ class Scraper:
                 return url + '/fulltext.html'
             else:
                 return url
-        except Exception as e:
+        except Exception as err:
             return url
 
 

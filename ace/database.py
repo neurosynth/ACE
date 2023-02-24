@@ -13,13 +13,12 @@ from ace import config
 import simplejson as json
 import logging
 import sys
-import traceback
-from . import config
-from . import sources
-from . import scrape
-from . import extract
 from os import path
 import datetime
+
+from . import sources
+from . import config
+from . import extract
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +89,7 @@ class Database:
 
         manager = sources.SourceManager(self, table_dir)
 
-        if isinstance(files, str):
+        if isinstance(files, basestring):
             from glob import glob
             files = glob(files)
             if limit is not None:
@@ -109,8 +108,8 @@ class Database:
                     self.add(article)
                     if commit and (i % 100 == 0 or i == len(files) - 1):
                         self.save()
-            except Exception:
-                print((traceback.format_exc()))
+            except Exception as err:
+                print(err)
 
     def delete_article(self, pmid):
         article = self.session.query(Article).filter_by(id=pmid).first()
@@ -122,7 +121,7 @@ class Database:
         n_articles = self.session.query(Article).count()
         n_tables = self.session.query(Table).count()
         n_activations = self.session.query(Activation).count()
-        print(("The database currently contains:\n\t%d articles\n\t%d tables\n\t%d activations" % (n_articles, n_tables, n_activations)))
+        print("The database currently contains:\n\t%d articles\n\t%d tables\n\t%d activations" % n_articles, n_tables, n_activations)
 
     def article_exists(self, pmid):
         ''' Check if an article already exists in the database. '''
@@ -281,7 +280,7 @@ class Activation(Base):
                     return False
             except:
                 print(c)
-                print((sys.exc_info()[0]))
+                print(sys.exc_info()[0])
                 raise
 
         sorted_xyz = sorted([abs(self.x), abs(self.y), abs(self.z)])

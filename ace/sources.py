@@ -100,7 +100,6 @@ class Source(metaclass=abc.ABCMeta):
         if pmid is not None and self.database.article_exists(pmid) and not config.OVERWRITE_EXISTING_ROWS:
             return False
 
-        html = html.decode('utf-8')   # Make sure we're working with unicode
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html)
         doi = self.extract_doi(soup)
@@ -166,9 +165,9 @@ class Source(metaclass=abc.ABCMeta):
                     if i + 1 == n_cells and cols_found_in_row < n_cols and data[j].count(None) > c_num:
                         c_num += n_cols - cols_found_in_row
                     data.add_val(c.get_text(), r_num, c_num)
-            except Exception as e:
+            except Exception as err:
                 if not config.SILENT_ERRORS:
-                    logger.error(e.message)
+                    logger.error(err.message)
                 if not config.IGNORE_BAD_ROWS:
                     raise
         logger.debug("\t\tTrying to parse table...")
@@ -204,7 +203,7 @@ class Source(metaclass=abc.ABCMeta):
         if self.table_dir is not None:
             filename = '%s/%s' % (self.table_dir, url.replace('/', '_'))
             if os.path.exists(filename):
-                table_html = open(filename).read().decode('utf-8')
+                table_html = open(filename).read()
             else:
                 table_html = scrape.get_url(url, delay=delay)
                 open(filename, 'w').write(table_html.encode('utf-8'))
