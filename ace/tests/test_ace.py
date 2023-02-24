@@ -1,7 +1,6 @@
 import unittest
 import os
 from ace import sources, database, datatable, export, scrape, config
-import json
 from os.path import dirname, join, exists, sep as pathsep
 import os
 import shutil
