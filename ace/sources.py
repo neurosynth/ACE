@@ -1,5 +1,5 @@
 # coding: utf-8
-from __future__ import unicode_literals  # use unicode everywhere
+  # use unicode everywhere
 from bs4 import BeautifulSoup
 import re
 import os
@@ -7,11 +7,11 @@ import json
 import abc
 import importlib
 from glob import glob
-import datatable
-import tableparser
-import scrape
-import config
-import database
+from . import datatable
+from . import tableparser
+from . import scrape
+from . import config
+from . import database
 import logging
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class SourceManager:
 
     def identify_source(self, html):
         ''' Identify the source of the article and return the corresponding Source object. '''
-        for source in self.sources.values():
+        for source in list(self.sources.values()):
             for patt in source.identifiers:
                 if re.search(patt, html):
                     logger.debug('Matched article to Source: %s' % source.__class__.__name__)
@@ -49,32 +49,25 @@ class SourceManager:
 
 
 # A single source of articles--i.e., a publisher or journal
-class Source:
+class Source(metaclass=abc.ABCMeta):
 
-    __metaclass__ = abc.ABCMeta
-
-    # Core set of HTML entities and unicode characters to replace.
-    # BeautifulSoup converts HTML entities to unicode, so we could
-    # potentially do the replacement only for unicode chars after
-    # soupifying the HTML. But this way we only have to do one pass
-    # through the entire file, so it should be faster to do it up front.
     ENTITIES = {
         '&nbsp;': ' ',
         '&minus;': '-',
         # '&kappa;': 'kappa',
         '\xa0': ' ',        # Unicode non-breaking space
         # '\x3e': ' ',
-        '\u2212': '-',      # Various unicode dashes
-        '\u2012': '-',
-        '\u2013': '-',
-        '\u2014': '-',
-        '\u2015': '-',
-        '\u8211': '-',
-        '\u0150': '-',
-        '\u0177': '',
-        '\u0160': '',
-        '\u0145': "'",
-        '\u0146': "'",
+        '\\u2212': '-',      # Various unicode dashes
+        '\\u2012': '-',
+        '\\u2013': '-',
+        '\\u2014': '-',
+        '\\u2015': '-',
+        '\\u8211': '-',
+        '\\u0150': '-',
+        '\\u0177': '',
+        '\\u0160': '',
+        '\\u0145': "'",
+        '\\u0146': "'",
 
     }
 
@@ -86,7 +79,7 @@ class Source:
 
         valid_keys = ['name', 'identifiers', 'entities', 'delay']
 
-        for k, v in config.items():
+        for k, v in list(config.items()):
             if k in valid_keys:
                 setattr(self, k, v)
 
@@ -196,7 +189,7 @@ class Source:
         # Any entities BeautifulSoup passes through thatwe don't like, e.g.,
         # &nbsp/x0a
         patterns = re.compile('(' + '|'.join(re.escape(
-            k) for k in self.entities.iterkeys()) + ')')
+            k) for k in list(self.entities.keys())) + ')')
         replacements = lambda m: self.entities[m.group(0)]
         return patterns.sub(replacements, html)
         # return html
@@ -456,7 +449,7 @@ class WileySource(Source):
         tables = []
         table_containers = soup.findAll('div', {
                                         'class': 'table', 'id': re.compile('^(.*?)\-tbl\-\d+$|^t(bl)*\d+$')})
-        print "Found %d tables." % len(table_containers)
+        print(("Found %d tables." % len(table_containers)))
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             try:
@@ -582,7 +575,7 @@ class SpringerSource(Source):
 
     def extract_doi(self, soup):
         content = soup.find('p', class_='ArticleDOI').get_text()
-        print content
+        print(content)
         return content.split(' ')[1]
 
     def extract_pmid(self, soup):

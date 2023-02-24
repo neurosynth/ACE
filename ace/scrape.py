@@ -1,9 +1,9 @@
 # coding: utf-8
-from __future__ import unicode_literals  # use unicode everywhere
+  # use unicode everywhere
 import re
 import requests
 from time import sleep
-import config
+from . import config
 from bs4 import BeautifulSoup
 import logging
 import os
@@ -68,7 +68,7 @@ def parse_PMID_text(text, doi=None):
     with standardized field names. '''
     data = {}
     text = re.sub('\n\s+', ' ', text)
-    patt = re.compile(ur'([A-Z]+)\s*-\s+(.*)')
+    patt = re.compile(r'([A-Z]+)\s*-\s+(.*)')
     for m in patt.finditer(text):
         field, val = m.group(1), m.group(2)
         if field in data:
@@ -79,7 +79,7 @@ def parse_PMID_text(text, doi=None):
     # Extra processing
     if doi is None:
         if 'AID' in data and '[doi]' in data['AID']:
-            doi = filter(lambda x: 'doi' in x, data['AID'].split('; '))[0].split(' ')[0]
+            doi = [x for x in data['AID'].split('; ') if 'doi' in x][0].split(' ')[0]
         else:
             doi = ''
     year = data['DP'].split(' ')[0]
@@ -152,7 +152,7 @@ class Scraper:
                     try:
                         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'relatedArticles')))
                     except TimeoutException:
-                        print "Loading Wiley page took too much time!"
+                        print("Loading Wiley page took too much time!")
 
                 # Sometimes we get annoying alerts (e.g., Flash animation
                 # timeouts), so we dismiss them if present.
@@ -221,7 +221,7 @@ class Scraper:
                 return url + '/fulltext.html'
             else:
                 return url
-        except Exception, e:
+        except Exception as e:
             return url
 
 

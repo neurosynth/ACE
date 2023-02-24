@@ -1,10 +1,10 @@
 # coding: utf-8
-from __future__ import unicode_literals  # use unicode everywhere
+  # use unicode everywhere
 
 # import database
 import regex  # Note: we're using features in the new regex module, not re!
 import logging
-import config, database
+from . import config, database
 from collections import Counter, defaultdict
 
 
@@ -89,7 +89,7 @@ def identify_repeating_groups(labels):
     groups = []
     n_labels = len(labels)
     label_counts = Counter(labels)
-    rep_labels = set([k for k, v in label_counts.items() if v > 1])
+    rep_labels = set([k for k, v in list(label_counts.items()) if v > 1])
     # Track multi-label sequences. Key/value = sequence/onset
     label_seqs = defaultdict(list)
 
@@ -108,11 +108,11 @@ def identify_repeating_groups(labels):
             label_seqs['###'.join(current_seq)].append(i)
 
     # Keep only sequences that occur two or more times
-    label_seqs = { k: v for k, v in label_seqs.items() if len(v) > 1}
+    label_seqs = { k: v for k, v in list(label_seqs.items()) if len(v) > 1}
     
     # Invert what's left into a list where the sequence occurs at its start pos
     seq_starts = [None] * n_labels
-    for k, v in label_seqs.items():
+    for k, v in list(label_seqs.items()):
         for start in v:
             seq_starts[start] = k.split('###')
 
@@ -189,7 +189,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
         # journals leave a gap.
         if not i in standard_cols:
             cs = '([\-\.\s]*\d{1,3}\.*\d{0,2})'
-            m = regex.search('%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), unicode(col).strip())
+            m = regex.search('%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), str(col).strip())
             if m:
                 x, y, z = [regex.sub('-\s+', '-', c) for c in [m.group(1), m.group(2), m.group(3)]]
                 logger.info("Found multi-coordinate column: %s\n...and extracted: %s, %s, %s" % (col, x, y, z))
@@ -245,7 +245,7 @@ def parse_table(data):
 
     # Sometimes tables have a single "Coordinates" column name
     # despite breaking X/Y/Z up into 3 columns, so we account for this here.
-    for k, v in multicol_labels.items():
+    for k, v in list(multicol_labels.items()):
         if regex.search('(ordinate|x.*y.*z)', v):
             st, span = k.split('/')
             start, end = int(st), (int(st) + int(span))
@@ -257,7 +257,7 @@ def parse_table(data):
     # There shouldn't be any unfilled column labels at this point, but if there are,
     # log that information and skip table if flag is set.
     if None in labels:
-        labels = [unicode(l) for l in labels]
+        labels = [str(l) for l in labels]
         msg = 'Failed to identify at least one column label: [%s]. Skipping table!' % ', '.join(labels)
         if config.EXCLUDE_TABLES_WITH_MISSING_LABELS:
             logger.error(msg)
@@ -270,7 +270,7 @@ def parse_table(data):
     standard_cols = identify_standard_columns(labels)
     group_cols = identify_repeating_groups(labels)
     logger.debug("Labels: " + ', '.join(labels))
-    logger.debug("Standard columns:" + ', '.join([unicode(x) for x in standard_cols if x is not None]))
+    logger.debug("Standard columns:" + ', '.join([str(x) for x in standard_cols if x is not None]))
 
     # Store a boolean list indicating which columns belong to a group
     cols_in_group = [False] * n_cols
@@ -339,7 +339,7 @@ def parse_table(data):
                 # for the key first.
                 groups = [multicol_labels[g]] if g in multicol_labels else []
                 if group_row is not None: groups.append(group_row)
-                group_specific_cols = range(onset, onset+length)
+                group_specific_cols = list(range(onset, onset+length))
 
                 # Select columns that belong to this activation: all columns that do not 
                 # belong to any group, plus any columns that belong only to this group.

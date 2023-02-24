@@ -44,7 +44,7 @@ if not os.path.exists(output_dir):
 scraper = Scraper('/tmp/articles')
 
 # Loop through journals and 
-for j, settings in journals.items():
+for j, settings in list(journals.items()):
     scraper.retrieve_journal_articles(j, **settings)
 
 

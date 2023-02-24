@@ -1,7 +1,7 @@
 # from nltk import *
 import re
 from collections import Counter
-from database import Article
+from .database import Article
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 import pandas as pd
 
@@ -24,7 +24,7 @@ def extract_ngram_features(db, tfidf=True, save=None, vocabulary=None, require_a
     articles = db.session.query(Article.id, Article.abstract)
     if require_activations:
         articles = articles.filter(Article.tables.any())
-    pmids, corpus = zip(*articles.all())
+    pmids, corpus = list(zip(*articles.all()))
 
     # Instantiate vectorizer--either simple counts, or tf-idf
     vectorizer = TfidfVectorizer if tfidf else CountVectorizer

@@ -1,4 +1,4 @@
-from database import Database, Article, Table, Activation
+from .database import Database, Article, Table, Activation
 from sqlalchemy import func
 import logging
 
@@ -24,7 +24,7 @@ def export_database(db, filename, metadata=True, groups=False):
             	if metadata:
             		fields += [a.title, a.authors, a.year, a.journal]
                 if groups:
-                    if isinstance(p.groups, basestring):
+                    if isinstance(p.groups, str):
                         p.groups = [p.groups]
                     elif p.groups is None:
                         p.groups = []

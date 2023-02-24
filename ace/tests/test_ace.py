@@ -60,7 +60,7 @@ class TestACE(unittest.TestCase):
         self.assertEqual(t.number, '1')
         self.assertIsNotNone(t.caption)
         for a in t.activations:
-            print [a.x, a.y, a.z]
+            print([a.x, a.y, a.z])
         # Note: only 12 regions, but there are data for 2 experiments,
         # so it's appropriate to treat as 24 activations.
         self.assertEqual(t.n_activations, 24)
