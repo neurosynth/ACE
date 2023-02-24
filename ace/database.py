@@ -89,7 +89,7 @@ class Database:
 
         manager = sources.SourceManager(self, table_dir)
 
-        if isinstance(files, basestring):
+        if isinstance(files, str):
             from glob import glob
             files = glob(files)
             if limit is not None:

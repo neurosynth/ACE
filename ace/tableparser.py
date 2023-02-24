@@ -287,7 +287,6 @@ def parse_table(data):
     activation_num = 0
     
     for r in data:
-
         logger.debug(r)
 
         n_cells = len(r)

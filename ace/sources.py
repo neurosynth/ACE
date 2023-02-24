@@ -165,11 +165,15 @@ class Source(metaclass=abc.ABCMeta):
                     if i + 1 == n_cells and cols_found_in_row < n_cols and data[j].count(None) > c_num:
                         c_num += n_cols - cols_found_in_row
                     data.add_val(c.get_text(), r_num, c_num)
+                
             except Exception as err:
                 if not config.SILENT_ERRORS:
-                    logger.error(err.message)
+                    logger.error(str(err))
                 if not config.IGNORE_BAD_ROWS:
                     raise
+
+        if data.data[data.n_rows- 1].count(None) == data.n_cols:
+            data.data.pop()
         logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data)
 
