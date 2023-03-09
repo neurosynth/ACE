@@ -134,9 +134,7 @@ class Scraper:
         or just gets the URL directly. '''
 
         if self.mode == 'browser':
-            options = Options()
-            options.headless = True
-            driver = webdriver.Chrome(options=options)
+            driver = webdriver.Chrome()
             driver.get(url)
             url = driver.current_url
             driver.get(url)

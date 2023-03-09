@@ -101,6 +101,9 @@ class Database:
             logger.info("Processing article %s..." % f)
             html = open(f).read()
             source = manager.identify_source(html)
+            if source is None:
+                logger.warning("Could not identify source for %s" % f)
+                continue
             try:
                 pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
                 article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
