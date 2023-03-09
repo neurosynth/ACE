@@ -14,6 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,9 @@ class Scraper:
         or just gets the URL directly. '''
 
         if self.mode == 'browser':
-            driver = webdriver.Chrome()
+            options = Options()
+            options.headless = True
+            driver = webdriver.Chrome(options=options)
             driver.get(url)
             url = driver.current_url
             driver.get(url)
