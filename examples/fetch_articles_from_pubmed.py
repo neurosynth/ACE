@@ -14,21 +14,7 @@ journals = {
         'delay': 20,  # Mean delay between article downloads--prevents the banhammer
         'mode': 'browser',  # ScienceDirect journals require selenium to work properly
         'search': 'fmri',  # Only retrieve articles with this string in abstract
-        'min_pmid': 20000000   # Start from this PMID--can run incrementally
-    },
-
-    'PLoS ONE': {
-        'delay': 10,
-        'search': 'fmri',
-        'mode': 'direct',  # PLoS sends nice usable XML directly
-        'min_pmid': None
-    },
-    'Journal of Neuroscience': {
-        'delay': 20,
-        'mode': 'browser',
-        'search': 'fmri',
-        'min_pmid': None,
-        'limit': 100  # We can limit to only N new articles
+        'min_pmid': 34447833   # Start from this PMID--can run incrementally
     }
 }
 
