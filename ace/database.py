@@ -69,7 +69,7 @@ class Database:
         Args:
             files: The path to the article(s) to process. Can be a single
                 filename (string), a list of filenames, or a path to pass
-                to glob (e.g., "article_dir/NIMG*html")
+                to glob (e.g., "article_lsdir/NIMG*html")
             commit: Whether or not to save records to DB file after adding them.
             table_dir: Directory to store downloaded tables in (if None, tables 
                 will not be saved.)
@@ -124,7 +124,7 @@ class Database:
         n_articles = self.session.query(Article).count()
         n_tables = self.session.query(Table).count()
         n_activations = self.session.query(Activation).count()
-        print("The database currently contains:\n\t%d articles\n\t%d tables\n\t%d activations" % n_articles, n_tables, n_activations)
+        print(f"The database currently contains:{n_articles} articles {n_tables} tables {n_activations} activations")
 
     def article_exists(self, pmid):
         ''' Check if an article already exists in the database. '''

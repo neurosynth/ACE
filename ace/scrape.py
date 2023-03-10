@@ -1,6 +1,7 @@
 # coding: utf-8
   # use unicode everywhere
 import re
+from pathlib import Path
 import requests
 from time import sleep
 from . import config
@@ -111,8 +112,7 @@ probably be refactored into this class eventually. '''
 class Scraper:
 
     def __init__(self, store):
-
-        self.store = store
+        self.store = Path(store)
 
 
     def search_pubmed(self, journal, search, retmax=10000, savelist=None):
@@ -129,7 +129,7 @@ class Scraper:
         return doc
 
 
-    def get_html(self, url):
+    def get_html(self, url, journal):
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
@@ -144,13 +144,13 @@ class Scraper:
             url = driver.current_url  # After the redirect from PubMed
 
             html = driver.page_source
-            new_url = self.check_for_substitute_url(url, html)
+            new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
                 driver.get(new_url)
                 sleep(3
                 )
-                if self.journal.lower() in ['human brain mapping',
+                if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
                     sleep(0.5 + random() * 1)
@@ -184,7 +184,7 @@ class Scraper:
             r = requests.get(url, headers=headers)
             # For some journals, we can do better than the returned HTML, so get the final URL and 
             # substitute a better one.
-            url = self.check_for_substitute_url(r.url, r.text)
+            url = self.check_for_substitute_url(r.url, r.text, journal)
             if url != r.url:
                 r = requests.get(url, headers=headers)
                 # XML content is usually misidentified as ISO-8859-1, so we need to manually set utf-8.
@@ -194,20 +194,19 @@ class Scraper:
             return r.text
 
 
-    def get_html_by_pmid(self, pmid, retmode='ref'):
-
-        query = "   " % (pmid, retmode)
+    def get_html_by_pmid(self, pmid, journal, retmode='ref'):
+        query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&cmd=prlinks&retmode=%s" % (pmid, retmode)
         logger.info(query)
-        return self.get_html(query)
+        return self.get_html(query, journal)
 
 
-    def check_for_substitute_url(self, url, html):
+    def check_for_substitute_url(self, url, html, journal):
         ''' For some journals/publishers, we can get a better document version by modifying the 
         URL passed from PubMed. E.g., we can get XML with embedded tables from PLoS ONE instead of 
         the standard HTML, which displays tables as images. For some journals (e.g., Frontiers),  
         it's easier to get the URL by searching the source, so pass the html in as well. '''
 
-        j = self.journal.lower()
+        j = journal.lower()
         try:
             if j == 'plos one':
                 doi_part = re.search('article\?id\=(.*)', url).group(1)
@@ -237,6 +236,30 @@ class Scraper:
 
         return '<ArticleId IdType="pmc">' in str(response.content)
 
+    def process_article(self, id, journal, delay=None, overwrite=False):
+
+        logger.info("Processing %s..." % id)
+        journal_path = (self.store / 'html' / journal)
+        filename = journal_path / "{id}.html"
+
+        if not overwrite and os.path.isfile(filename): 
+            logger.info("\tAlready exists! Skipping...")
+            
+            return None
+
+        # Save the HTML
+        doc = self.get_html_by_pmid(id, journal)
+        if doc:
+            with filename.open('w') as f:
+                f.write(doc)
+
+            # Insert random delay until next request.
+            if delay is not None:
+                sleep_time = random.random() * float(delay*2)
+                sleep(sleep_time)
+        
+        return filename
+
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, shuffle=False,
                                 skip_pubmed_central=True, save_metadata=True):
@@ -265,9 +288,6 @@ class Scraper:
             save_metadata: When True, retrieves metadata from PubMed and saves it to 
                 the pubmed/ folder below the root storage folder.
         '''
-        self.journal = journal
-        self.delay = delay
-        self.mode = mode
         query = self.search_pubmed(journal, search)
         soup = BeautifulSoup(query)
         ids = [t.string for t in soup.find_all('id')]
@@ -276,41 +296,18 @@ class Scraper:
         logger.info("Found %d records.\n" % len(ids))
 
         # Make directory if it doesn't exist
-        journal_path = os.path.join(self.store, 'html', journal)
-        if not os.path.exists(journal_path):
-            os.makedirs(journal_path)
+        (self.store / 'html' / journal).mkdir(parents=True, exist_ok=True)
 
         articles_found = 0
 
         for id in ids:
-
             if min_pmid is not None and int(id) < min_pmid: continue
             if limit is not None and articles_found >= limit: break
 
             if skip_pubmed_central and self.has_pmc_entry(id):
                 logger.info("\tPubMed Central entry found! Skipping...")
                 continue
-            
-            logger.info("Processing %s..." % id)
-            filename = '%s/%s.html' % (journal_path, id)
 
-            if not overwrite and os.path.isfile(filename): 
-                logger.info("\tAlready exists! Skipping...")
-                continue
-
-            # Save the HTML
-            doc = self.get_html_by_pmid(id)
-            if doc:
-                outf = open(filename, 'w')
-                # Still having encoding issues with some journals (e.g., 
-                # PLoS ONE). Why???
-                outf.write(doc)
-                outf.close()
+            filename = self.process_article(id, journal_path, delay, overwrite)
+            if filename:
                 articles_found += 1
-
-                # Insert random delay until next request.
-                if delay is not None:
-                    sleep_time = random.random() * float(delay*2)
-                    sleep(sleep_time)
-
-
