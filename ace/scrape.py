@@ -7,7 +7,7 @@ from . import config
 from bs4 import BeautifulSoup
 import logging
 import os
-from random import random, shuffle
+import random
 from selenium import webdriver
 import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
@@ -15,6 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
 logger = logging.getLogger(__name__)
 
@@ -114,10 +115,10 @@ class Scraper:
         self.store = store
 
 
-    def search_pubmed(self, journal, retmax=10000, savelist=None):
+    def search_pubmed(self, journal, search, retmax=10000, savelist=None):
         # query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal])+AND+(%s[Date+-+Publication])&retmax=%s" % (journal, str(year), str(retmax))
         journal = journal.replace(' ', '+')
-        search = '+%s' % self.search if self.search is not None else ''
+        search = '+%s' % search
         query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal]+journal+article[pt]%s)&retmax=%s" % (journal, search, str(retmax))
         logger.info("Query: %s" % query)
         doc = get_url(query)
@@ -141,11 +142,14 @@ class Scraper:
 
             # Check for URL substitution and get the new one if it's changed
             url = driver.current_url  # After the redirect from PubMed
+
             html = driver.page_source
             new_url = self.check_for_substitute_url(url, html)
 
             if url != new_url:
                 driver.get(new_url)
+                sleep(3
+                )
                 if self.journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
@@ -172,7 +176,6 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-            sleep(1.5)
             driver.quit()
             return html
 
@@ -193,7 +196,7 @@ class Scraper:
 
     def get_html_by_pmid(self, pmid, retmode='ref'):
 
-        query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&cmd=prlinks&retmode=%s" % (pmid, retmode)
+        query = "   " % (pmid, retmode)
         logger.info(query)
         return self.get_html(query)
 
@@ -225,9 +228,18 @@ class Scraper:
         except Exception as err:
             return url
 
+    def has_pmc_entry(self, pmid):
+        ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
+
+        url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pmid}&retmode=xml"
+
+        response = requests.get(url)
+
+        return '<ArticleId IdType="pmc">' in str(response.content)
 
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
-                                limit=None, overwrite=False, min_pmid=None, save_metadata=True):
+                                limit=None, overwrite=False, min_pmid=None, shuffle=False,
+                                skip_pubmed_central=True, save_metadata=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -247,17 +259,20 @@ class Scraper:
             min_pmid: When a PMID is provided, only articles with PMIDs greater than 
                 this will be processed. Primarily useful for excluding older articles 
                 that aren't available in full-text HTML format.
+            shuffle: When True, articles are retrieved in random order.
+            skip_pubmed_central: When True, skips articles that are available from
+                PubMed Central. 
             save_metadata: When True, retrieves metadata from PubMed and saves it to 
                 the pubmed/ folder below the root storage folder.
         '''
         self.journal = journal
         self.delay = delay
         self.mode = mode
-        self.search = search
-        query = self.search_pubmed(journal)
+        query = self.search_pubmed(journal, search)
         soup = BeautifulSoup(query)
         ids = [t.string for t in soup.find_all('id')]
-        shuffle(ids)
+        if shuffle:
+            random.shuffle(ids)
         logger.info("Found %d records.\n" % len(ids))
 
         # Make directory if it doesn't exist
@@ -271,6 +286,10 @@ class Scraper:
 
             if min_pmid is not None and int(id) < min_pmid: continue
             if limit is not None and articles_found >= limit: break
+
+            if skip_pubmed_central and self.has_pmc_entry(id):
+                logger.info("\tPubMed Central entry found! Skipping...")
+                continue
             
             logger.info("Processing %s..." % id)
             filename = '%s/%s.html' % (journal_path, id)
@@ -291,7 +310,7 @@ class Scraper:
 
                 # Insert random delay until next request.
                 if delay is not None:
-                    sleep_time = random() * float(delay*2)
+                    sleep_time = random.random() * float(delay*2)
                     sleep(sleep_time)
 
 
