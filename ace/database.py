@@ -69,7 +69,7 @@ class Database:
         Args:
             files: The path to the article(s) to process. Can be a single
                 filename (string), a list of filenames, or a path to pass
-                to glob (e.g., "article_lsdir/NIMG*html")
+                to glob (e.g., "article_ls  dir/NIMG*html")
             commit: Whether or not to save records to DB file after adding them.
             table_dir: Directory to store downloaded tables in (if None, tables 
                 will not be saved.)
@@ -104,15 +104,15 @@ class Database:
             if source is None:
                 logger.warning("Could not identify source for %s" % f)
                 continue
-            try:
-                pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
-                article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
-                if article and (config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables):
-                    self.add(article)
-                    if commit and (i % 100 == 0 or i == len(files) - 1):
-                        self.save()
-            except Exception as err:
-                print(err)
+            # try:
+            pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
+            article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
+            if article and (config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables):
+                self.add(article)
+                if commit and (i % 100 == 0 or i == len(files) - 1):
+                    self.save()
+            # except Exception as err:
+            #     print(err)
 
     def delete_article(self, pmid):
         article = self.session.query(Article).filter_by(id=pmid).first()

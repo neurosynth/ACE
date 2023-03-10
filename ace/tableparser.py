@@ -201,7 +201,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 
 def parse_table(data):
     ''' Takes a DataTable as input and returns a Table instance. '''
-
+    
     table = database.Table()
     n_cols = data.n_cols
 
@@ -209,7 +209,6 @@ def parse_table(data):
       # Also track multi-column labels for group names.
     labels = [None] * n_cols
     multicol_labels = {}
-
     for i in range(data.n_rows):
         r = data[i]
         found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
@@ -238,7 +237,6 @@ def parse_table(data):
 
     # Compact the list, although there shouldn't be any missing values at this point...
     # labels = [x.lower() for x in labels if x is not None]
-
     # Convert all labels to lowercase
     labels = [x.lower() if x is not None else x for x in labels]
     n_cols = len(labels)
@@ -355,6 +353,7 @@ def parse_table(data):
                 activation = create_activation(activation_columns, activation_labels, activation_scs, groups)
                 if activation.validate():
                     table.activations.append(activation)
+
     table.finalize()
     return table if len(table.activations) else None
 

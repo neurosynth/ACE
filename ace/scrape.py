@@ -129,12 +129,12 @@ class Scraper:
         return doc
 
 
-    def get_html(self, url, journal):
+    def get_html(self, url, journal, mode='browser'):
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-        if self.mode == 'browser':
+        if mode == 'browser':
             driver = webdriver.Chrome()
             driver.get(url)
             url = driver.current_url
@@ -179,7 +179,7 @@ class Scraper:
             driver.quit()
             return html
 
-        else:
+        elif mode == 'requests':
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1464.0 Safari/537.36'}
             r = requests.get(url, headers=headers)
             # For some journals, we can do better than the returned HTML, so get the final URL and 
@@ -194,10 +194,10 @@ class Scraper:
             return r.text
 
 
-    def get_html_by_pmid(self, pmid, journal, retmode='ref'):
+    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref'):
         query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&cmd=prlinks&retmode=%s" % (pmid, retmode)
         logger.info(query)
-        return self.get_html(query, journal)
+        return self.get_html(query, journal, mode=mode)
 
 
     def check_for_substitute_url(self, url, html, journal):
@@ -236,11 +236,11 @@ class Scraper:
 
         return '<ArticleId IdType="pmc">' in str(response.content)
 
-    def process_article(self, id, journal, delay=None, overwrite=False):
+    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
         logger.info("Processing %s..." % id)
         journal_path = (self.store / 'html' / journal)
-        filename = journal_path / "{id}.html"
+        filename = journal_path / f"{id}.html"
 
         if not overwrite and os.path.isfile(filename): 
             logger.info("\tAlready exists! Skipping...")
@@ -248,7 +248,7 @@ class Scraper:
             return None
 
         # Save the HTML
-        doc = self.get_html_by_pmid(id, journal)
+        doc = self.get_html_by_pmid(id, journal, mode=mode)
         if doc:
             with filename.open('w') as f:
                 f.write(doc)
@@ -308,6 +308,6 @@ class Scraper:
                 logger.info("\tPubMed Central entry found! Skipping...")
                 continue
 
-            filename = self.process_article(id, journal_path, delay, overwrite)
+            filename = self.process_article(id, journal, delay, mode, overwrite)
             if filename:
                 articles_found += 1

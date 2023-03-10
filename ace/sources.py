@@ -171,7 +171,7 @@ class Source(metaclass=abc.ABCMeta):
                     logger.error(str(err))
                 if not config.IGNORE_BAD_ROWS:
                     raise
-
+                
         if data.data[data.n_rows- 1].count(None) == data.n_cols:
             data.data.pop()
         logger.debug("\t\tTrying to parse table...")
@@ -281,15 +281,16 @@ class ScienceDirectSource(Source):
 
         # Extract tables
         tables = []
-        for (i, tc) in enumerate(soup.find_all('dl', {'class': 'table '})):
+        for (i, tc) in enumerate(soup.find_all('div', {'class': 'tables'})):
             table_html = tc.find('table')
             t = self.parse_table(table_html)
             if t:
+                from pdb import set_trace; set_trace()
                 t.position = i + 1
-                t.number = tc['data-label'].split(' ')[-1].strip()
+                t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
                 t.label = tc.find('span', class_='label').text.strip()
                 try:
-                    t.caption = tc.find('p', class_='caption').get_text()
+                    t.caption = tc.find('p').contents[-1].strip()
                 except:
                     pass
                 try:
@@ -305,7 +306,7 @@ class ScienceDirectSource(Source):
         return super(ScienceDirectSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('a', {'id': 'ddDoi'})['href'].replace('http://dx.doi.org/', '')
+        return list(soup.find('div', {'id': 'article-identifier-links'}).children)[0]['href'].replace('https://doi.org/', '')
 
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
