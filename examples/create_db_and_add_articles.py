@@ -7,11 +7,11 @@ import ace
 from ace import database
 
 # Uncomment the next line to seem more information
-ace.set_logging_level('info')
+# ace.set_logging_level('info')
 
 # Change this to a valid path to a set of html files.
-PATH_TO_FILES = "/Users/tal/tmp/html/*.html"
+PATH_TO_FILES = "/home/zorro/neurosynth_scrape/articles/html/Neuroimage/*"
 
-db = database.Database('example_db.sqlite')
-db.add_articles(PATH_TO_FILES)
+db = database.Database(adapter='sqlite', db_name='sqlite:///example_db.db')
+db.add_articles(PATH_TO_FILES, pmid_filenames=True)
 db.print_stats()
