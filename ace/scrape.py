@@ -166,8 +166,20 @@ class Scraper:
                     alert.dismiss()
                 except:
                     pass
+                            
+            logger.info(journal.lower())
+            if journal.lower() in ['journal of neuroscience', 'j neurosci']:
+                ## Find links with class data-table-url, and click on them
+                ## to load the table data.
+                table_links = driver.find_elements(By.CLASS_NAME, 'table-expand-inline')
 
-                html = driver.page_source
+                if len(table_links):         
+                    for link in table_links:
+                        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((
+                            By.CLASS_NAME, 'table-expand-inline')))    
+                        driver.execute_script("arguments[0].scrollIntoView();", link)
+                        link.click()
+                        sleep(0.5 + random.random() * 1)
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -176,6 +188,7 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
+            html = driver.page_source
             driver.quit()
             return html
 
@@ -293,6 +306,9 @@ class Scraper:
         ids = [t.string for t in soup.find_all('id')]
         if shuffle:
             random.shuffle(ids)
+        else:
+            ids.sort()
+
         logger.info("Found %d records.\n" % len(ids))
 
         # Make directory if it doesn't exist
