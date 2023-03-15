@@ -280,6 +280,7 @@ class Scraper:
     def has_pmc_entry(self, pmid):
         ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
         content = self._client.efetch(pmid, retmode='xml')
+        import pdb; pdb.set_trace()
         return '<ArticleId IdType="pmc">' in str(content)
 
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
