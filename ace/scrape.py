@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 class PubMedAPI:
-    def __init__(self, api_key):
+    def __init__(self, api_key=None):
         self.api_key = api_key
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
         self.headers = {'User-Agent': config.USER_AGENT_STRING}
 
-    def get(self, util, params=None):
+    def get(self, util, params=None, return_content=True):
         url = f"{self.base_url}/{util}.fcgi"
         if self.api_key:
             params['api_key'] = self.api_key
@@ -36,35 +36,38 @@ class PubMedAPI:
         if response.status_code != 200:
             raise Exception(f"PubMed API returned status code {response.status_code} for {url}")
 
-        return response.content
+        if return_content:
+            response = response.content
+
+        return response
         
-    def esearch(self, query, retmax=100000):
+    def esearch(self, query, retmax=100000, **kwargs):
         params = {
             "db": "pubmed",
             "term": query,
             "retmax": str(retmax)
         }
-        response = self.get("esearch", params=params)
+        response = self.get("esearch", params=params, **kwargs)
         return response
     
-    def efetch(self, pmid, retmode='txt', rettype='medline'):
+    def efetch(self, pmid, retmode='txt', rettype='medline', **kwargs):
         params = {
             "db": "pubmed",
             "id": pmid,
             "retmode": retmode,
             "rettype": rettype
         }
-        response = self.get("efetch", params=params)
+        response = self.get("efetch", params=params, **kwargs)
         return response
     
-    def elink(self, pmid, retmode='ref'):
+    def elink(self, pmid, retmode='ref', **kwargs):
         params = {
             "dbfrom": "pubmed",
             "id": pmid,
             "cmd": "prlinks",
             "retmode": retmode
         }
-        response = self.get("elink", params=params)
+        response = self.get("elink", params=params, **kwargs)
         return response
 
 
@@ -164,7 +167,7 @@ class Scraper:
         doc = self._client.esearch(query, retmax=retmax)
 
         if savelist is not None:
-            outf = open(savelist, 'w')
+            oupmctf = open(savelist, 'w')
             outf.write(doc)
             outf.close()
         return doc
