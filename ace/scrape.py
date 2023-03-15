@@ -27,40 +27,44 @@ class PubMedAPI:
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
         self.headers = {'User-Agent': config.USER_AGENT_STRING}
 
+    def get(self, util, params=None):
+        url = f"{self.base_url}/{util}.fcgi"
+        if self.api_key:
+            params['api_key'] = self.api_key
+        response = requests.get(url, params=params, headers=self.headers, timeout=5)
+
+        if response.status_code != 200:
+            raise Exception(f"PubMed API returned status code {response.status_code} for {url}")
+
+        return response.content
         
     def esearch(self, query, retmax=100000):
-        url = f"{self.base_url}/esearch.fcgi"
         params = {
             "db": "pubmed",
-            "api_key": self.api_key,
             "term": query,
             "retmax": str(retmax)
         }
-        response = requests.get(url, params=params, timeout=5, headers=self.headers)
+        response = self.get("esearch", params=params)
         return response
     
     def efetch(self, pmid, retmode='txt', rettype='medline'):
-        url = f"{self.base_url}/efetch.fcgi"
         params = {
             "db": "pubmed",
-            "api_key": self.api_key,
             "id": pmid,
             "retmode": retmode,
             "rettype": rettype
         }
-        response = requests.get(url, params=params, headers=self.headers)
+        response = self.get("efetch", params=params)
         return response
     
     def elink(self, pmid, retmode='ref'):
-        url = f"{self.base_url}/elink.fcgi"
         params = {
             "dbfrom": "pubmed",
-            "api_key": self.api_key,
             "id": pmid,
             "cmd": "prlinks",
             "retmode": retmode
         }
-        response = requests.get(url, params=params, headers=self.headers)
+        response = self.get("elink", params=params)
         return response
 
 
@@ -92,7 +96,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
         text = open(md_file).read()
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        text = PubMedAPI(api_key=api_key).efetch(pmid, retmode='text', rettype='medline').content
+        text = PubMedAPI(api_key=api_key).efetch(pmid, retmode='text', rettype='medline')
         if store is not None and save and text is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
@@ -157,7 +161,7 @@ class Scraper:
         query = f"({journal}[Journal]+journal+article[pt]{search})"
         logger.info("Query: %s" % query)
 
-        doc = self._client.esearch(query, retmax=retmax).content
+        doc = self._client.esearch(query, retmax=retmax)
 
         if savelist is not None:
             outf = open(savelist, 'w')
@@ -279,8 +283,8 @@ class Scraper:
 
     def has_pmc_entry(self, pmid):
         ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
-        response = self._client.efetch(pmid, retmode='xml')
-        return '<ArticleId IdType="pmc">' in str(response.content)
+        content = self._client.efetch(pmid, retmode='xml')
+        return '<ArticleId IdType="pmc">' in str(content)
 
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
