@@ -21,24 +21,61 @@ from selenium.webdriver.common.by import By
 logger = logging.getLogger(__name__)
 
 
-def get_url(url, delay=0.0, verbose=False):
-    headers = {'User-Agent': config.USER_AGENT_STRING}
-    sleep(delay)
-    r = requests.get(url, headers=headers, timeout=5.0)
-    return r.text
+class PubMedAPI:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+        self.headers = {'User-Agent': config.USER_AGENT_STRING}
+
+        
+    def esearch(self, query, retmax=100000):
+        url = f"{self.base_url}/esearch.fcgi"
+        params = {
+            "db": "pubmed",
+            "api_key": self.api_key,
+            "term": query,
+            "retmax": str(retmax)
+        }
+        response = requests.get(url, params=params, timeout=5, headers=self.headers)
+        import pdb; pdb.set_trace()
+        return response.content
+    
+    def efetch(self, pmids, retmode='txt', rettype='medline'):
+        url = f"{self.base_url}/efetch.fcgi"
+        params = {
+            "db": "pubmed",
+            "api_key": self.api_key,
+            "id": ",".join(pmids),
+            "retmode": retmode,
+            "rettype": rettype
+        }
+        response = requests.get(url, params=params, headers=self.headers)
+        return response.content
+    
+    def elink(self, pmid, retmode='ref'):
+        url = f"{self.base_url}/elink.fcgi"
+        params = {
+            "dbfrom": "pubmed",
+            "api_key": self.api_key,
+            "id": pmid,
+            "cmd": "prlinks",
+            "retmode": retmode
+        }
+        response = requests.get(url, params=params, headers=self.headers)
+        return response.content
 
 
-def get_pmid_from_doi(doi):
+def get_pmid_from_doi(doi, api_key=None):
     ''' Query PubMed for the PMID of a paper based on its doi. We need this
     for some Sources that don't contain the PMID anywhere in the artice HTML.
     '''
-    data = get_url(
-        'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%s[aid]' % doi)
+    query = f"{doi}[aid]"
+    data = PubMedAPI(api_key=api_key).esearch(query=query)
     pmid = re.search('\<Id\>(\d+)\<\/Id\>', data).group(1)
     return pmid
 
 
-def get_pubmed_metadata(pmid, parse=True, store=None, save=True):
+def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
     ''' Get PubMed metadata for article.
     Args:
         pmid: The article's PubMed ID
@@ -56,8 +93,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True):
         text = open(md_file).read()
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        text = get_url(
-            'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s&retmode=text&rettype=medline' % pmid)
+        text = PubMedAPI(api_key=api_key).efetch(pmid, retmode='text', rettype='medline')
         if store is not None and save and text is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
@@ -111,17 +147,19 @@ def parse_PMID_text(text, doi=None):
 probably be refactored into this class eventually. '''
 class Scraper:
 
-    def __init__(self, store):
+    def __init__(self, store, api_key=None):
         self.store = Path(store)
+        self._client = PubMedAPI(api_key=api_key)
 
 
-    def search_pubmed(self, journal, search, retmax=10000, savelist=None):
-        # query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal])+AND+(%s[Date+-+Publication])&retmax=%s" % (journal, str(year), str(retmax))
+    def search_pubmed(self, journal, search, retmax=10000, savelist=None,):
         journal = journal.replace(' ', '+')
         search = '+%s' % search
-        query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal]+journal+article[pt]%s)&retmax=%s" % (journal, search, str(retmax))
+        query = "({journal}[Journal]+journal+article[pt]{search})"
         logger.info("Query: %s" % query)
-        doc = get_url(query)
+
+        doc = self._client.esearch(query, retmax=retmax)
+
         if savelist is not None:
             outf = open(savelist, 'w')
             outf.write(doc)
@@ -242,12 +280,8 @@ class Scraper:
 
     def has_pmc_entry(self, pmid):
         ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
-
-        url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pmid}&retmode=xml"
-
-        response = requests.get(url)
-
-        return '<ArticleId IdType="pmc">' in str(response.content)
+        content = self._client.efetch(pmid, retmode='xml')
+        return '<ArticleId IdType="pmc">' in str(content)
 
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
@@ -321,7 +355,7 @@ class Scraper:
             if limit is not None and articles_found >= limit: break
 
             if skip_pubmed_central and self.has_pmc_entry(id):
-                logger.info("\tPubMed Central entry found! Skipping...")
+                logger.info(f"\tPubMed Central entry found! Skipping {id}...")
                 continue
 
             filename = self.process_article(id, journal, delay, mode, overwrite)
