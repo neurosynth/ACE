@@ -37,19 +37,19 @@ class PubMedAPI:
             "retmax": str(retmax)
         }
         response = requests.get(url, params=params, timeout=5, headers=self.headers)
-        return response.content
+        return response
     
-    def efetch(self, pmids, retmode='txt', rettype='medline'):
+    def efetch(self, pmid, retmode='txt', rettype='medline'):
         url = f"{self.base_url}/efetch.fcgi"
         params = {
             "db": "pubmed",
             "api_key": self.api_key,
-            "id": ",".join(pmids),
+            "id": pmid,
             "retmode": retmode,
             "rettype": rettype
         }
         response = requests.get(url, params=params, headers=self.headers)
-        return response.content
+        return response
     
     def elink(self, pmid, retmode='ref'):
         url = f"{self.base_url}/elink.fcgi"
@@ -61,7 +61,7 @@ class PubMedAPI:
             "retmode": retmode
         }
         response = requests.get(url, params=params, headers=self.headers)
-        return response.content
+        return response
 
 
 def get_pmid_from_doi(doi, api_key=None):
@@ -69,7 +69,7 @@ def get_pmid_from_doi(doi, api_key=None):
     for some Sources that don't contain the PMID anywhere in the artice HTML.
     '''
     query = f"{doi}[aid]"
-    data = PubMedAPI(api_key=api_key).esearch(query=query)
+    data = PubMedAPI(api_key=api_key).esearch(query=query).content
     pmid = re.search('\<Id\>(\d+)\<\/Id\>', data).group(1)
     return pmid
 
@@ -92,7 +92,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
         text = open(md_file).read()
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        text = PubMedAPI(api_key=api_key).efetch(pmid, retmode='text', rettype='medline')
+        text = PubMedAPI(api_key=api_key).efetch(pmid, retmode='text', rettype='medline').content
         if store is not None and save and text is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
@@ -157,7 +157,7 @@ class Scraper:
         query = f"({journal}[Journal]+journal+article[pt]{search})"
         logger.info("Query: %s" % query)
 
-        doc = self._client.esearch(query, retmax=retmax)
+        doc = self._client.esearch(query, retmax=retmax).content
 
         if savelist is not None:
             outf = open(savelist, 'w')
@@ -279,9 +279,8 @@ class Scraper:
 
     def has_pmc_entry(self, pmid):
         ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
-        content = self._client.efetch(pmid, retmode='xml')
-        import pdb; pdb.set_trace()
-        return '<ArticleId IdType="pmc">' in str(content)
+        response = self._client.efetch(pmid, retmode='xml')
+        return '<ArticleId IdType="pmc">' in str(response.content)
 
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
