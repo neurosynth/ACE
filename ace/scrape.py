@@ -37,7 +37,6 @@ class PubMedAPI:
             "retmax": str(retmax)
         }
         response = requests.get(url, params=params, timeout=5, headers=self.headers)
-        import pdb; pdb.set_trace()
         return response.content
     
     def efetch(self, pmids, retmode='txt', rettype='medline'):
