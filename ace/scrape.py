@@ -154,7 +154,7 @@ class Scraper:
     def search_pubmed(self, journal, search, retmax=10000, savelist=None,):
         journal = journal.replace(' ', '+')
         search = '+%s' % search
-        query = "({journal}[Journal]+journal+article[pt]{search})"
+        query = f"({journal}[Journal]+journal+article[pt]{search})"
         logger.info("Query: %s" % query)
 
         doc = self._client.esearch(query, retmax=retmax)
