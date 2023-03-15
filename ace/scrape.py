@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import logging
 import os
 import random
+import xmltodict
 from selenium import webdriver
 import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
@@ -76,7 +77,7 @@ def get_pmid_from_doi(doi, api_key=None):
     for some Sources that don't contain the PMID anywhere in the artice HTML.
     '''
     query = f"{doi}[aid]"
-    data = PubMedAPI(api_key=api_key).esearch(query=query).content
+    data = str(PubMedAPI(api_key=api_key).esearch(query=query).content)
     pmid = re.search('\<Id\>(\d+)\<\/Id\>', data).group(1)
     return pmid
 
@@ -99,55 +100,46 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
         text = open(md_file).read()
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        text = PubMedAPI(api_key=api_key).efetch(pmid, retmode='text', rettype='medline')
+        xml = PubMedAPI(api_key=api_key).efetch(pmid, retmode='xml', rettype='medline')
         if store is not None and save and text is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
             open(md_file, 'w').write(text)
 
-    return parse_PMID_text(text) if (parse and text is not None) else text
+    return parse_PMID_xml(xml) if (parse and xml is not None) else text
 
 
-def parse_PMID_text(text, doi=None):
-    ''' Take text-format PubMed metadata and convert it to a dictionary
+def parse_PMID_xml(xml, doi=None):
+    ''' Take XML-format PubMed metadata and convert it to a dictionary
     with standardized field names. '''
-    data = {}
-    text = re.sub('\n\s+', ' ', text)
-    patt = re.compile(r'([A-Z]+)\s*-\s+(.*)')
-    for m in patt.finditer(text):
-        field, val = m.group(1), m.group(2)
-        if field in data:
-            data[field] += ('; %s' % val)
-        else:
-            data[field] = val
 
-    # Extra processing
-    if doi is None:
-        if 'AID' in data and '[doi]' in data['AID']:
-            doi = [x for x in data['AID'].split('; ') if 'doi' in x][0].split(' ')[0]
-        else:
-            doi = ''
-    year = data['DP'].split(' ')[0]
-    authors = data['AU'].replace(';', ',')
-    for field in ['MH', 'AB', 'JT']:
-        if field not in data:
-            data[field] = ''
+    di = xmltodict.parse(xml)['PubmedArticleSet']['PubmedArticle']
+    article = di['MedlineCitation']['Article']
+
+    year = article['ArticleDate']['Year']
+    authors = article['AuthorList']['Author']
+    authors = [a['LastName'] + ', ' + a['ForeName'] for a in authors]
+    authors = ';'.join(authors)
+
+    if 'MeshHeadingList' in di['MedlineCitation']:
+        mesh = di['MedlineCitation']['MeshHeadingList']['MeshHeading']
+    else:
+        mesh = []
 
     metadata = {
         'authors': authors,
-        'citation': data['SO'],
-        'comment': data['AB'],
+        'citation': di['PubmedData']['ArticleIdList']['ArticleId'][1]['#text'],
+        'comment': article['Abstract']['AbstractText']['#text'],
         'doi': doi,
         'keywords': '',
-        'mesh': data['MH'],
-        'pmid': data['PMID'],
-        'title': data['TI'],
-        'abstract': data['AB'],
-        'journal': data['JT'],
+        'mesh': mesh,
+        'pmid': di['MedlineCitation']['PMID'],
+        'title': article['ArticleTitle'],
+        'abstract': article['Abstract']['AbstractText']['#text'],
+        'journal': article['Journal']['Title'],
         'year': year
     }
     return metadata
-
 
 ''' Class for journal Scraping. The above free-floating methods should 
 probably be refactored into this class eventually. '''
