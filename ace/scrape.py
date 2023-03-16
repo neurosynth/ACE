@@ -83,7 +83,7 @@ def get_pmid_from_doi(doi, api_key=None):
     for some Sources that don't contain the PMID anywhere in the artice HTML.
     '''
     query = f"{doi}[aid]"
-    data = str(PubMedAPI(api_key=api_key).esearch(query=query).content)
+    data = str(PubMedAPI(api_key=api_key).esearch(query=query))
     pmid = re.search('\<Id\>(\d+)\<\/Id\>', data).group(1)
     return pmid
 
