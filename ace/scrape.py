@@ -10,6 +10,7 @@ import logging
 import os
 import random
 import xmltodict
+from requests.adapters import HTTPAdapter, Retry
 from selenium import webdriver
 import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
@@ -34,11 +35,17 @@ class PubMedAPI:
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
         self.headers = {'User-Agent': config.USER_AGENT_STRING}
 
+        self.session = requests.Session()
+        retries = Retry(total=3, backoff_factor=1, status_forcelist=[ 502, 503, 504, 400])
+        self.session.mount('https://', HTTPAdapter(max_retries=retries))
+
+
     def get(self, util, params=None, return_content=True):
         url = f"{self.base_url}/{util}.fcgi"
         if self.api_key:
             params['api_key'] = self.api_key
-        response = requests.get(url, params=params, headers=self.headers, timeout=5)
+            
+        response = self.session.get(url, params=params, headers=self.headers, timeout=5)
 
         if response.status_code != 200:
             raise Exception(f"PubMed API returned status code {response.status_code} for {url}")
