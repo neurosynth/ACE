@@ -21,6 +21,12 @@ from selenium.webdriver.common.by import By
 
 logger = logging.getLogger(__name__)
 
+def get_url(url, delay=0.0, verbose=False):
+    headers = {'User-Agent': config.USER_AGENT_STRING}
+    sleep(delay)
+    r = requests.get(url, headers=headers, timeout=5.0)
+    return r.text
+
 
 class PubMedAPI:
     def __init__(self, api_key=None):
@@ -126,16 +132,20 @@ def parse_PMID_xml(xml, doi=None):
     else:
         mesh = []
 
+    abstract = article['Abstract']['AbstractText']
+    if isinstance(abstract, dict):
+        abstract = abstract['#text']
+
     metadata = {
         'authors': authors,
         'citation': di['PubmedData']['ArticleIdList']['ArticleId'][1]['#text'],
-        'comment': article['Abstract']['AbstractText']['#text'],
+        'comment': abstract,
         'doi': doi,
         'keywords': '',
         'mesh': mesh,
         'pmid': di['MedlineCitation']['PMID'],
         'title': article['ArticleTitle'],
-        'abstract': article['Abstract']['AbstractText']['#text'],
+        'abstract': abstract,
         'journal': article['Journal']['Title'],
         'year': year
     }
