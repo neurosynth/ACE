@@ -1,4 +1,4 @@
-from .database import Database, Article, Table, Activation
+from .database import Article
 from sqlalchemy import func
 import logging
 

@@ -4,7 +4,8 @@
 # import database
 import regex  # Note: we're using features in the new regex module, not re!
 import logging
-from . import config, database
+from . import config
+from .database import Activation, Table
 from collections import Counter, defaultdict
 
 
@@ -142,7 +143,7 @@ def identify_repeating_groups(labels):
 
 def create_activation(data, labels, standard_cols, group_labels=[]):
 
-    activation = database.Activation()
+    activation = Activation()
 
     for i, col in enumerate(data):
 
@@ -202,7 +203,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 def parse_table(data):
     ''' Takes a DataTable as input and returns a Table instance. '''
     
-    table = database.Table()
+    table = Table()
     n_cols = data.n_cols
 
     # Identify column names: first occurrence of unique (i.e. colspan=1) label.

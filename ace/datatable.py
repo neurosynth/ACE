@@ -1,7 +1,5 @@
 import logging
 logger = logging.getLogger(__name__)
-import math
-# logging.basicConfig()
 
 
 class DataTable:

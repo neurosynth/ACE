@@ -119,7 +119,6 @@ class Source(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def parse_table(self, table):
         ''' Takes HTML for a single table and returns a Table. '''
-
         # Formatting issues sometimes prevent table extraction, so just return
         if table is None:
             return False
@@ -128,7 +127,7 @@ class Source(metaclass=abc.ABCMeta):
 
         # Count columns. Check either just one row, or all of them.
         def n_cols_in_row(row):
-            return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all('td')])
+            return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all(['th', 'td'])])
 
         if config.CAREFUL_PARSING:
             n_cols = max([n_cols_in_row(
@@ -165,13 +164,12 @@ class Source(metaclass=abc.ABCMeta):
                     if i + 1 == n_cells and cols_found_in_row < n_cols and data[j].count(None) > c_num:
                         c_num += n_cols - cols_found_in_row
                     data.add_val(c.get_text(), r_num, c_num)
-                
             except Exception as err:
                 if not config.SILENT_ERRORS:
                     logger.error(str(err))
                 if not config.IGNORE_BAD_ROWS:
                     raise
-                
+        
         if data.data[data.n_rows- 1].count(None) == data.n_cols:
             data.data.pop()
         logger.debug("\t\tTrying to parse table...")
@@ -285,7 +283,6 @@ class ScienceDirectSource(Source):
             table_html = tc.find('table')
             t = self.parse_table(table_html)
             if t:
-                from pdb import set_trace; set_trace()
                 t.position = i + 1
                 t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
                 t.label = tc.find('span', class_='label').text.strip()

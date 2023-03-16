@@ -2,6 +2,7 @@
   # use unicode everywhere
 import re
 from pathlib import Path
+from collections import Mapping
 import requests
 from time import sleep
 from . import config
@@ -131,7 +132,7 @@ def parse_PMID_xml(xml, doi=None):
 
     year = article['ArticleDate']['Year']
     authors = article['AuthorList']['Author']
-    authors = [a['LastName'] + ', ' + a['ForeName'] for a in authors]
+    authors = [a['LastName'] + ', ' + a['ForeName'] for a in authors if 'ForeName' in a]
     authors = ';'.join(authors)
 
     if 'MeshHeadingList' in di['MedlineCitation']:
@@ -140,8 +141,12 @@ def parse_PMID_xml(xml, doi=None):
         mesh = []
 
     abstract = article['Abstract']['AbstractText']
-    if isinstance(abstract, dict):
+    if isinstance(abstract, list):
+        abstract = ' | '.join([a['#text'] for a in abstract])
+    elif isinstance(abstract, Mapping):
         abstract = abstract['#text']
+
+
 
     metadata = {
         'authors': authors,

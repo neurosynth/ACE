@@ -3,8 +3,8 @@
 # be included in this package, so you'll need to replace PATH_TO_FILES
 # with something that works.
 
-import ace
 from ace import database
+from ace.ingest import add_articles
 
 # Uncomment the next line to seem more information
 # ace.set_logging_level('info')
@@ -13,5 +13,5 @@ from ace import database
 PATH_TO_FILES = "/home/zorro/neurosynth_scrape/articles/html/Neuroimage/*"
 
 db = database.Database(adapter='sqlite', db_name='sqlite:///example_db.db')
-db.add_articles(PATH_TO_FILES, pmid_filenames=True)
+add_articles(db, PATH_TO_FILES, pmid_filenames=True)
 db.print_stats()
