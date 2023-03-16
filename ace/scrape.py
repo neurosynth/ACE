@@ -141,12 +141,6 @@ def parse_PMID_xml(xml, doi=None):
         mesh = []
 
     abstract = article['Abstract']['AbstractText']
-    if isinstance(abstract, list):
-        abstract = ' | '.join([a['#text'] for a in abstract])
-    elif isinstance(abstract, Mapping):
-        abstract = abstract['#text']
-
-
 
     metadata = {
         'authors': authors,
@@ -161,6 +155,21 @@ def parse_PMID_xml(xml, doi=None):
         'journal': article['Journal']['Title'],
         'year': year
     }
+
+    # Clean up nested Dicts
+    for k, v in metadata.items():
+        if isinstance(v, list):
+            to_join = []
+            for a in v:
+                if 'DescriptorName' in a:
+                    a = a['DescriptorName']
+                a = a['#text']
+                to_join.append(a)
+            v = ' | '.join(to_join)
+        elif isinstance(v, Mapping):
+            v = v['#text']
+        metadata[k] = v
+
     return metadata
 
 ''' Class for journal Scraping. The above free-floating methods should 
