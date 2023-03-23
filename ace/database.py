@@ -45,7 +45,7 @@ class Database:
         else:
             raise ValueError("Value of SQL_ADAPTER in settings must be either 'sqlite' or 'mysql'")
 
-        engine = create_engine(db_uri, echo=False)
+        engine = create_engine(db_uri, echo=False, connect_args={'timeout': 15})
 
         if adapter == 'mysql': engine.execute("SET sql_mode=''")
 

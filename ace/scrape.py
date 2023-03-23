@@ -140,7 +140,9 @@ def parse_PMID_xml(xml, doi=None):
     else:
         mesh = []
 
-    abstract = article['Abstract']['AbstractText']
+    abstract = article.get('Abstract', '')
+    if abstract != '':
+        abstract = abstract.get('AbstractText', '')
 
     metadata = {
         'authors': authors,
@@ -337,7 +339,7 @@ class Scraper:
         return filename
 
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
-                                limit=None, overwrite=False, min_pmid=None, shuffle=False,
+                                limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
                                 skip_pubmed_central=True, save_metadata=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
@@ -358,6 +360,8 @@ class Scraper:
             min_pmid: When a PMID is provided, only articles with PMIDs greater than 
                 this will be processed. Primarily useful for excluding older articles 
                 that aren't available in full-text HTML format.
+            max_pmid: When a PMID is provided, only articles with PMIDs less than
+                this will be processed. 
             shuffle: When True, articles are retrieved in random order.
             skip_pubmed_central: When True, skips articles that are available from
                 PubMed Central. 
@@ -381,6 +385,7 @@ class Scraper:
 
         for id in ids:
             if min_pmid is not None and int(id) < min_pmid: continue
+            if max_pmid is not None and int(id) > max_pmid: continue
             if limit is not None and articles_found >= limit: break
 
             if skip_pubmed_central and self.has_pmc_entry(id):
