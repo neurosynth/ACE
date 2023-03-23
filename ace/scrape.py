@@ -32,6 +32,9 @@ def get_url(url, delay=0.0, verbose=False):
 
 class PubMedAPI:
     def __init__(self, api_key=None):
+        if api_key is None:
+            # Look for api key in environment variable
+            api_key = os.environ.get('PUBMED_API_KEY')
         self.api_key = api_key
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
         self.headers = {'User-Agent': config.USER_AGENT_STRING}

@@ -5,7 +5,7 @@ from . import sources, config
 logger = logging.getLogger(__name__)
 
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
-                    pmid_filenames=False, metadata_dir=None):
+                    pmid_filenames=False, metadata_dir=None, **kwargs):
     ''' Process articles and add their data to the DB.
     Args:
         files: The path to the article(s) to process. Can be a single
@@ -26,6 +26,7 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
             path is provided, will check there first before querying PubMed,
             and will save the result of the query if it doesn't already
             exist.
+        kwargs: Additional keyword arguments to pass to parse_article.
     '''
 
     manager = sources.SourceManager(db, table_dir)
@@ -47,7 +48,7 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
             continue
         # try:
         pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
-        article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
+        article = source.parse_article(html, pmid, metadata_dir=metadata_dir, **kwargs)
         if article and (config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables):
             db.add(article)
             if commit and (i % 100 == 0 or i == len(files) - 1):
