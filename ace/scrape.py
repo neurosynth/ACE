@@ -118,7 +118,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
         xml = PubMedAPI(api_key=api_key).efetch(pmid, retmode='xml', rettype='medline')
-        if store is not None and save and text is not None:
+        if store is not None and save:
             if not os.path.exists(store):
                 os.makedirs(store)
             open(md_file, 'w').write(text)
