@@ -114,14 +114,17 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
 
     if store is not None and os.path.exists(md_file):
         logger.info("Retrieving metadata from file %s..." % os.path.join(store, pmid))
-        xml = open(md_file).read()
+        with open(md_file, 'rb') as f:
+            xml = f.read()
+
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
         xml = PubMedAPI(api_key=api_key).efetch(pmid, retmode='xml', rettype='medline')
         if store is not None and save and xml is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
-            open(md_file, 'w').write(xml)
+            with open(md_file, 'wb') as f:
+                f.write(xml)
 
     return parse_PMID_xml(xml) if (parse and xml is not None) else xml
 
