@@ -136,7 +136,18 @@ def parse_PMID_xml(xml, doi=None):
     di = xmltodict.parse(xml)['PubmedArticleSet']['PubmedArticle']
     article = di['MedlineCitation']['Article']
 
-    year = article['ArticleDate']['Year']
+    if 'ArticleTitle' in article:
+        date = article['ArticleTitle']
+    elif 'Journal' in article:
+        date = article['Journal']['JournalIssue']['PubDate']
+    else:
+        date = None
+    
+    if date:
+        year = date.get('Year', None)
+    else:
+        year = None
+
     authors = article['AuthorList']['Author']
 
     _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
