@@ -138,9 +138,13 @@ def parse_PMID_xml(xml, doi=None):
 
     year = article['ArticleDate']['Year']
     authors = article['AuthorList']['Author']
-    if isinstance(authors, dict):
-        authors = [a['LastName'] + ', ' + a['ForeName'] for a in authors if 'ForeName' in a]
-        authors = ';'.join(authors)
+
+    _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
+    if isinstance(authors, list):
+        authors = [_get_author(a) for a in authors if 'ForeName' in a]
+    else:
+        authors = [_get_author(authors)]
+    authors = ';'.join(authors)
 
     if 'MeshHeadingList' in di['MedlineCitation']:
         mesh = di['MedlineCitation']['MeshHeadingList']['MeshHeading']
