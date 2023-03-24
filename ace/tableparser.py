@@ -147,6 +147,8 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 
     for i, col in enumerate(data):
 
+        col = col.replace('−', '-')
+
         # Cast to integer or float if appropriate
         # if regex.match('[-\d]+$', col):
         #     col = int(col)
@@ -164,10 +166,10 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
             # If they're not, keep only leading numbers. The exception is that ScienceDirect 
             # journals often follow the minus sign with a space (e.g., - 35), which we strip.
             if regex.match('[xyz]$', sc):
-                m = regex.match('([\−\-])s?(\d+\.*\d*)$', col)
+                m = regex.match('([-])s?(\d+\.*\d*)$', col)
                 if m:
                     col = "%s%s" % (m.group(1), m.group(2))
-                if not regex.match('([\−\-]*\d+)\.*\d*$', col):
+                if not regex.match('([-]*\d+)\.*\d*$', col):
                     logging.debug("Value %s in %s column is not valid" % (col, sc))
                     activation.problems.append("Value in %s column is not valid" % sc)
                     return activation
