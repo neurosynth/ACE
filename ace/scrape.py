@@ -49,7 +49,7 @@ class PubMedAPI:
         if self.api_key:
             params['api_key'] = self.api_key
             
-        response = self.session.get(url, params=params, headers=self.headers, timeout=5)
+        response = self.session.get(url, params=params, headers=self.headers, timeout=10)
 
         if response.status_code != 200:
             raise Exception(f"PubMed API returned status code {response.status_code} for {url}")

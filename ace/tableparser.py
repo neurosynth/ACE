@@ -239,7 +239,7 @@ def parse_table(data):
     # Compact the list, although there shouldn't be any missing values at this point...
     # labels = [x.lower() for x in labels if x is not None]
     # Convert all labels to lowercase
-    labels = [x.lower() if x is not None else x for x in labels]
+    labels = [x.lower() if x is not None else '' for x in labels]
     n_cols = len(labels)
 
     # Sometimes tables have a single "Coordinates" column name
