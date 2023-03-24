@@ -71,9 +71,14 @@ class Database:
     def print_stats(self):
         ''' Summarize the current state of the DB. '''
         n_articles = self.session.query(Article).count()
+        n_articles_with_coordinates = self.session.query(Activation).distinct('article_id').count()
         n_tables = self.session.query(Table).count()
         n_activations = self.session.query(Activation).count()
-        print(f"The database currently contains:{n_articles} articles {n_tables} tables {n_activations} activations")
+        n_links = self.session.query(NeurovaultLink).count()
+        n_articles_with_links = self.session.query(NeurovaultLink).distinct('article_id').count()
+        print(f"The database currently contains:{n_articles} articles.\n"
+        "{n_articles_with_coordinates} have coordinates, and {n_articles_with_links} have NeuroVault links."
+        "There are a total of {n_tables} tables, {n_activations} activations and {n_links} NeuroVault links.")
 
     def article_exists(self, pmid):
         ''' Check if an article already exists in the database. '''
@@ -124,6 +129,10 @@ class Article(Base):
                           backref='article')
     activations = relationship('Activation', cascade="all, delete-orphan",
                                 backref='article')
+
+    neurovault_links = relationship('NeurovaultLink', cascade="all, delete-orphan",
+                                backref='article')
+                                
     features = association_proxy('tags', 'feature')
 
     def __init__(self, text, pmid=None, doi=None, metadata=None):
@@ -242,3 +251,13 @@ class Activation(Base):
             return False
 
         return True
+
+class NeurovaultLink(Base):
+    
+    __tablename__ = 'Neurovaultlinks'
+
+    id = Column(Integer, primary_key=True)
+    full_url = Column(String(100))
+    type = Column(String(100))
+
+    article_id = Column(Integer, ForeignKey('articles.id'))

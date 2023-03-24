@@ -113,8 +113,49 @@ class Source(metaclass=abc.ABCMeta):
                 self.database.delete_article(pmid)
             else:
                 return False
+        
         self.article = database.Article(text, pmid=pmid, doi=doi, metadata=metadata)
+        self.extract_neurovault(soup)
         return soup
+
+    def extract_neurovault(self, soup):
+        ''' Look through all links, and use regex to identify NeuroVault links. '''
+        image_regexes = ['identifiers.org/neurovault.image:(\d*)',
+                     'neurovault.org/images/(\d*)']
+
+        image_regexes = re.compile( '|'.join( image_regexes) )
+
+        collection_regexes = ['identifiers.org/neurovault.collection:(\w*)',
+                     'neurovault.org/collections/(\w*)']
+
+        collection_regexes = re.compile( '|'.join( collection_regexes) )
+
+
+        nv_links = []
+        for link in soup.find_all('a'):
+            if link.has_attr('href'):
+
+                img_m = image_regexes.search(link)
+                col_m = collection_regexes.search(link)
+                if not (img_m or col_m):
+                    continue
+
+                if img_m:
+                    type = 'image'
+                    val =  img_m.groups()[0] or img_m.groups()[1]
+                elif col_m:
+                    type = 'collection'
+                    val =  img_m.groups()[0] or img_m.groups()[1]
+
+                nv_links.append(
+                    database.NeurovaultLink(
+                        type=type,
+                        value=val,
+                        url=link['href']
+                    )
+                )
+
+        self.article.neurovault_links = nv_links
 
     @abc.abstractmethod
     def parse_table(self, table):
