@@ -256,7 +256,8 @@ class NeurovaultLink(Base):
     
     __tablename__ = 'Neurovaultlinks'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    neurovault_id = Column(Integer)
     url = Column(String(100))
     type = Column(String(100))
 
