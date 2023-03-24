@@ -138,7 +138,7 @@ def parse_PMID_xml(xml, doi=None):
 
     year = article['ArticleDate']['Year']
     authors = article['AuthorList']['Author']
-    if isinstance(authors, list):
+    if isinstance(authors, dict):
         authors = [a['LastName'] + ', ' + a['ForeName'] for a in authors if 'ForeName' in a]
         authors = ';'.join(authors)
 
