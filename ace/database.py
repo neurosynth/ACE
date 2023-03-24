@@ -77,8 +77,8 @@ class Database:
         n_links = self.session.query(NeurovaultLink).count()
         n_articles_with_links = self.session.query(NeurovaultLink).distinct('article_id').count()
         print(f"The database currently contains:{n_articles} articles.\n"
-        "{n_articles_with_coordinates} have coordinates, and {n_articles_with_links} have NeuroVault links."
-        "There are a total of {n_tables} tables, {n_activations} activations and {n_links} NeuroVault links.")
+        f"{n_articles_with_coordinates} have coordinates, and {n_articles_with_links} have NeuroVault links."
+        f"There are a total of {n_tables} tables, {n_activations} activations and {n_links} NeuroVault links.")
 
     def article_exists(self, pmid):
         ''' Check if an article already exists in the database. '''
