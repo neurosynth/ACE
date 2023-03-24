@@ -146,7 +146,7 @@ class Source(metaclass=abc.ABCMeta):
                     val =  img_m.groups()[0] or img_m.groups()[1]
                 elif col_m:
                     type = 'collection'
-                    val =  img_m.groups()[0] or img_m.groups()[1]
+                    val =  col_m.groups()[0] or col_m.groups()[1]
 
                 nv_links.append(
                     database.NeurovaultLink(
