@@ -151,7 +151,7 @@ class Source(metaclass=abc.ABCMeta):
                 nv_links.append(
                     database.NeurovaultLink(
                         type=type,
-                        value=val,
+                        id=val,
                         url=href
                     )
                 )
