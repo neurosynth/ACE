@@ -134,9 +134,10 @@ class Source(metaclass=abc.ABCMeta):
         nv_links = []
         for link in soup.find_all('a'):
             if link.has_attr('href'):
+                href = link['href']
 
-                img_m = image_regexes.search(link)
-                col_m = collection_regexes.search(link)
+                img_m = image_regexes.search(href)
+                col_m = collection_regexes.search(href)
                 if not (img_m or col_m):
                     continue
 
@@ -151,7 +152,7 @@ class Source(metaclass=abc.ABCMeta):
                     database.NeurovaultLink(
                         type=type,
                         value=val,
-                        url=link['href']
+                        url=href
                     )
                 )
 
