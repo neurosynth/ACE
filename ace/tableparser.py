@@ -281,12 +281,8 @@ def parse_table(data):
         for i in range(onset, onset+length):
             cols_in_group[i] = True
 
-    # Also store non-group labels for easy lookup later
-    nongroup_labels = [l for (i,l) in enumerate(labels) if not cols_in_group[i]]
-
     # Loop over rows in table
     group_row = None
-    activation_num = 0
     
     for r in data:
         logger.debug(r)
@@ -318,10 +314,7 @@ def parse_table(data):
 
         # Skip any additional header rows
         if n_cells != n_cols or regex.search('@@', ' '.join(r)): continue
-
-
-
-
+    
       
         # If we don't have to worry about groups, the entire row is a single activation
         if not len(group_cols):
