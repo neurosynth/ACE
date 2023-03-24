@@ -164,10 +164,10 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
             # If they're not, keep only leading numbers. The exception is that ScienceDirect 
             # journals often follow the minus sign with a space (e.g., - 35), which we strip.
             if regex.match('[xyz]$', sc):
-                m = regex.match('(-)\s+(\d+\.*\d*)$', col)
+                m = regex.match('([\−\-])s?(\d+\.*\d*)$', col)
                 if m:
                     col = "%s%s" % (m.group(1), m.group(2))
-                if not regex.match('(-*\d+)\.*\d*$', col):
+                if not regex.match('([\−\-]*\d+)\.*\d*$', col):
                     logging.debug("Value %s in %s column is not valid" % (col, sc))
                     activation.problems.append("Value in %s column is not valid" % sc)
                     return activation
@@ -251,7 +251,8 @@ def parse_table(data):
             if not regex.search('[a-zA-Z]', ''.join(labels[start:end])):
                 logger.info(
                     "Possible multi-column coordinates found: %s, %s" % (k, v))
-                labels[start:end] = ['x', 'y', 'z']
+                
+
 
     # There shouldn't be any unfilled column labels at this point, but if there are,
     # log that information and skip table if flag is set.
