@@ -251,7 +251,7 @@ def parse_table(data):
             if not regex.search('[a-zA-Z]', ''.join(labels[start:end])):
                 logger.info(
                     "Possible multi-column coordinates found: %s, %s" % (k, v))
-                
+                labels[start:end] = ['x', 'y', 'z']
 
 
     # There shouldn't be any unfilled column labels at this point, but if there are,
