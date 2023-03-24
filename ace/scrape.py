@@ -136,7 +136,7 @@ def parse_PMID_xml(xml, doi=None):
     di = xmltodict.parse(xml)['PubmedArticleSet']['PubmedArticle']
     article = di['MedlineCitation']['Article']
 
-    if 'ArticleTitle' in article:
+    if 'ArticleDate' in article:
         date = article['ArticleDate']
     elif 'Journal' in article:
         date = article['Journal']['JournalIssue']['PubDate']
