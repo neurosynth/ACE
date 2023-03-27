@@ -218,14 +218,12 @@ def parse_table(data):
     multicol_labels = {}
     for i in range(data.n_rows):
         r = data[i]
-        found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join([x or '' for x in r]))  # use this later
+        r = [x or '' for x in r]
+        found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
         for j, val in enumerate(r):
-            if val is None:
-                val = ''
-            if val:
-                val = val.strip()
-                if val != '' and val[-1] == '.':
-                    val = val[:-1].strip()
+            val = val.strip()
+            if val != '' and val[-1] == '.':
+                val = val[:-1].strip()
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
             # there is no current label assigned to this column...
             if val != '' and not val.startswith('@@') and labels[j] is None:
@@ -294,6 +292,7 @@ def parse_table(data):
     group_row = None
     
     for r in data:
+        r = [x or '' for x in r]
         # Restrip just to be sure
         r = [x.strip() for x in r]
         logger.debug(r)
