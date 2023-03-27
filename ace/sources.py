@@ -450,16 +450,20 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         tables = []
 
         # Now download each table and parse it
-        for tc in soup.find_all('table', {'role': 'table'}):
-            t = self.parse_table(tc)
+        for i, tc in enumerate(soup.find_all('div', {'class': 'table-wrap'})):
+            table_html = tc.find('table', {'role': 'table'})
+            if not table_html:
+                continue
+
+            t = self.parse_table(table_html)
+
             if t:
-                t.position = num
-                t.number = num
-                cap = tc.caption.find('span', class_='title')
-                t.label = cap.b.get_text()
-                t.caption = cap.get_text()
+                t.position = i + 1
+                t.number = re.search('T(\d+).+$', tc['content-id']).group(1)
+                t.label = tc.find('div', class_='caption').get_text()
+                t.caption = tc.find('div', class_='caption').get_text()
                 try:
-                    t.notes = table_soup.find('div', class_="footnote").p.get_text()
+                    t.notes = tc.find('div', class_="footnote").p.get_text()
                 except:
                     pass
                 tables.append(t)
