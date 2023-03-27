@@ -291,6 +291,8 @@ def parse_table(data):
     group_row = None
     
     for r in data:
+        # Restrip just to be sure
+        r = [x.strip() for x in r]
         logger.debug(r)
 
         n_cells = len(r)
