@@ -447,32 +447,22 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
         # To download tables, we need the DOI and the number of tables
         doi = self.article.doi or self.extract_doi(soup)
-        n_tables = len(soup.find_all('table', {'role': 'table'}))
-        logger.debug("Found %d tables!" % n_tables)
         tables = []
 
         # Now download each table and parse it
-        for i in range(n_tables):
-            num = i + 1
-            url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (
-                num, doi)
-            table_soup = self._download_table(url)
-            tc = table_soup.find('table')  # JCogNeuro nests tables 2-deep
-            if tc:
-                tc = tc.find('table')
-            if tc:
-                t = self.parse_table(tc)
-                if t:
-                    t.position = num
-                    t.number = num
-                    cap = tc.caption.find('span', class_='title')
-                    t.label = cap.b.get_text()
-                    t.caption = cap.get_text()
-                    try:
-                        t.notes = table_soup.find('div', class_="footnote").p.get_text()
-                    except:
-                        pass
-                    tables.append(t)
+        for tc in soup.find_all('table', {'role': 'table'}):
+            t = self.parse_table(tc)
+            if t:
+                t.position = num
+                t.number = num
+                cap = tc.caption.find('span', class_='title')
+                t.label = cap.b.get_text()
+                t.caption = cap.get_text()
+                try:
+                    t.notes = table_soup.find('div', class_="footnote").p.get_text()
+                except:
+                    pass
+                tables.append(t)
 
         self.article.tables = tables
         return self.article
