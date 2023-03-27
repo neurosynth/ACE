@@ -129,7 +129,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
     return parse_PMID_xml(xml) if (parse and xml is not None) else xml
 
 
-def parse_PMID_xml(xml, doi=None):
+def parse_PMID_xml(xml):
     ''' Take XML-format PubMed metadata and convert it to a dictionary
     with standardized field names. '''
 
@@ -145,8 +145,16 @@ def parse_PMID_xml(xml, doi=None):
     
     if date:
         year = date.get('Year', None)
-    else:
+    else:   
         year = None
+
+    doi = None
+    doi_source = article.get('ELocationID', None)
+    if doi_source is not None and isinstance(doi, list):
+        doi_source = [d for d in doi_source if d['@EIdType'] == 'doi'][0]
+
+    if doi_source is not None and doi_source['@EIdType'] == 'doi':
+        doi = doi_source['#text']
 
     authors = article['AuthorList']['Author']
 
