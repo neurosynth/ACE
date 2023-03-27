@@ -220,9 +220,12 @@ def parse_table(data):
         r = data[i]
         found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join([x or '' for x in r]))  # use this later
         for j, val in enumerate(r):
-            val = val.strip()
-            if val and val[-1] == '.':
-                val = val[:-1].strip()
+            if val is None:
+                val = ''
+            if val:
+                val = val.strip()
+                if val[-1] == '.':
+                    val = val[:-1].strip()
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
             # there is no current label assigned to this column...
             if val != '' and not val.startswith('@@') and labels[j] is None:
