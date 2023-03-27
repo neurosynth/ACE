@@ -71,7 +71,7 @@ class Database:
     def print_stats(self):
         ''' Summarize the current state of the DB. '''
         n_articles = self.session.query(Article).count()
-        n_articles_with_coordinates = self.session.query(Activation).distinct('article_id').count()
+        n_articles_with_coordinates = self.session.query(Table).filter(Table.n_activations>0).distinct('article_id').count()
         n_tables = self.session.query(Table).count()
         n_activations = self.session.query(Activation).count()
         n_links = self.session.query(NeurovaultLink).count()
