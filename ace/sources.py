@@ -447,8 +447,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
         # To download tables, we need the DOI and the number of tables
         doi = self.article.doi or self.extract_doi(soup)
-        pattern = re.compile('^T\d+$')
-        n_tables = len(soup.find_all('table', {'id': pattern}))
+        n_tables = len(soup.find_all('table', {'role': 'table'}))
         logger.debug("Found %d tables!" % n_tables)
         tables = []
 
