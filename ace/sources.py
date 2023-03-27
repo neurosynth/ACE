@@ -463,7 +463,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
                 t.label = tc.find('div', class_='caption').get_text()
                 t.caption = tc.find('div', class_='caption').get_text()
                 try:
-                    t.notes = tc.find('div', class_="footnote").p.get_text()
+                    t.notes = tc.find('div', class_="fn").p.get_text()
                 except:
                     pass
                 tables.append(t)

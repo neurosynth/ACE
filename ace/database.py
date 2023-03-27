@@ -127,8 +127,6 @@ class Article(Base):
 
     tables = relationship('Table', cascade="all, delete-orphan",
                           backref='article')
-    activations = relationship('Activation', cascade="all, delete-orphan",
-                                backref='article')
 
     neurovault_links = relationship('NeurovaultLink', cascade="all, delete-orphan",
                                 backref='article')
