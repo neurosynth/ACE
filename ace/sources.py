@@ -327,7 +327,7 @@ class ScienceDirectSource(Source):
             if t:
                 t.position = i + 1
                 try:
-                    t.number =  .text.split(' ')[-1].strip()
+                    t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
                     t.label = tc.find('span', class_='label').text.strip()
                 except:
                     pass
