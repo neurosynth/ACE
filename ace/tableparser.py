@@ -218,7 +218,7 @@ def parse_table(data):
     multicol_labels = {}
     for i in range(data.n_rows):
         r = data[i]
-        found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
+        found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join([x or '' for x in r]))  # use this later
         for j, val in enumerate(r):
             val = val.strip()
             if val and val[-1] == '.':
