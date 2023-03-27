@@ -148,7 +148,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
     for i, col in enumerate(data):
 
         # Replace unicode minus signs with hyphens
-        replace = "֊‐‑⁃﹣－‒–—﹘−"
+        replace = ['֊', '‐', '‑', '⁃', '﹣', '－', '‒', '–', '—', '﹘', '−', '−−']
         for c in replace:
             if c in col:
                 col = col.replace(c, '-')
@@ -301,7 +301,7 @@ def parse_table(data):
 
         if n_cells != len(labels):
             logger.warning("Skipping row with %d cells (expected %d): %s" % (n_cells, len(labels), r))
-            continue
+            continue 
 
         # Skip row if any value matches the column label--assume we're in header
         match_lab = False
