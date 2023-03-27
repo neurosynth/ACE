@@ -147,7 +147,11 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 
     for i, col in enumerate(data):
 
-        col = col.replace('−', '-')
+        # Replace unicode minus signs with hyphens
+        replace = "֊‐‑⁃﹣－‒–—﹘"
+        for c in replace:
+            if c in col:
+                col.replace(c, '-')
 
         # Cast to integer or float if appropriate
         # if regex.match('[-\d]+$', col):
