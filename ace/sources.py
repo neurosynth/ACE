@@ -460,8 +460,10 @@ class JournalOfCognitiveNeuroscienceSource(Source):
             if t:
                 t.position = i + 1
                 t.number = re.search('T(\d+).+$', tc['content-id']).group(1)
-                t.label = tc.find('div', class_='caption').get_text()
-                t.caption = tc.find('div', class_='caption').get_text()
+                caption = tc.find('div', class_='caption')
+                if caption:
+                    t.label = caption.get_text()
+                    t.caption = caption.get_text()
                 try:
                     t.notes = tc.find('div', class_="fn").p.get_text()
                 except:
