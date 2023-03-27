@@ -326,8 +326,11 @@ class ScienceDirectSource(Source):
             t = self.parse_table(table_html)
             if t:
                 t.position = i + 1
-                t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
-                t.label = tc.find('span', class_='label').text.strip()
+                try:
+                    t.number =  .text.split(' ')[-1].strip()
+                    t.label = tc.find('span', class_='label').text.strip()
+                except:
+                    pass
                 try:
                     t.caption = tc.find('p').contents[-1].strip()
                 except:
