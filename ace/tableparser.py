@@ -151,7 +151,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
         replace = "֊‐‑⁃﹣－‒–—﹘−"
         for c in replace:
             if c in col:
-                col.replace(c, '-')
+                col = col.replace(c, '-')
 
         # Cast to integer or float if appropriate
         # if regex.match('[-\d]+$', col):
