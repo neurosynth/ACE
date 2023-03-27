@@ -292,12 +292,16 @@ def parse_table(data):
     group_row = None
     
     for r in data:
-        r = [x or '' for x in r]
-        # Restrip just to be sure
-        r = [x.strip() for x in r]
+        # Strip whitespace and replace empty cells with empty strings
+        r = [x.strip() or '' for x in r]
+
         logger.debug(r)
 
         n_cells = len(r)
+
+        if n_cells != len(labels):
+            logger.warning("Skipping row with %d cells (expected %d): %s" % (n_cells, len(labels), r))
+            continue
 
         # Skip row if any value matches the column label--assume we're in header
         match_lab = False
