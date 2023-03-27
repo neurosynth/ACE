@@ -150,7 +150,7 @@ def parse_PMID_xml(xml):
 
     doi = None
     doi_source = article.get('ELocationID', None)
-    if doi_source is not None and isinstance(doi, list):
+    if doi_source is not None and isinstance(doi_source, list):
         doi_source = [d for d in doi_source if d['@EIdType'] == 'doi'][0]
 
     if doi_source is not None and doi_source['@EIdType'] == 'doi':
