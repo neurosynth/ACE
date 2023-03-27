@@ -102,8 +102,9 @@ class Source(metaclass=abc.ABCMeta):
 
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html)
-        doi = self.extract_doi(soup)
-        pmid = self.extract_pmid(soup) if pmid is None else pmid
+        if pmid is None:
+            pmid = self.extract_pmid(soup)
+
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
         # TODO: add Source-specific delimiting of salient text boundaries--e.g., exclude References
@@ -114,7 +115,7 @@ class Source(metaclass=abc.ABCMeta):
             else:
                 return False
         
-        self.article = database.Article(text, pmid=pmid, doi=doi, metadata=metadata)
+        self.article = database.Article(text, pmid=pmid, metadata=metadata)
         self.extract_neurovault(soup)
         return soup
 

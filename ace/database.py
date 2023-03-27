@@ -153,6 +153,7 @@ class Article(Base):
             self.authors = pmd['authors']
             self.abstract = pmd['abstract']
             self.citation = pmd['citation']
+            self.doi = pmd['doi']
 
 
 class Table(Base):
