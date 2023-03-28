@@ -294,7 +294,7 @@ def parse_table(data):
     
     for r in data:
         # Strip whitespace and replace empty cells with empty strings
-        r = [x.strip() or '' for x in r]
+        r = [x.strip() or '' for x in r if x is not None]
 
         logger.debug(r)
 
