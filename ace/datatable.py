@@ -1,7 +1,5 @@
 import logging
 logger = logging.getLogger(__name__)
-import math
-# logging.basicConfig()
 
 
 class DataTable:
@@ -48,8 +46,6 @@ class DataTable:
             open_pos = flat.index(None)
             ri = open_pos / self.n_cols
             if (ri + rows) > self.n_rows:
-                logging.error("Error: DataTable row has more columns than labels: [%d, %d, %d]" % (
-                    ri, rows, self.n_rows))
                 for i in range(round((ri + rows)) - self.n_rows):
                     self.data.append([None] * self.n_cols)
 

@@ -1,7 +1,7 @@
 # Database stuff and models
 
 from sqlalchemy import (TypeDecorator, Table, Column, Integer, Float, String,
-                        ForeignKey, Boolean, DateTime, Text)
+                        ForeignKey, DateTime, Text)
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,14 +9,12 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.sql import exists
 from datetime import datetime
-from ace import config
 import simplejson as json
 import logging
 import sys
 from os import path
 import datetime
 
-from . import sources
 from . import config
 from . import extract
 
@@ -47,7 +45,7 @@ class Database:
         else:
             raise ValueError("Value of SQL_ADAPTER in settings must be either 'sqlite' or 'mysql'")
 
-        engine = create_engine(db_uri, echo=False)
+        engine = create_engine(db_uri, echo=False, connect_args={'timeout': 15})
 
         if adapter == 'mysql': engine.execute("SET sql_mode=''")
 
@@ -62,54 +60,8 @@ class Database:
     def save(self):
         ''' Commit all stored records to file. '''
         self.session.commit()
-
-    def add_articles(self, files, commit=True, table_dir=None, limit=None,
-                     pmid_filenames=False, metadata_dir=None):
-        ''' Process articles and add their data to the DB.
-        Args:
-            files: The path to the article(s) to process. Can be a single
-                filename (string), a list of filenames, or a path to pass
-                to glob (e.g., "article_dir/NIMG*html")
-            commit: Whether or not to save records to DB file after adding them.
-            table_dir: Directory to store downloaded tables in (if None, tables 
-                will not be saved.)
-            limit: Optional integer indicating max number of articles to add 
-                (selected randomly from all available). When None, will add all
-                available articles.
-            pmid_filenames: When True, assume that the file basename is a PMID.
-                This saves us from having to retrieve metadata from PubMed When
-                checking if a file is already in the DB, and greatly speeds up 
-                batch processing when overwrite is off.
-            metadata_dir: Location to read/write PubMed metadata for articles.
-                When None (default), retrieves new metadata each time. If a 
-                path is provided, will check there first before querying PubMed,
-                and will save the result of the query if it doesn't already
-                exist.
-        '''
-
-        manager = sources.SourceManager(self, table_dir)
-
-        if isinstance(files, str):
-            from glob import glob
-            files = glob(files)
-            if limit is not None:
-                from random import shuffle
-                shuffle(files)
-                files = files[:limit]
-
-        for i, f in enumerate(files):
-            logger.info("Processing article %s..." % f)
-            html = open(f).read()
-            source = manager.identify_source(html)
-            try:
-                pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
-                article = source.parse_article(html, pmid, metadata_dir=metadata_dir)
-                if article and (config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables):
-                    self.add(article)
-                    if commit and (i % 100 == 0 or i == len(files) - 1):
-                        self.save()
-            except Exception as err:
-                print(err)
+            # except Exception as err:
+            #     print(err)
 
     def delete_article(self, pmid):
         article = self.session.query(Article).filter_by(id=pmid).first()
@@ -119,9 +71,14 @@ class Database:
     def print_stats(self):
         ''' Summarize the current state of the DB. '''
         n_articles = self.session.query(Article).count()
+        n_articles_with_coordinates = self.session.query(Table).filter(Table.n_activations>0).distinct('article_id').count()
         n_tables = self.session.query(Table).count()
         n_activations = self.session.query(Activation).count()
-        print("The database currently contains:\n\t%d articles\n\t%d tables\n\t%d activations" % n_articles, n_tables, n_activations)
+        n_links = self.session.query(NeurovaultLink).count()
+        n_articles_with_links = self.session.query(NeurovaultLink).distinct('article_id').count()
+        print(f"The database currently contains: {n_articles} articles.\n"
+        f"{n_articles_with_coordinates} have coordinates, and {n_articles_with_links} have NeuroVault links.\n"
+        f"Total of {n_tables} tables, {n_activations} activations and {n_links} NeuroVault links.")
 
     def article_exists(self, pmid):
         ''' Check if an article already exists in the database. '''
@@ -170,8 +127,10 @@ class Article(Base):
 
     tables = relationship('Table', cascade="all, delete-orphan",
                           backref='article')
-    activations = relationship('Activation', cascade="all, delete-orphan",
+
+    neurovault_links = relationship('NeurovaultLink', cascade="all, delete-orphan",
                                 backref='article')
+                                
     features = association_proxy('tags', 'feature')
 
     def __init__(self, text, pmid=None, doi=None, metadata=None):
@@ -192,6 +151,7 @@ class Article(Base):
             self.authors = pmd['authors']
             self.abstract = pmd['abstract']
             self.citation = pmd['citation']
+            self.doi = pmd['doi']
 
 
 class Table(Base):
@@ -291,23 +251,13 @@ class Activation(Base):
 
         return True
 
+class NeurovaultLink(Base):
+    
+    __tablename__ = 'Neurovaultlinks'
 
-# class Feature(Base):
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    neurovault_id = Column(Integer)
+    url = Column(String(100))
+    type = Column(String(100))
 
-#     __tablename__ = 'features'
-
-#     id = Column(String, primary_key=True)
-#     name = Column(String)
-
-
-# class Tag(Base):
-
-#     __tablename__ = 'tags'
-
-#     feature_id = Column(Integer, ForeignKey('features.id'), primary_key=True)
-#     article_id = Column(Integer, ForeignKey('articles.id'), primary_key=True)
-#     weight = Column(Float)
-
-#     article = relationship(Article, backref=backref(
-#         "tags", cascade="all, delete-orphan"))
-#     feature = relationship("Feature")
+    article_id = Column(Integer, ForeignKey('articles.id'))

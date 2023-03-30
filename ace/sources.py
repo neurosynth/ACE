@@ -102,8 +102,9 @@ class Source(metaclass=abc.ABCMeta):
 
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html)
-        doi = self.extract_doi(soup)
-        pmid = self.extract_pmid(soup) if pmid is None else pmid
+        if pmid is None:
+            pmid = self.extract_pmid(soup)
+
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
         # TODO: add Source-specific delimiting of salient text boundaries--e.g., exclude References
@@ -113,13 +114,54 @@ class Source(metaclass=abc.ABCMeta):
                 self.database.delete_article(pmid)
             else:
                 return False
-        self.article = database.Article(text, pmid=pmid, doi=doi, metadata=metadata)
+        
+        self.article = database.Article(text, pmid=pmid, metadata=metadata)
+        self.extract_neurovault(soup)
         return soup
+
+    def extract_neurovault(self, soup):
+        ''' Look through all links, and use regex to identify NeuroVault links. '''
+        image_regexes = ['identifiers.org/neurovault.image:(\d*)',
+                     'neurovault.org/images/(\d*)']
+
+        image_regexes = re.compile( '|'.join( image_regexes) )
+
+        collection_regexes = ['identifiers.org/neurovault.collection:(\w*)',
+                     'neurovault.org/collections/(\w*)']
+
+        collection_regexes = re.compile( '|'.join( collection_regexes) )
+
+
+        nv_links = []
+        for link in soup.find_all('a'):
+            if link.has_attr('href'):
+                href = link['href']
+
+                img_m = image_regexes.search(href)
+                col_m = collection_regexes.search(href)
+                if not (img_m or col_m):
+                    continue
+
+                if img_m:
+                    type = 'image'
+                    val =  img_m.groups()[0] or img_m.groups()[1]
+                elif col_m:
+                    type = 'collection'
+                    val =  col_m.groups()[0] or col_m.groups()[1]
+
+                nv_links.append(
+                    database.NeurovaultLink(
+                        type=type,
+                        neurovault_id=val,
+                        url=href
+                    )
+                )
+
+        self.article.neurovault_links = nv_links
 
     @abc.abstractmethod
     def parse_table(self, table):
         ''' Takes HTML for a single table and returns a Table. '''
-
         # Formatting issues sometimes prevent table extraction, so just return
         if table is None:
             return False
@@ -128,7 +170,7 @@ class Source(metaclass=abc.ABCMeta):
 
         # Count columns. Check either just one row, or all of them.
         def n_cols_in_row(row):
-            return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all('td')])
+            return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all(['th', 'td'])])
 
         if config.CAREFUL_PARSING:
             n_cols = max([n_cols_in_row(
@@ -165,13 +207,12 @@ class Source(metaclass=abc.ABCMeta):
                     if i + 1 == n_cells and cols_found_in_row < n_cols and data[j].count(None) > c_num:
                         c_num += n_cols - cols_found_in_row
                     data.add_val(c.get_text(), r_num, c_num)
-                
             except Exception as err:
                 if not config.SILENT_ERRORS:
                     logger.error(str(err))
                 if not config.IGNORE_BAD_ROWS:
                     raise
-
+        
         if data.data[data.n_rows- 1].count(None) == data.n_cols:
             data.data.pop()
         logger.debug("\t\tTrying to parse table...")
@@ -281,15 +322,18 @@ class ScienceDirectSource(Source):
 
         # Extract tables
         tables = []
-        for (i, tc) in enumerate(soup.find_all('dl', {'class': 'table '})):
+        for (i, tc) in enumerate(soup.find_all('div', {'class': 'tables'})):
             table_html = tc.find('table')
             t = self.parse_table(table_html)
             if t:
                 t.position = i + 1
-                t.number = tc['data-label'].split(' ')[-1].strip()
-                t.label = tc.find('span', class_='label').text.strip()
                 try:
-                    t.caption = tc.find('p', class_='caption').get_text()
+                    t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
+                    t.label = tc.find('span', class_='label').text.strip()
+                except:
+                    pass
+                try:
+                    t.caption = tc.find('p').contents[-1].strip()
                 except:
                     pass
                 try:
@@ -305,7 +349,7 @@ class ScienceDirectSource(Source):
         return super(ScienceDirectSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('a', {'id': 'ddDoi'})['href'].replace('http://dx.doi.org/', '')
+        return list(soup.find('div', {'id': 'article-identifier-links'}).children)[0]['href'].replace('https://doi.org/', '')
 
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
@@ -402,34 +446,29 @@ class JournalOfCognitiveNeuroscienceSource(Source):
             return False
 
         # To download tables, we need the DOI and the number of tables
-        doi = self.extract_doi(soup)
-        pattern = re.compile('^T\d+$')
-        n_tables = len(soup.find_all('table', {'id': pattern}))
-        logger.debug("Found %d tables!" % n_tables)
+        doi = self.article.doi or self.extract_doi(soup)
         tables = []
 
         # Now download each table and parse it
-        for i in range(n_tables):
-            num = i + 1
-            url = 'http://www.mitpressjournals.org/action/showPopup?citid=citart1&id=T%d&doi=%s' % (
-                num, doi)
-            table_soup = self._download_table(url)
-            tc = table_soup.find('table')  # JCogNeuro nests tables 2-deep
-            if tc:
-                tc = tc.find('table')
-            if tc:
-                t = self.parse_table(tc)
-                if t:
-                    t.position = num
-                    t.number = num
-                    cap = tc.caption.find('span', class_='title')
-                    t.label = cap.b.get_text()
-                    t.caption = cap.get_text()
-                    try:
-                        t.notes = table_soup.find('div', class_="footnote").p.get_text()
-                    except:
-                        pass
-                    tables.append(t)
+        for i, tc in enumerate(soup.find_all('div', {'class': 'table-wrap'})):
+            table_html = tc.find('table', {'role': 'table'})
+            if not table_html:
+                continue
+
+            t = self.parse_table(table_html)
+
+            if t:
+                t.position = i + 1
+                t.number = re.search('T(\d+).+$', tc['content-id']).group(1)
+                caption = tc.find('div', class_='caption')
+                if caption:
+                    t.label = caption.get_text()
+                    t.caption = caption.get_text()
+                try:
+                    t.notes = tc.find('div', class_="fn").p.get_text()
+                except:
+                    pass
+                tables.append(t)
 
         self.article.tables = tables
         return self.article
