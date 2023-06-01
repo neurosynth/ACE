@@ -1,13 +1,14 @@
 from .database import Article
-from sqlalchemy import func
+from sqlalchemy import func, or_
 import logging
 import csv
 from pathlib import Path
 import datetime
+import json
 
 logger = logging.getLogger(__name__)
 
-def export_database(db, foldername):
+def export_database(db, foldername, skip_empty=True):
     # Create folder if it doesn't exist
     foldername = Path(foldername)
     foldername.mkdir(parents=True, exist_ok=True)
@@ -22,7 +23,13 @@ def export_database(db, foldername):
     text_columns = ['pmid', 'title' ,'abstract']
     texts = []
 
-    articles = db.session.query(Article).filter(Article.tables.any()).all()
+    nv_columns = ['pmid', 'type', 'nv_id']
+    nv_links = []
+
+    articles = db.session.query(Article)
+    if skip_empty:
+        articles = articles.filter(or_(Article.tables.any(), Article.neurovault_links.any()))
+
     for art in articles:
         logger.info('Processing article %s...' % art.id)
 
@@ -40,6 +47,9 @@ def export_database(db, foldername):
 
                 coordinates.append([art.id, t.id, t.label, t.caption, t.number, 
                     p.x, p.y, p.z, p.p_value, p.region, p.size, p.statistic, groups])
+            
+        for nv in art.neurovault_links:
+            nv_links.append([art.id, nv.type, nv.neurovault_id])
 
     # Save articles as tab separated file
     with (foldername / 'articles.tsv').open('w', newline='') as f:
@@ -59,6 +69,18 @@ def export_database(db, foldername):
         writer.writerow(text_columns)
         writer.writerows(texts)
 
+    # Save NV links
+    with (foldername / 'neurovault.tsv').open('w', newline='') as f:
+        writer = csv.writer(f, delimiter='\t')
+        writer.writerow(nv_columns)
+        writer.writerows(nv_links)
+
     # Save json file with time of export
+    export_md = {
+        "exported": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "n_articles": len(art_results),
+        "n_activations": len(coordinates)
+    }
+
     with (foldername / 'export.json').open('w') as f:
-        f.write('{"exported": "%s"}' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        json.dump(export_md, f)
