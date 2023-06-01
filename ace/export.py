@@ -79,7 +79,8 @@ def export_database(db, foldername, skip_empty=True):
     export_md = {
         "exported": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "n_articles": len(art_results),
-        "n_activations": len(coordinates)
+        "n_activations": len(coordinates),
+        "n_nv_links": len(nv_links)
     }
 
     with (foldername / 'export.json').open('w') as f:
