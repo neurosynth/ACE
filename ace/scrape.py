@@ -40,7 +40,7 @@ class PubMedAPI:
         self.headers = {'User-Agent': config.USER_AGENT_STRING}
 
         self.session = requests.Session()
-        retries = Retry(total=3, backoff_factor=1, status_forcelist=[ 502, 503, 504, 400])
+        retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 400])
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
 
@@ -409,7 +409,8 @@ class Scraper:
         logger.info("Found %d records.\n" % len(ids))
 
         # Make directory if it doesn't exist
-        (self.store / 'html' / journal).mkdir(parents=True, exist_ok=True)
+        
+        out_dir = (self.store / 'html' / journal)
 
         articles_found = 0
 
@@ -421,6 +422,9 @@ class Scraper:
             if skip_pubmed_central and self.has_pmc_entry(id):
                 logger.info(f"\tPubMed Central entry found! Skipping {id}...")
                 continue
+
+            if not out_dir.exists():
+                (self.store / 'html' / journal).mkdir(parents=True, exist_ok=True)
 
             filename = self.process_article(id, journal, delay, mode, overwrite)
             if filename:

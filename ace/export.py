@@ -20,7 +20,7 @@ def export_database(db, foldername, skip_empty=True):
         'x', 'y', 'z', 'p_value', 'region', 'size', 'statistic', 'groups']
     coordinates = []
 
-    text_columns = ['pmid', 'title' ,'abstract']
+    text_columns = ['pmid', 'title' ,'abstract', 'text']
     texts = []
 
     nv_columns = ['pmid', 'type', 'nv_id']
@@ -34,7 +34,7 @@ def export_database(db, foldername, skip_empty=True):
         logger.info('Processing article %s...' % art.id)
 
         art_results.append([art.id, art.doi, art.authors, art.title, art.journal, art.year, art.space])
-        texts.append([art.id, art.title, art.abstract])
+        texts.append([art.id, art.title, art.abstract, art.text])
 
         for t in art.tables:
             for p in t.activations:
