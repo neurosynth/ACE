@@ -100,7 +100,7 @@ def get_pmid_from_doi(doi, api_key=None):
     for some Sources that don't contain the PMID anywhere in the artice HTML.
     '''
     query = f"{doi}[aid]"
-    data = str(PubMedAPI(api_key=api_key).esearch(query=query))
+    data = PubMedAPI(api_key=api_key).esearch(query=query)
     return data[0]
 
 
@@ -353,6 +353,7 @@ class Scraper:
 
         logger.info("Processing %s..." % id)
         journal_path = (self.store / 'html' / journal)
+        journal_path.mkdir(parents=True, exist_ok=True)
         filename = journal_path / f"{id}.html"
 
         if not overwrite and os.path.isfile(filename): 
