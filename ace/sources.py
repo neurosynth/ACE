@@ -107,6 +107,10 @@ class Source(metaclass=abc.ABCMeta):
 
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
+        # Remove all scripts and styles
+        for script in soup(["script", "style"]):
+            script.extract()
+        # Get text
         text = soup.get_text()
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
@@ -158,6 +162,24 @@ class Source(metaclass=abc.ABCMeta):
                 )
 
         self.article.neurovault_links = nv_links
+
+    def extract_text(self, soup):
+        ''' Extract text from the article.
+         Publisher specific extraction of body text should be done in a subclass.
+         '''
+        # Remove any remaining HTML tags
+        text = re.sub(r'<[^>]+>', '', text)
+
+        # Remove any remaining unicode characters
+        text = re.sub(r'\\u[0-9]+', '', text)
+
+        # Remove any remaining entities
+        text = self.decode_html_entities(text)
+
+        # Remove any remaining whitespace
+        text = re.sub(r'\s+', ' ', text)
+
+        self.article.text = text
 
     @abc.abstractmethod
     def parse_table(self, table):
@@ -312,7 +334,25 @@ class HighWireSource(Source):
     def extract_pmid(self, soup):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
+    def extract_text(self, soup):
+        # If div has class "main-content-wrapper" or "article" or "fulltext-view"
+        # extract all text from it
 
+        # Assuming you have a BeautifulSoup object called soup
+        div = soup.find_all("div", class_="article")
+        if div:
+            div = div[0]
+            div_classes = ["ref-list", "abstract", "copyright-statement", "fn-group", "history-list", "license"]
+            for class_ in div_classes:
+                for tag in div.find_all(class_=class_):
+                    tag.extract()
+            text = div.get_text()
+        else:
+            text = soup.get_text()
+
+        return super(HighWireSource, self).extract_text(text)
+
+ 
 class ScienceDirectSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):

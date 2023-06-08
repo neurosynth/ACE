@@ -101,7 +101,11 @@ def get_pmid_from_doi(doi, api_key=None):
     '''
     query = f"{doi}[aid]"
     data = PubMedAPI(api_key=api_key).esearch(query=query)
-    return data[0]
+    if data:
+        data = data[0]
+    else:
+        data = None
+    return data
 
 
 def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
