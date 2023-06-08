@@ -167,6 +167,9 @@ class Source(metaclass=abc.ABCMeta):
         ''' Extract text from the article.
          Publisher specific extraction of body text should be done in a subclass.
          '''
+
+        text = soup.get_text()
+
         # Remove any remaining HTML tags
         text = re.sub(r'<[^>]+>', '', text)
 
@@ -346,11 +349,9 @@ class HighWireSource(Source):
             for class_ in div_classes:
                 for tag in div.find_all(class_=class_):
                     tag.extract()
-            text = div.get_text()
-        else:
-            text = soup.get_text()
+            soup = div
 
-        return super(HighWireSource, self).extract_text(text)
+        return super(HighWireSource, self).extract_text(soup)
 
  
 class ScienceDirectSource(Source):
