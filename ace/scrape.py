@@ -40,7 +40,7 @@ class PubMedAPI:
         self.headers = {'User-Agent': config.USER_AGENT_STRING}
 
         self.session = requests.Session()
-        retries = Retry(total=3, backoff_factor=1, status_forcelist=[ 502, 503, 504, 400])
+        retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 400])
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
 
@@ -59,13 +59,19 @@ class PubMedAPI:
 
         return response
         
-    def esearch(self, query, retmax=100000, **kwargs):
+    def esearch(self, query, retstart=None, retmax=10000, extract_ids=True, **kwargs):
         params = {
             "db": "pubmed",
             "term": query,
-            "retmax": str(retmax)
+            "retmax": str(retmax),
         }
+        if retstart is not None:
+            params["retstart"] = str(retstart)
+            
         response = self.get("esearch", params=params, **kwargs)
+        if extract_ids:
+            soup = BeautifulSoup(response)
+            response = [t.string for t in soup.find_all('id')]
         return response
     
     def efetch(self, pmid, retmode='txt', rettype='medline', **kwargs):
@@ -94,9 +100,8 @@ def get_pmid_from_doi(doi, api_key=None):
     for some Sources that don't contain the PMID anywhere in the artice HTML.
     '''
     query = f"{doi}[aid]"
-    data = str(PubMedAPI(api_key=api_key).esearch(query=query))
-    pmid = re.search('\<Id\>(\d+)\<\/Id\>', data).group(1)
-    return pmid
+    data = PubMedAPI(api_key=api_key).esearch(query=query)
+    return data[0]
 
 
 def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
@@ -348,6 +353,7 @@ class Scraper:
 
         logger.info("Processing %s..." % id)
         journal_path = (self.store / 'html' / journal)
+        journal_path.mkdir(parents=True, exist_ok=True)
         filename = journal_path / f"{id}.html"
 
         if not overwrite and os.path.isfile(filename): 
@@ -370,7 +376,7 @@ class Scraper:
 
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
-                                skip_pubmed_central=True, save_metadata=True):
+                                skip_pubmed_central=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -395,12 +401,8 @@ class Scraper:
             shuffle: When True, articles are retrieved in random order.
             skip_pubmed_central: When True, skips articles that are available from
                 PubMed Central. 
-            save_metadata: When True, retrieves metadata from PubMed and saves it to 
-                the pubmed/ folder below the root storage folder.
         '''
-        query = self.search_pubmed(journal, search)
-        soup = BeautifulSoup(query)
-        ids = [t.string for t in soup.find_all('id')]
+        ids = self.search_pubmed(journal, search)
         if shuffle:
             random.shuffle(ids)
         else:
@@ -409,7 +411,8 @@ class Scraper:
         logger.info("Found %d records.\n" % len(ids))
 
         # Make directory if it doesn't exist
-        (self.store / 'html' / journal).mkdir(parents=True, exist_ok=True)
+        
+        out_dir = (self.store / 'html' / journal)
 
         articles_found = 0
 
@@ -422,6 +425,29 @@ class Scraper:
                 logger.info(f"\tPubMed Central entry found! Skipping {id}...")
                 continue
 
+            if not out_dir.exists():
+                (self.store / 'html' / journal).mkdir(parents=True, exist_ok=True)
+
             filename = self.process_article(id, journal, delay, mode, overwrite)
             if filename:
                 articles_found += 1
+
+    def retrieve_by_dois(self, dois, delay=None, mode='browser', overwrite=False, skip_pubmed_central=True):
+        ''' Retrieve all PubMed articles by DOI into a single flat folder. '''
+        for doi in dois:
+            pmid = get_pmid_from_doi(doi)
+
+            if pmid:
+                if skip_pubmed_central and self.has_pmc_entry(pmid):
+                    logger.info(f"\tPubMed Central entry found! Skipping {pmid}...")
+                    continue
+
+                # Get the journal name
+                metadata = get_pubmed_metadata(pmid)
+                journal = metadata['journal']
+
+                filename = self.process_article(
+                    pmid, journal, delay, mode, overwrite=overwrite)
+
+            else:
+                logger.info(f"\tNo PMID found for DOI {doi}!")

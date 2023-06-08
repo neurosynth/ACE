@@ -107,7 +107,6 @@ class Source(metaclass=abc.ABCMeta):
 
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
-        # TODO: add Source-specific delimiting of salient text boundaries--e.g., exclude References
         text = soup.get_text()
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
@@ -117,6 +116,7 @@ class Source(metaclass=abc.ABCMeta):
         
         self.article = database.Article(text, pmid=pmid, metadata=metadata)
         self.extract_neurovault(soup)
+        self.extract_text(soup)
         return soup
 
     def extract_neurovault(self, soup):
