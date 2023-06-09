@@ -20,7 +20,7 @@ def export_database(db, foldername, skip_empty=True):
         'x', 'y', 'z', 'p_value', 'region', 'size', 'statistic', 'groups']
     coordinates = []
 
-    text_columns = ['pmid', 'title' ,'abstract', 'text']
+    text_columns = ['pmid', 'title' ,'abstract', 'body']
     texts = []
 
     nv_columns = ['pmid', 'type', 'nv_id']
