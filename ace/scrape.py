@@ -208,7 +208,7 @@ def parse_PMID_xml(xml):
                 to_join.append(a)
             v = ' | '.join(to_join)
         elif isinstance(v, Mapping):
-            v = v['#text']
+            v = v.get('#text', '')
         metadata[k] = v
 
     return metadata
