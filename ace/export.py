@@ -23,8 +23,11 @@ def export_database(db, foldername, skip_empty=True):
     text_columns = ['pmid', 'title' ,'abstract', 'body']
     texts = []
 
-    nv_columns = ['pmid', 'type', 'nv_id']
-    nv_links = []
+    nv_colls_col = ['pmid','collection_id']
+    nv_colls = []
+
+    nv_images_col = ['pmid','image_id']
+    nv_images = []
 
     articles = db.session.query(Article)
     if skip_empty:
@@ -49,7 +52,10 @@ def export_database(db, foldername, skip_empty=True):
                     p.x, p.y, p.z, p.p_value, p.region, p.size, p.statistic, groups])
             
         for nv in art.neurovault_links:
-            nv_links.append([art.id, nv.type, nv.neurovault_id])
+            if nv.type == 'collection':
+                nv_colls.append([art.id, nv.neurovault_id])
+            elif nv.type == 'image':
+                nv_images.append([art.id, nv.neurovault_id])
 
     # Save articles as tab separated file
     with (foldername / 'articles.tsv').open('w', newline='') as f:
