@@ -76,17 +76,24 @@ def export_database(db, foldername, skip_empty=True):
         writer.writerows(texts)
 
     # Save NV links
-    with (foldername / 'neurovault.tsv').open('w', newline='') as f:
+    with (foldername / 'neurovault_collections.tsv').open('w', newline='') as f:
         writer = csv.writer(f, delimiter='\t')
-        writer.writerow(nv_columns)
-        writer.writerows(nv_links)
+        writer.writerow(nv_colls_col)
+        writer.writerows(nv_colls)
+
+    with (foldername / 'neurovault_images.tsv').open('w', newline='') as f:
+        writer = csv.writer(f, delimiter='\t')
+        writer.writerow(nv_images_col)
+        writer.writerows(nv_images)
 
     # Save json file with time of export
     export_md = {
         "exported": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "n_articles": len(art_results),
         "n_activations": len(coordinates),
-        "n_nv_links": len(nv_links)
+        "n_nv_collections": len(nv_colls),
+        "n_nv_images": len(nv_images)
+
     }
 
     with (foldername / 'export.json').open('w') as f:
