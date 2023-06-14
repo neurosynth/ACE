@@ -58,31 +58,31 @@ def export_database(db, foldername, skip_empty=True):
                 nv_images.append([art.id, nv.neurovault_id])
 
     # Save articles as tab separated file
-    with (foldername / 'articles.tsv').open('w', newline='') as f:
-        writer = csv.writer(f, delimiter='\t')
+    with (foldername / 'metadata.csv').open('w', newline='') as f:
+        writer = csv.writer(f)
         writer.writerow(article_columns)
         writer.writerows(art_results)
 
     # Save coordinates as tab separated file
-    with (foldername / 'coordinates.tsv').open('w', newline='') as f:
-        writer = csv.writer(f, delimiter='\t')
+    with (foldername / 'coordinates.csv').open('w', newline='') as f:
+        writer = csv.writer(f)
         writer.writerow(coordinate_columns)
         writer.writerows(coordinates)
 
     # Save texts as tab separated file
-    with (foldername / 'texts.tsv').open('w', newline='') as f:
-        writer = csv.writer(f, delimiter='\t')
+    with (foldername / 'text.csv').open('w', newline='') as f:
+        writer = csv.writer(f)
         writer.writerow(text_columns)
         writer.writerows(texts)
 
     # Save NV links
-    with (foldername / 'neurovault_collections.tsv').open('w', newline='') as f:
-        writer = csv.writer(f, delimiter='\t')
+    with (foldername / 'neurovault_collections.csv').open('w', newline='') as f:
+        writer = csv.writer(f)
         writer.writerow(nv_colls_col)
         writer.writerows(nv_colls)
 
-    with (foldername / 'neurovault_images.tsv').open('w', newline='') as f:
-        writer = csv.writer(f, delimiter='\t')
+    with (foldername / 'neurovault_images.csv').open('w', newline='') as f:
+        writer = csv.writer(f)
         writer.writerow(nv_images_col)
         writer.writerows(nv_images)
 
