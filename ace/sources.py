@@ -353,7 +353,77 @@ class HighWireSource(Source):
 
         return super(HighWireSource, self).extract_text(soup)
 
- 
+
+class OUPSource(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(OUPSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+
+        # Exclude modal tables to prevent duplicates
+        all_tables = set(soup.select('div.table-full-width-wrap'))
+        modal_tables = set(soup.select('div.table-full-width-wrap.table-modal'))
+        result = all_tables - modal_tables
+        for (i, tc) in enumerate(result):
+            table_html = tc.find('table')
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+                try:
+                    t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
+                    t.label = tc.find('span', class_='label').text.strip()
+                except:
+                    pass
+                try:
+                    t.caption = tc.find('span', class_='caption').get_text()
+                except:
+                    pass
+                try:
+                    t.notes = tc.find('span', class_='fn').get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def parse_table(self, table):
+        return super(OUPSource, self).parse_table(table)
+
+    def extract_doi(self, soup):
+        try:
+            return soup.find('meta', {'name': 'citation_doi'})['content']
+        except:
+            return ''
+
+    def extract_pmid(self, soup):
+        pmid = soup.find('meta', {'name': 'citation_pmid'})
+        if pmid:
+            return pmid['content']
+        else:
+            return ''
+
+    def extract_text(self, soup):
+        # If div has class "main-content-wrapper" or "article" or "fulltext-view"
+        # extract all text from it
+
+        # Assuming you have a BeautifulSoup object called soup
+        div = soup.find_all("div", class_="article-body")
+        if div:
+            div = div[0]
+            div_classes = ["ref-list", "abstract", "copyright-statement", "fn-group", "history-list", "license"]
+            for class_ in div_classes:
+                for tag in div.find_all(class_=class_):
+                    tag.extract()
+            soup = div
+
+        return super(OUPSource, self).extract_text(soup)
+
+
 class ScienceDirectSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):
