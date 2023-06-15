@@ -5,7 +5,7 @@ from . import sources, config
 logger = logging.getLogger(__name__)
 
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
-    pmid_filenames=False, metadata_dir=None, **kwargs):
+    pmid_filenames=False, metadata_dir=None, force_ingest=True, **kwargs):
     ''' Process articles and add their data to the DB.
     Args:
         files: The path to the article(s) to process. Can be a single
@@ -26,6 +26,7 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
             path is provided, will check there first before querying PubMed,
             and will save the result of the query if it doesn't already
             exist.
+        force_ingest: Ingest even if no source is identified. 
         kwargs: Additional keyword arguments to pass to parse_article.
     '''
 
@@ -47,7 +48,10 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
         if source is None:
             logger.warning("Could not identify source for %s" % f)
             missing_sources.append(f)
-            continue
+            if not force_ingest:
+                continue
+            else:
+                source = sources.DefaultSource(db)
 
         pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
         article = source.parse_article(html, pmid, metadata_dir=metadata_dir, **kwargs)

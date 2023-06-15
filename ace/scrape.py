@@ -165,14 +165,17 @@ def parse_PMID_xml(xml):
     if doi_source is not None and doi_source['@EIdType'] == 'doi':
         doi = doi_source['#text']
 
-    authors = article['AuthorList']['Author']
+    authors = article.get('AuthorList', None)
+    
+    if authors:
+        authors = authors['Author']
 
-    _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
-    if isinstance(authors, list):
-        authors = [_get_author(a) for a in authors if 'ForeName' in a]
-    else:
-        authors = [_get_author(authors)]
-    authors = ';'.join(authors)
+        _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
+        if isinstance(authors, list):
+            authors = [_get_author(a) for a in authors if 'ForeName' in a]
+        else:
+            authors = [_get_author(authors)]
+        authors = ';'.join(authors)
 
     if 'MeshHeadingList' in di['MedlineCitation']:
         mesh = di['MedlineCitation']['MeshHeadingList']['MeshHeading']
@@ -183,9 +186,13 @@ def parse_PMID_xml(xml):
     if abstract != '':
         abstract = abstract.get('AbstractText', '')
 
+    cit = di['PubmedData']['ArticleIdList']['ArticleId']
+    if isinstance(cit, list):
+        cit = cit[1]
+
     metadata = {
         'authors': authors,
-        'citation': di['PubmedData']['ArticleIdList']['ArticleId'][1]['#text'],
+        'citation': cit['#text'],
         'comment': abstract,
         'doi': doi,
         'keywords': '',

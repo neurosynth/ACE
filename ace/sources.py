@@ -36,7 +36,7 @@ class SourceManager:
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
         for config_file in glob('%s/*json' % source_dir):
             class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(config_file, database, table_dir)
+            cls = getattr(module, class_name + 'Source')(database, config=config_file, table_dir=table_dir)
             self.sources[class_name] = cls
 
     def identify_source(self, html):
@@ -71,24 +71,25 @@ class Source(metaclass=abc.ABCMeta):
 
     }
 
-    def __init__(self, config, database, table_dir=None):
-
-        config = json.load(open(config, 'rb'))
+    def __init__(self, database, config=None, table_dir=None):
         self.database = database
         self.table_dir = table_dir
+        self.entities = {}
 
-        valid_keys = ['name', 'identifiers', 'entities', 'delay']
+        if config is not None:
+            config = json.load(open(config, 'rb'))
+            valid_keys = ['name', 'identifiers', 'entities', 'delay']
 
-        for k, v in list(config.items()):
-            if k in valid_keys:
-                setattr(self, k, v)
+            for k, v in list(config.items()):
+                if k in valid_keys:
+                    setattr(self, k, v)
 
-        # Append any source-specific entities found in the config file to
-        # the standard list
-        if self.entities is None:
-            self.entities = Source.ENTITIES
-        else:
-            self.entities.update(Source.ENTITIES)
+            # Append any source-specific entities found in the config file to
+            # the standard list
+            if self.entities is None:
+                self.entities = Source.ENTITIES
+            else:
+                self.entities.update(Source.ENTITIES)
 
     @abc.abstractmethod
     def parse_article(self, html, pmid=None, metadata_dir=None):
@@ -184,7 +185,6 @@ class Source(metaclass=abc.ABCMeta):
 
         self.article.text = text
 
-    @abc.abstractmethod
     def parse_table(self, table):
         ''' Takes HTML for a single table and returns a Table. '''
         # Formatting issues sometimes prevent table extraction, so just return
@@ -243,12 +243,10 @@ class Source(metaclass=abc.ABCMeta):
         logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data)
 
-    @abc.abstractmethod
     def extract_doi(self, soup):
         ''' Every Source subclass must be able to extract its doi. '''
         return
 
-    @abc.abstractmethod
     def extract_pmid(self, soup):
         ''' Every Source subclass must be able to extract its PMID. '''
         return
@@ -257,11 +255,13 @@ class Source(metaclass=abc.ABCMeta):
         ''' Re-encode HTML entities as innocuous little Unicode characters. '''
         # Any entities BeautifulSoup passes through thatwe don't like, e.g.,
         # &nbsp/x0a
-        patterns = re.compile('(' + '|'.join(re.escape(
-            k) for k in list(self.entities.keys())) + ')')
-        replacements = lambda m: self.entities[m.group(0)]
-        return patterns.sub(replacements, html)
-        # return html
+        if self.entities:
+            patterns = re.compile('(' + '|'.join(re.escape(
+                k) for k in list(self.entities.keys())) + ')')
+            replacements = lambda m: self.entities[m.group(0)]
+            return patterns.sub(replacements, html)
+        else:
+            return html
 
     def _download_table(self, url):
         ''' For Sources that have tables in separate files, a helper for 
@@ -283,6 +283,13 @@ class Source(metaclass=abc.ABCMeta):
         table_html = self.decode_html_entities(table_html)
         return(BeautifulSoup(table_html))
 
+class DefaultSource(Source):
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(DefaultSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+            
+        return self.article
 
 
 class HighWireSource(Source):
