@@ -226,7 +226,8 @@ def _validate_scrape(html):
 
     patterns = ['Checking if you are a human', 
     'Please turn JavaScript on and reload the page', 
-    'Checking if the site connection is secure']
+    'Checking if the site connection is secure',
+    'Enable JavaScript and cookies to continue']
 
     for pattern in patterns:
         if pattern in html:
