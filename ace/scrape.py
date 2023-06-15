@@ -12,7 +12,7 @@ import os
 import random
 import xmltodict
 from requests.adapters import HTTPAdapter, Retry
-from selenium import webdriver
+import undetected_chromedriver as uc
 import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -257,7 +257,7 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
-            driver = webdriver.Chrome()
+            driver = uc.Chrome()
             driver.get(url)
             url = driver.current_url
             driver.get(url)
@@ -270,8 +270,7 @@ class Scraper:
 
             if url != new_url:
                 driver.get(new_url)
-                sleep(3
-                )
+                sleep(5)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
@@ -377,7 +376,7 @@ class Scraper:
         if not overwrite and os.path.isfile(filename): 
             logger.info("\tAlready exists! Skipping...")
             
-            return None
+            return None, None
 
         # Save the HTML
         doc = self.get_html_by_pmid(id, journal, mode=mode)
