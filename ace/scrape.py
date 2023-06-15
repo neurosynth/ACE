@@ -213,6 +213,20 @@ def parse_PMID_xml(xml):
 
     return metadata
 
+def _validate_scrape(html):
+    """ Checks to see if scraping was successful. 
+    For example, checks to see if Cloudfare interfered """
+
+    patterns = ['Checking if you are a human', 
+    'Please turn JavaScript on and reload the page', 
+    'Checking if the site connection is secure']
+
+    for pattern in patterns:
+        if pattern in html:
+            return False
+
+    return True
+
 ''' Class for journal Scraping. The above free-floating methods should 
 probably be refactored into this class eventually. '''
 class Scraper:
@@ -383,7 +397,7 @@ class Scraper:
         
         return filename, valid
 
-    def retrieve_articles(self, journal=None, dois=None, delay=None, mode='browser', search=None,
+    def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
                                 skip_pubmed_central=True):
 
@@ -391,7 +405,8 @@ class Scraper:
         already exist in the storage directory.
         Args:
             journal: The name of the journal (as it appears in PubMed).
-            dois: A list of DOIs to retrieve. Either this or journal must be provided.
+            pmids: A list of PMIDs to retrieve.
+            dois: A list of DOIs to retrieve. 
             delay: Mean delay between requests.
             mode: When 'browser', use selenium to load articles in Chrome. When 
                 'direct', attempts to fetch the HTML directly via requests module.
@@ -413,12 +428,12 @@ class Scraper:
                 PubMed Central. 
         '''
 
-        if journal is None and dois is None:
-            raise ValueError("Either journal or dois must be provided.")
+        if journal is None and dois is None and pmids is None:
+            raise ValueError("Either journal, pmids, or dois must be provided.")
         
         if journal is not None:
-            logger.info("Retrieving articles from %s..." % journal)
-            ids = self.search_pubmed(journal, search)
+            logger.info("Getting PMIDs for articles from %s..." % journal)
+            pmids = self.search_pubmed(journal, search)
 
         if dois is not None:
             logger.info("Retrieving articles from %s..." % ', '.join(dois))
@@ -431,21 +446,21 @@ class Scraper:
                 logger.info("Missing DOIs: %s" % ', '.join(missing_dois))
 
         if shuffle:
-            random.shuffle(ids)
+            random.shuffle(pmids)
         else:
-            ids.sort()
+            pmids.sort()
 
-        logger.info("Found %d records.\n" % len(ids))
+        logger.info("Found %d records.\n" % len(pmids))
         
         invalid_articles = []
-        for pmid in ids:
+        for pmid in pmids:
             if journal is None:
                 # Get the journal name
                 metadata = get_pubmed_metadata(pmid)
                 journal = metadata['journal']
 
             if min_pmid is not None and int(pmid) < min_pmid: continue
-            if max_pmid is not None and int(pmid) > max_pmid: continue
+            if max_pmid is not None and int(pmid) > max_pmid: continue  
             if limit is not None and articles_found >= limit: break
 
             if skip_pubmed_central and self.has_pmc_entry(pmid):
