@@ -5,7 +5,7 @@ from . import sources, config
 logger = logging.getLogger(__name__)
 
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
-                    pmid_filenames=False, metadata_dir=None, **kwargs):
+    pmid_filenames=False, metadata_dir=None, **kwargs):
     ''' Process articles and add their data to the DB.
     Args:
         files: The path to the article(s) to process. Can be a single
@@ -39,17 +39,21 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
             shuffle(files)
             files = files[:limit]
 
+    missing_sources = []
     for i, f in enumerate(files):
         logger.info("Processing article %s..." % f)
         html = open(f).read()
         source = manager.identify_source(html)
         if source is None:
             logger.warning("Could not identify source for %s" % f)
+            missing_sources.append(f)
             continue
-        # try:
+
         pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
         article = source.parse_article(html, pmid, metadata_dir=metadata_dir, **kwargs)
         if article and (config.SAVE_ARTICLES_WITHOUT_ACTIVATIONS or article.tables):
             db.add(article)
             if commit and (i % 100 == 0 or i == len(files) - 1):
                 db.save()
+
+    return missing_sources
