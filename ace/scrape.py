@@ -216,6 +216,7 @@ def parse_PMID_xml(xml):
                 if 'DescriptorName' in a:
                     a = a['DescriptorName']
                 a = a['#text']
+                
                 to_join.append(a)
             v = ' | '.join(to_join)
         elif isinstance(v, Mapping):
@@ -475,7 +476,7 @@ class Scraper:
             pmids = [get_pmid_from_doi(doi) for doi in dois]
 
             # Remove None values and log missing DOIs
-            ids = [pmid for pmid in pmids if pmid is not None]
+            pmids = [pmid for pmid in pmids if pmid is not None]
             missing_dois = [doi for doi, pmid in zip(dois, pmids) if pmid is None]
             if len(missing_dois) > 0:
                 logger.info("Missing DOIs: %s" % ', '.join(missing_dois))
