@@ -269,16 +269,21 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
-            try:
-                driver = uc.Chrome()
-                driver.get(url)
-                url = driver.current_url
-                driver.get(url)
-            except TimeoutException:
-                pass
-
-            # Check for URL substitution and get the new one if it's changed
-            url = driver.current_url  # After the redirect from PubMed
+            for attempt in range(10):
+                try:
+                    driver = uc.Chrome()
+                    driver.implicitly_wait(5)
+                    driver.set_page_load_timeout(5)
+                    driver.get(url)
+                    url = driver.current_url
+                except TimeoutException:
+                    driver.quit()
+                    logger.info(f"Timeout exception #{attempt}. Retrying...")
+                else:
+                    break
+            else:
+                logger.info("Timeout exception. Giving up.")
+                return None
 
             html = driver.page_source
             new_url = self.check_for_substitute_url(url, html, journal)
