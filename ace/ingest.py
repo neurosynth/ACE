@@ -1,6 +1,7 @@
 from os import path
 import logging
 from . import sources, config
+from .scrape import _validate_scrape
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,11 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
     for i, f in enumerate(files):
         logger.info("Processing article %s..." % f)
         html = open(f).read()
+
+        if not _validate_scrape(html):
+            logger.warning("Invalid HTML for %s" % f)
+            continue
+
         source = manager.identify_source(html)
         if source is None:
             logger.warning("Could not identify source for %s" % f)
