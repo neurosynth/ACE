@@ -214,7 +214,7 @@ class Activation(Base):
         self.columns = {}
 
     def set_coords(self, x, y, z):
-        self.x, self.y, self.z = [float(e.replace(' ', '')) for e in [x, y, z]]
+        self.x, self.y, self.z = [float(e.replace(' ', '').rstrip('.')) for e in [x, y, z]]
 
     def add_col(self, key, val):
         self.columns[key] = val
