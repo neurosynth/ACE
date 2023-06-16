@@ -5,6 +5,7 @@ import csv
 from pathlib import Path
 import datetime
 import json
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +30,13 @@ def export_database(db, foldername, skip_empty=True):
     nv_images_col = ['pmid','image_id']
     nv_images = []
 
+    print("Exporting database to %s" % foldername)
+
     articles = db.session.query(Article)
     if skip_empty:
         articles = articles.filter(or_(Article.tables.any(), Article.neurovault_links.any()))
 
-    for art in articles:
-        logger.info('Processing article %s...' % art.id)
-
+    for art in tqdm(articles):
         art_results.append([art.id, art.doi, art.authors, art.title, art.journal, art.year, art.space])
         texts.append([art.id, art.title, art.abstract, art.text])
 
