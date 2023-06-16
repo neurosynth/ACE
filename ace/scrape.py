@@ -142,7 +142,11 @@ def parse_PMID_xml(xml):
     ''' Take XML-format PubMed metadata and convert it to a dictionary
     with standardized field names. '''
 
-    di = xmltodict.parse(xml)['PubmedArticleSet']['PubmedArticle']
+    di = xmltodict.parse(xml)['PubmedArticleSet']
+    if not di:
+        return None
+    
+    di = di['PubmedArticle']
     article = di['MedlineCitation']['Article']
 
     if 'ArticleDate' in article:
@@ -278,7 +282,7 @@ class Scraper:
 
             if url != new_url:
                 driver.get(new_url)
-                sleep(5)
+                sleep(2)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
@@ -297,6 +301,8 @@ class Scraper:
                     pass
                             
             logger.info(journal.lower())
+            timeout = 5
+            html = driver.page_source
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
                 ## Find links with class data-table-url, and click on them
                 ## to load the table data.
@@ -309,6 +315,20 @@ class Scraper:
                         driver.execute_script("arguments[0].scrollIntoView();", link)
                         link.click()
                         sleep(0.5 + random.random() * 1)
+
+            # If title has ScienceDirect in in title
+            elif ' - ScienceDirect' in driver.page_source:
+                try:
+                    element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
+                    WebDriverWait(driver, timeout).until(element_present)
+                except TimeoutException:
+                    pass
+            elif 'Wiley Online Library</title>' in driver.page_source:
+                try:
+                    element_present = EC.presence_of_element_located((By.ID, 'article__content'))
+                    WebDriverWait(driver, timeout).until(element_present)
+                except TimeoutException:
+                    pass
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -454,8 +474,6 @@ class Scraper:
 
         if shuffle:
             random.shuffle(pmids)
-        else:
-            pmids.sort()
 
         logger.info("Found %d records.\n" % len(pmids))
         
