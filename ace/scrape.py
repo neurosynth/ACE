@@ -269,10 +269,13 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
-            driver = uc.Chrome()
-            driver.get(url)
-            url = driver.current_url
-            driver.get(url)
+            try:
+                driver = uc.Chrome()
+                driver.get(url)
+                url = driver.current_url
+                driver.get(url)
+            except TimeoutException:
+                pass
 
             # Check for URL substitution and get the new one if it's changed
             url = driver.current_url  # After the redirect from PubMed
