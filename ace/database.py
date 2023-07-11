@@ -1,6 +1,6 @@
 # Database stuff and models
 
-from sqlalchemy import (TypeDecorator, Table, Column, Integer, Float, String,
+from sqlalchemy import (TypeDecorator, Table, Column, Integer, Float, String, Boolean,
                         ForeignKey, DateTime, Text)
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
@@ -208,6 +208,8 @@ class Activation(Base):
     size = Column(String(100))
     statistic = Column(String(100))
     p_value = Column(String(100))
+
+    missing_source = Column(Boolean, default=False)
 
     def __init__(self):
         self.problems = []

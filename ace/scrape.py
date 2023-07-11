@@ -272,7 +272,7 @@ class Scraper:
         if mode == 'browser':
             for attempt in range(10):
                 try:
-                    driver = uc.Chrome()
+                    driver = uc.Chrome(headless=True)
                     driver.implicitly_wait(5)
                     driver.set_page_load_timeout(5)
                     driver.get(url)

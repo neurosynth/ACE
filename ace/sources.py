@@ -288,7 +288,8 @@ class DefaultSource(Source):
         soup = super(DefaultSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
             return False
-            
+
+        self.article.missing_source = True
         return self.article
 
 
