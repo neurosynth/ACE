@@ -1,6 +1,7 @@
 # coding: utf-8
   # use unicode everywhere
 import re
+import json
 from pathlib import Path
 from collections import Mapping
 import requests
@@ -92,6 +93,26 @@ class PubMedAPI:
             "retmode": retmode
         }
         response = self.get("elink", params=params, **kwargs)
+        return response
+    
+    def elink_PMC(self, pmid, **kwargs):
+        params = {
+            "dbfrom": "pubmed",
+            "id": pmid,
+            "linkname": "pubmed_pmc",
+            "retmode": "json"
+        }
+        response = self.get("elink", params=params, **kwargs)
+        return response
+
+    def efetch_PMC(self, pmcid, retmode='xml', rettype='medline', **kwargs):
+        params = {
+            "db": "pmc",
+            "id": pmcid,
+            "retmode": retmode,
+            "rettype": rettype
+        }
+        response = self.get("efetch", params=params, **kwargs)
         return response
 
 
@@ -227,7 +248,7 @@ class Scraper:
         doc = self._client.esearch(query, retmax=retmax)
 
         if savelist is not None:
-            oupmctf = open(savelist, 'w')
+            outf = open(savelist, 'w')
             outf.write(doc)
             outf.close()
         return doc
@@ -348,7 +369,14 @@ class Scraper:
         ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
         content = self._client.efetch(pmid, retmode='xml')
         return '<ArticleId IdType="pmc">' in str(content)
-
+    
+    def has_pmc_openaccess_entry(self, pmid):
+        ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
+        pmid_content = json.loads(self._client.elink_PMC(pmid))
+        pmcid = pmid_content['linksets'][0]['linksetdbs'][0]['links'][0]
+        content = self._client.efetch_PMC(pmcid)
+        return (('open-access' in str(content).lower()) or ('open access' in str(content).lower()))
+    
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
         logger.info("Processing %s..." % id)
