@@ -6,7 +6,7 @@ from pathlib import Path
 from collections import Mapping
 import requests
 from time import sleep
-from . import config
+import config
 from bs4 import BeautifulSoup
 import logging
 import os
@@ -75,44 +75,42 @@ class PubMedAPI:
             response = [t.string for t in soup.find_all('id')]
         return response
     
-    def efetch(self, pmid, retmode='txt', rettype='medline', **kwargs):
-        params = {
-            "db": "pubmed",
-            "id": pmid,
-            "retmode": retmode,
-            "rettype": rettype
-        }
+    def efetch(self, input_id, retmode='txt', rettype='medline', access_db = 'pubmed', **kwargs):
+        if (access_db == "pmc"):
+            params = {
+                "db": "pmc",
+                "id": input_id, # assuming that the input id would be pmcid
+                "retmode": retmode,
+                "rettype": rettype
+            }
+        else:
+            params = {
+                "db": "pubmed",
+                "id": input_id, # assuming that the input id would be pmid
+                "retmode": retmode,
+                "rettype": rettype
+            }
+        
         response = self.get("efetch", params=params, **kwargs)
         return response
     
-    def elink(self, pmid, retmode='ref', **kwargs):
-        params = {
-            "dbfrom": "pubmed",
-            "id": pmid,
-            "cmd": "prlinks",
-            "retmode": retmode
-        }
+    def elink(self, pmid, retmode='ref', access_db = 'pubmed', **kwargs):
+        if access_db == "pmc":
+            params = {
+                "dbfrom": "pubmed",
+                "id": pmid,
+                "linkname": "pubmed_pmc",
+                "retmode": "json"
+            }
+        else:
+            params = {
+                "dbfrom": "pubmed",
+                "id": pmid,
+                "cmd": "prlinks",
+                "retmode": retmode
+            }
+        
         response = self.get("elink", params=params, **kwargs)
-        return response
-    
-    def elink_PMC(self, pmid, **kwargs):
-        params = {
-            "dbfrom": "pubmed",
-            "id": pmid,
-            "linkname": "pubmed_pmc",
-            "retmode": "json"
-        }
-        response = self.get("elink", params=params, **kwargs)
-        return response
-
-    def efetch_PMC(self, pmcid, retmode='xml', rettype='medline', **kwargs):
-        params = {
-            "db": "pmc",
-            "id": pmcid,
-            "retmode": retmode,
-            "rettype": rettype
-        }
-        response = self.get("efetch", params=params, **kwargs)
         return response
 
 
@@ -145,7 +143,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
 
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        xml = PubMedAPI(api_key=api_key).efetch(pmid, retmode='xml', rettype='medline')
+        xml = PubMedAPI(api_key=api_key).efetch(input_id=pmid,  retmode='xml', rettype='medline', access_db="pubmed")
         if store is not None and save and xml is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
@@ -367,15 +365,15 @@ class Scraper:
 
     def has_pmc_entry(self, pmid):
         ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
-        content = self._client.efetch(pmid, retmode='xml')
+        content = self._client.efetch(input_id=pmid, retmode='xml')
         return '<ArticleId IdType="pmc">' in str(content)
     
     def has_pmc_openaccess_entry(self, pmid):
         ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
-        pmid_content = json.loads(self._client.elink_PMC(pmid))
+        pmid_content = json.loads(self._client.elink(pmid, access_db='pmc'))
         pmcid = pmid_content['linksets'][0]['linksetdbs'][0]['links'][0]
-        content = self._client.efetch_PMC(pmcid)
-        return (('open-access' in str(content).lower()) or ('open access' in str(content).lower()))
+        content = self._client.efetch(input_id=pmcid, retmode="xml", access_db="pmc")
+        return (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())) 
     
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
