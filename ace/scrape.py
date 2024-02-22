@@ -1,11 +1,12 @@
 # coding: utf-8
   # use unicode everywhere
 import re
+import json
 from pathlib import Path
 from collections import Mapping
 import requests
 from time import sleep
-from . import config
+import config
 from bs4 import BeautifulSoup
 import logging
 import os
@@ -74,23 +75,29 @@ class PubMedAPI:
             response = [t.string for t in soup.find_all('id')]
         return response
     
-    def efetch(self, pmid, retmode='txt', rettype='medline', **kwargs):
+    def efetch(self, input_id, retmode='txt', rettype='medline', db = 'pubmed', **kwargs):
         params = {
-            "db": "pubmed",
-            "id": pmid,
+            "db": db,
+            "id": input_id, # type of input id should change with the type of db being accessed
             "retmode": retmode,
             "rettype": rettype
         }
+        
+        
         response = self.get("efetch", params=params, **kwargs)
         return response
     
-    def elink(self, pmid, retmode='ref', **kwargs):
+    def elink(self, pmid, retmode='ref', access_db = 'pubmed', **kwargs):
         params = {
             "dbfrom": "pubmed",
             "id": pmid,
-            "cmd": "prlinks",
             "retmode": retmode
         }
+        if access_db == "pmc":
+            params["linkname"] = "pubmed_pmc"
+        else:
+            params["cmd"] = "prlinks"
+        
         response = self.get("elink", params=params, **kwargs)
         return response
 
@@ -124,7 +131,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
 
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        xml = PubMedAPI(api_key=api_key).efetch(pmid, retmode='xml', rettype='medline')
+        xml = PubMedAPI(api_key=api_key).efetch(input_id=pmid,  retmode='xml', rettype='medline', access_db="pubmed")
         if store is not None and save and xml is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
@@ -227,7 +234,7 @@ class Scraper:
         doc = self._client.esearch(query, retmax=retmax)
 
         if savelist is not None:
-            oupmctf = open(savelist, 'w')
+            outf = open(savelist, 'w')
             outf.write(doc)
             outf.close()
         return doc
@@ -346,9 +353,16 @@ class Scraper:
 
     def has_pmc_entry(self, pmid):
         ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
-        content = self._client.efetch(pmid, retmode='xml')
+        content = self._client.efetch(input_id=pmid, retmode='xml')
         return '<ArticleId IdType="pmc">' in str(content)
-
+    
+    def has_pmc_openaccess_entry(self, pmid):
+        ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
+        pmid_content = json.loads(self._client.elink(pmid, access_db='pmc', retmode='json'))
+        pmcid = pmid_content['linksets'][0]['linksetdbs'][0]['links'][0]
+        content = self._client.efetch(input_id=pmcid, retmode="xml", access_db="pmc")
+        return (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())) 
+    
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
         logger.info("Processing %s..." % id)
