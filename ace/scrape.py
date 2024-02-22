@@ -75,7 +75,7 @@ class PubMedAPI:
             response = [t.string for t in soup.find_all('id')]
         return response
     
-    def efetch(self, input_id, retmode='txt', rettype='medline', access_db = 'pubmed', **kwargs):
+    def efetch(self, input_id, retmode='txt', rettype='medline', db = 'pubmed', **kwargs):
         if (access_db == "pmc"):
             params = {
                 "db": "pmc",
