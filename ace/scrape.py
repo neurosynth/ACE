@@ -1,22 +1,27 @@
 # coding: utf-8
-from __future__ import unicode_literals  # use unicode everywhere
+  # use unicode everywhere
 import re
+from pathlib import Path
+from collections import Mapping
 import requests
 from time import sleep
-import config
+from . import config
 from bs4 import BeautifulSoup
 import logging
 import os
-from random import random, shuffle
+import random
+import xmltodict
+from requests.adapters import HTTPAdapter, Retry
 from selenium import webdriver
 import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
 logger = logging.getLogger(__name__)
-
 
 def get_url(url, delay=0.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
@@ -25,17 +30,81 @@ def get_url(url, delay=0.0, verbose=False):
     return r.text
 
 
-def get_pmid_from_doi(doi):
+class PubMedAPI:
+    def __init__(self, api_key=None):
+        if api_key is None:
+            # Look for api key in environment variable
+            api_key = os.environ.get('PUBMED_API_KEY')
+        self.api_key = api_key
+        self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+        self.headers = {'User-Agent': config.USER_AGENT_STRING}
+
+        self.session = requests.Session()
+        retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 400])
+        self.session.mount('https://', HTTPAdapter(max_retries=retries))
+
+
+    def get(self, util, params=None, return_content=True):
+        url = f"{self.base_url}/{util}.fcgi"
+        if self.api_key:
+            params['api_key'] = self.api_key
+            
+        response = self.session.get(url, params=params, headers=self.headers, timeout=10)
+
+        if response.status_code != 200:
+            raise Exception(f"PubMed API returned status code {response.status_code} for {url}")
+
+        if return_content:
+            response = response.content
+
+        return response
+        
+    def esearch(self, query, retstart=None, retmax=10000, extract_ids=True, **kwargs):
+        params = {
+            "db": "pubmed",
+            "term": query,
+            "retmax": str(retmax),
+        }
+        if retstart is not None:
+            params["retstart"] = str(retstart)
+            
+        response = self.get("esearch", params=params, **kwargs)
+        if extract_ids:
+            soup = BeautifulSoup(response)
+            response = [t.string for t in soup.find_all('id')]
+        return response
+    
+    def efetch(self, pmid, retmode='txt', rettype='medline', **kwargs):
+        params = {
+            "db": "pubmed",
+            "id": pmid,
+            "retmode": retmode,
+            "rettype": rettype
+        }
+        response = self.get("efetch", params=params, **kwargs)
+        return response
+    
+    def elink(self, pmid, retmode='ref', **kwargs):
+        params = {
+            "dbfrom": "pubmed",
+            "id": pmid,
+            "cmd": "prlinks",
+            "retmode": retmode
+        }
+        response = self.get("elink", params=params, **kwargs)
+        return response
+
+
+def get_pmid_from_doi(doi, api_key=None):
     ''' Query PubMed for the PMID of a paper based on its doi. We need this
     for some Sources that don't contain the PMID anywhere in the artice HTML.
     '''
-    data = get_url(
-        'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%s[aid]' % doi)
-    pmid = re.search('\<Id\>(\d+)\<\/Id\>', data).group(1)
-    return pmid
+    query = f"{doi}[aid]"
+    data = PubMedAPI(api_key=api_key).esearch(query=query)
+    return data[0]
 
 
-def get_pubmed_metadata(pmid, parse=True, store=None, save=True):
+def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
     ''' Get PubMed metadata for article.
     Args:
         pmid: The article's PubMed ID
@@ -50,89 +119,126 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True):
 
     if store is not None and os.path.exists(md_file):
         logger.info("Retrieving metadata from file %s..." % os.path.join(store, pmid))
-        text = open(md_file).read()
+        with open(md_file, 'rb') as f:
+            xml = f.read()
+
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        text = get_url(
-            'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=%s&retmode=text&rettype=medline' % pmid)
-        if store is not None and save and text is not None:
+        xml = PubMedAPI(api_key=api_key).efetch(pmid, retmode='xml', rettype='medline')
+        if store is not None and save and xml is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
-            open(md_file, 'w').write(text)
+            with open(md_file, 'wb') as f:
+                f.write(xml)
 
-    return parse_PMID_text(text) if (parse and text is not None) else text
+    return parse_PMID_xml(xml) if (parse and xml is not None) else xml
 
 
-def parse_PMID_text(text, doi=None):
-    ''' Take text-format PubMed metadata and convert it to a dictionary
+def parse_PMID_xml(xml):
+    ''' Take XML-format PubMed metadata and convert it to a dictionary
     with standardized field names. '''
-    data = {}
-    text = re.sub('\n\s+', ' ', text)
-    patt = re.compile(ur'([A-Z]+)\s*-\s+(.*)')
-    for m in patt.finditer(text):
-        field, val = m.group(1), m.group(2)
-        if field in data:
-            data[field] += ('; %s' % val)
-        else:
-            data[field] = val
 
-    # Extra processing
-    if doi is None:
-        if 'AID' in data and '[doi]' in data['AID']:
-            doi = filter(lambda x: 'doi' in x, data['AID'].split('; '))[0].split(' ')[0]
-        else:
-            doi = ''
-    year = data['DP'].split(' ')[0]
-    authors = data['AU'].replace(';', ',')
-    for field in ['MH', 'AB', 'JT']:
-        if field not in data:
-            data[field] = ''
+    di = xmltodict.parse(xml)['PubmedArticleSet']['PubmedArticle']
+    article = di['MedlineCitation']['Article']
+
+    if 'ArticleDate' in article:
+        date = article['ArticleDate']
+    elif 'Journal' in article:
+        date = article['Journal']['JournalIssue']['PubDate']
+    else:
+        date = None
+    
+    if date:
+        year = date.get('Year', None)
+    else:   
+        year = None
+
+    doi = None
+    doi_source = article.get('ELocationID', None)
+    if doi_source is not None and isinstance(doi_source, list):
+        doi_source = [d for d in doi_source if d['@EIdType'] == 'doi'][0]
+
+    if doi_source is not None and doi_source['@EIdType'] == 'doi':
+        doi = doi_source['#text']
+
+    authors = article['AuthorList']['Author']
+
+    _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
+    if isinstance(authors, list):
+        authors = [_get_author(a) for a in authors if 'ForeName' in a]
+    else:
+        authors = [_get_author(authors)]
+    authors = ';'.join(authors)
+
+    if 'MeshHeadingList' in di['MedlineCitation']:
+        mesh = di['MedlineCitation']['MeshHeadingList']['MeshHeading']
+    else:
+        mesh = []
+
+    abstract = article.get('Abstract', '')
+    if abstract != '':
+        abstract = abstract.get('AbstractText', '')
 
     metadata = {
         'authors': authors,
-        'citation': data['SO'],
-        'comment': data['AB'],
+        'citation': di['PubmedData']['ArticleIdList']['ArticleId'][1]['#text'],
+        'comment': abstract,
         'doi': doi,
         'keywords': '',
-        'mesh': data['MH'],
-        'pmid': data['PMID'],
-        'title': data['TI'],
-        'abstract': data['AB'],
-        'journal': data['JT'],
+        'mesh': mesh,
+        'pmid': di['MedlineCitation']['PMID'],
+        'title': article['ArticleTitle'],
+        'abstract': abstract,
+        'journal': article['Journal']['Title'],
         'year': year
     }
-    return metadata
 
+    # Clean up nested Dicts
+    for k, v in metadata.items():
+        if isinstance(v, list):
+            to_join = []
+            for a in v:
+                if 'DescriptorName' in a:
+                    a = a['DescriptorName']
+                a = a['#text']
+                to_join.append(a)
+            v = ' | '.join(to_join)
+        elif isinstance(v, Mapping):
+            v = v['#text']
+        metadata[k] = v
+
+    return metadata
 
 ''' Class for journal Scraping. The above free-floating methods should 
 probably be refactored into this class eventually. '''
 class Scraper:
 
-    def __init__(self, store):
+    def __init__(self, store, api_key=None):
+        self.store = Path(store)
+        self._client = PubMedAPI(api_key=api_key)
 
-        self.store = store
 
-
-    def search_pubmed(self, journal, retmax=10000, savelist=None):
-        # query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal])+AND+(%s[Date+-+Publication])&retmax=%s" % (journal, str(year), str(retmax))
+    def search_pubmed(self, journal, search, retmax=10000, savelist=None,):
         journal = journal.replace(' ', '+')
-        search = '+%s' % self.search if self.search is not None else ''
-        query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=(%s[Journal]+journal+article[pt]%s)&retmax=%s" % (journal, search, str(retmax))
+        search = '+%s' % search
+        query = f"({journal}[Journal]+journal+article[pt]{search})"
         logger.info("Query: %s" % query)
-        doc = get_url(query)
+
+        doc = self._client.esearch(query, retmax=retmax)
+
         if savelist is not None:
-            outf = open(savelist, 'w')
+            oupmctf = open(savelist, 'w')
             outf.write(doc)
             outf.close()
         return doc
 
 
-    def get_html(self, url):
+    def get_html(self, url, journal, mode='browser'):
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-        if self.mode == 'browser':
+        if mode == 'browser':
             driver = webdriver.Chrome()
             driver.get(url)
             url = driver.current_url
@@ -140,19 +246,22 @@ class Scraper:
 
             # Check for URL substitution and get the new one if it's changed
             url = driver.current_url  # After the redirect from PubMed
+
             html = driver.page_source
-            new_url = self.check_for_substitute_url(url, html)
+            new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
                 driver.get(new_url)
-                if self.journal.lower() in ['human brain mapping',
+                sleep(3
+                )
+                if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
                     sleep(0.5 + random() * 1)
                     try:
                         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'relatedArticles')))
                     except TimeoutException:
-                        print "Loading Wiley page took too much time!"
+                        print("Loading Wiley page took too much time!")
 
                 # Sometimes we get annoying alerts (e.g., Flash animation
                 # timeouts), so we dismiss them if present.
@@ -161,8 +270,20 @@ class Scraper:
                     alert.dismiss()
                 except:
                     pass
+                            
+            logger.info(journal.lower())
+            if journal.lower() in ['journal of neuroscience', 'j neurosci']:
+                ## Find links with class data-table-url, and click on them
+                ## to load the table data.
+                table_links = driver.find_elements(By.CLASS_NAME, 'table-expand-inline')
 
-                html = driver.page_source
+                if len(table_links):         
+                    for link in table_links:
+                        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((
+                            By.CLASS_NAME, 'table-expand-inline')))    
+                        driver.execute_script("arguments[0].scrollIntoView();", link)
+                        link.click()
+                        sleep(0.5 + random.random() * 1)
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -171,16 +292,16 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-            sleep(1.5)
+            html = driver.page_source
             driver.quit()
             return html
 
-        else:
+        elif mode == 'requests':
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1464.0 Safari/537.36'}
             r = requests.get(url, headers=headers)
             # For some journals, we can do better than the returned HTML, so get the final URL and 
             # substitute a better one.
-            url = self.check_for_substitute_url(r.url, r.text)
+            url = self.check_for_substitute_url(r.url, r.text, journal)
             if url != r.url:
                 r = requests.get(url, headers=headers)
                 # XML content is usually misidentified as ISO-8859-1, so we need to manually set utf-8.
@@ -190,20 +311,19 @@ class Scraper:
             return r.text
 
 
-    def get_html_by_pmid(self, pmid, retmode='ref'):
-
+    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref'):
         query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&cmd=prlinks&retmode=%s" % (pmid, retmode)
         logger.info(query)
-        return self.get_html(query)
+        return self.get_html(query, journal, mode=mode)
 
 
-    def check_for_substitute_url(self, url, html):
+    def check_for_substitute_url(self, url, html, journal):
         ''' For some journals/publishers, we can get a better document version by modifying the 
         URL passed from PubMed. E.g., we can get XML with embedded tables from PLoS ONE instead of 
         the standard HTML, which displays tables as images. For some journals (e.g., Frontiers),  
         it's easier to get the URL by searching the source, so pass the html in as well. '''
 
-        j = self.journal.lower()
+        j = journal.lower()
         try:
             if j == 'plos one':
                 doi_part = re.search('article\?id\=(.*)', url).group(1)
@@ -221,12 +341,42 @@ class Scraper:
                 return url + '/fulltext.html'
             else:
                 return url
-        except Exception, e:
+        except Exception as err:
             return url
 
+    def has_pmc_entry(self, pmid):
+        ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
+        content = self._client.efetch(pmid, retmode='xml')
+        return '<ArticleId IdType="pmc">' in str(content)
+
+    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
+
+        logger.info("Processing %s..." % id)
+        journal_path = (self.store / 'html' / journal)
+        journal_path.mkdir(parents=True, exist_ok=True)
+        filename = journal_path / f"{id}.html"
+
+        if not overwrite and os.path.isfile(filename): 
+            logger.info("\tAlready exists! Skipping...")
+            
+            return None
+
+        # Save the HTML
+        doc = self.get_html_by_pmid(id, journal, mode=mode)
+        if doc:
+            with filename.open('w') as f:
+                f.write(doc)
+
+            # Insert random delay until next request.
+            if delay is not None:
+                sleep_time = random.random() * float(delay*2)
+                sleep(sleep_time)
+        
+        return filename
 
     def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
-                                limit=None, overwrite=False, min_pmid=None, save_metadata=True):
+                                limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
+                                skip_pubmed_central=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -246,51 +396,58 @@ class Scraper:
             min_pmid: When a PMID is provided, only articles with PMIDs greater than 
                 this will be processed. Primarily useful for excluding older articles 
                 that aren't available in full-text HTML format.
-            save_metadata: When True, retrieves metadata from PubMed and saves it to 
-                the pubmed/ folder below the root storage folder.
+            max_pmid: When a PMID is provided, only articles with PMIDs less than
+                this will be processed. 
+            shuffle: When True, articles are retrieved in random order.
+            skip_pubmed_central: When True, skips articles that are available from
+                PubMed Central. 
         '''
-        self.journal = journal
-        self.delay = delay
-        self.mode = mode
-        self.search = search
-        query = self.search_pubmed(journal)
-        soup = BeautifulSoup(query)
-        ids = [t.string for t in soup.find_all('id')]
-        shuffle(ids)
+        ids = self.search_pubmed(journal, search)
+        if shuffle:
+            random.shuffle(ids)
+        else:
+            ids.sort()
+
         logger.info("Found %d records.\n" % len(ids))
 
         # Make directory if it doesn't exist
-        journal_path = os.path.join(self.store, 'html', journal)
-        if not os.path.exists(journal_path):
-            os.makedirs(journal_path)
+        
+        out_dir = (self.store / 'html' / journal)
 
         articles_found = 0
 
         for id in ids:
-
             if min_pmid is not None and int(id) < min_pmid: continue
+            if max_pmid is not None and int(id) > max_pmid: continue
             if limit is not None and articles_found >= limit: break
-            
-            logger.info("Processing %s..." % id)
-            filename = '%s/%s.html' % (journal_path, id)
 
-            if not overwrite and os.path.isfile(filename): 
-                logger.info("\tAlready exists! Skipping...")
+            if skip_pubmed_central and self.has_pmc_entry(id):
+                logger.info(f"\tPubMed Central entry found! Skipping {id}...")
                 continue
 
-            # Save the HTML
-            doc = self.get_html_by_pmid(id)
-            if doc:
-                outf = open(filename, 'w')
-                # Still having encoding issues with some journals (e.g., 
-                # PLoS ONE). Why???
-                outf.write(doc.encode('utf-8'))
-                outf.close()
+            if not out_dir.exists():
+                (self.store / 'html' / journal).mkdir(parents=True, exist_ok=True)
+
+            filename = self.process_article(id, journal, delay, mode, overwrite)
+            if filename:
                 articles_found += 1
 
-                # Insert random delay until next request.
-                if delay is not None:
-                    sleep_time = random() * float(delay*2)
-                    sleep(sleep_time)
+    def retrieve_by_dois(self, dois, delay=None, mode='browser', overwrite=False, skip_pubmed_central=True):
+        ''' Retrieve all PubMed articles by DOI into a single flat folder. '''
+        for doi in dois:
+            pmid = get_pmid_from_doi(doi)
 
+            if pmid:
+                if skip_pubmed_central and self.has_pmc_entry(pmid):
+                    logger.info(f"\tPubMed Central entry found! Skipping {pmid}...")
+                    continue
 
+                # Get the journal name
+                metadata = get_pubmed_metadata(pmid)
+                journal = metadata['journal']
+
+                filename = self.process_article(
+                    pmid, journal, delay, mode, overwrite=overwrite)
+
+            else:
+                logger.info(f"\tNo PMID found for DOI {doi}!")

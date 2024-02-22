@@ -2,13 +2,13 @@
 # ex: set sts=4 ts=4 sw=4 et:
 """ACE -- Automated Coordinate Extraction.
 """
-__all__ = ["config", "database", "datatable", "exporter", "set_logging_level", "scrape", "sources", "tableparser", "tests", "__version__"]
+__all__ = ["config", "ingest", "database", "datatable", "set_logging_level", "scrape", "sources", "tableparser", "tests", "__version__"]
 
 import logging
 import sys
 import os
 
-from version import __version__
+from .version import __version__
 
 def set_logging_level(level=None):
     """Set package-wide logging level

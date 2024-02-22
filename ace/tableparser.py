@@ -1,10 +1,11 @@
 # coding: utf-8
-from __future__ import unicode_literals  # use unicode everywhere
+  # use unicode everywhere
 
 # import database
 import regex  # Note: we're using features in the new regex module, not re!
 import logging
-import config, database
+from . import config
+from .database import Activation, Table
 from collections import Counter, defaultdict
 
 
@@ -89,7 +90,7 @@ def identify_repeating_groups(labels):
     groups = []
     n_labels = len(labels)
     label_counts = Counter(labels)
-    rep_labels = set([k for k, v in label_counts.items() if v > 1])
+    rep_labels = set([k for k, v in list(label_counts.items()) if v > 1])
     # Track multi-label sequences. Key/value = sequence/onset
     label_seqs = defaultdict(list)
 
@@ -108,11 +109,11 @@ def identify_repeating_groups(labels):
             label_seqs['###'.join(current_seq)].append(i)
 
     # Keep only sequences that occur two or more times
-    label_seqs = { k: v for k, v in label_seqs.items() if len(v) > 1}
+    label_seqs = { k: v for k, v in list(label_seqs.items()) if len(v) > 1}
     
     # Invert what's left into a list where the sequence occurs at its start pos
     seq_starts = [None] * n_labels
-    for k, v in label_seqs.items():
+    for k, v in list(label_seqs.items()):
         for start in v:
             seq_starts[start] = k.split('###')
 
@@ -142,9 +143,16 @@ def identify_repeating_groups(labels):
 
 def create_activation(data, labels, standard_cols, group_labels=[]):
 
-    activation = database.Activation()
+    activation = Activation()
 
     for i, col in enumerate(data):
+
+        # Replace unicode minus signs with hyphens
+        replace = ['֊', '‐', '‑', '⁃', '﹣', '－', '‒', '–', '—', '﹘', '−', '-']
+        for c in replace:
+            if c in col:
+                col = col.replace(c, '-')
+                col = col.replace(c + c, '-')
 
         # Cast to integer or float if appropriate
         # if regex.match('[-\d]+$', col):
@@ -163,10 +171,10 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
             # If they're not, keep only leading numbers. The exception is that ScienceDirect 
             # journals often follow the minus sign with a space (e.g., - 35), which we strip.
             if regex.match('[xyz]$', sc):
-                m = regex.match('(-)\s+(\d+\.*\d*)$', col)
+                m = regex.match('([-])s?(\d+\.*\d*)$', col)
                 if m:
                     col = "%s%s" % (m.group(1), m.group(2))
-                if not regex.match('(-*\d+)\.*\d*$', col):
+                if not regex.match('([-]*\d+)\.*\d*$', col):
                     logging.debug("Value %s in %s column is not valid" % (col, sc))
                     activation.problems.append("Value in %s column is not valid" % sc)
                     return activation
@@ -189,7 +197,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
         # journals leave a gap.
         if not i in standard_cols:
             cs = '([\-\.\s]*\d{1,3}\.*\d{0,2})'
-            m = regex.search('%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), unicode(col).strip())
+            m = regex.search('%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), str(col).strip())
             if m:
                 x, y, z = [regex.sub('-\s+', '-', c) for c in [m.group(1), m.group(2), m.group(3)]]
                 logger.info("Found multi-coordinate column: %s\n...and extracted: %s, %s, %s" % (col, x, y, z))
@@ -201,20 +209,22 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 
 def parse_table(data):
     ''' Takes a DataTable as input and returns a Table instance. '''
-
-    table = database.Table()
+    
+    table = Table()
     n_cols = data.n_cols
 
     # Identify column names: first occurrence of unique (i.e. colspan=1) label.
       # Also track multi-column labels for group names.
     labels = [None] * n_cols
     multicol_labels = {}
-
     for i in range(data.n_rows):
         r = data[i]
+        r = [x or '' for x in r]
         found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
         for j, val in enumerate(r):
             val = val.strip()
+            if val != '' and val[-1] == '.':
+                val = val[:-1].strip()
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
             # there is no current label assigned to this column...
             if val != '' and not val.startswith('@@') and labels[j] is None:
@@ -238,14 +248,13 @@ def parse_table(data):
 
     # Compact the list, although there shouldn't be any missing values at this point...
     # labels = [x.lower() for x in labels if x is not None]
-
     # Convert all labels to lowercase
-    labels = [x.lower() if x is not None else x for x in labels]
+    labels = [x.lower() if x is not None else '' for x in labels]
     n_cols = len(labels)
 
     # Sometimes tables have a single "Coordinates" column name
     # despite breaking X/Y/Z up into 3 columns, so we account for this here.
-    for k, v in multicol_labels.items():
+    for k, v in list(multicol_labels.items()):
         if regex.search('(ordinate|x.*y.*z)', v):
             st, span = k.split('/')
             start, end = int(st), (int(st) + int(span))
@@ -254,10 +263,11 @@ def parse_table(data):
                     "Possible multi-column coordinates found: %s, %s" % (k, v))
                 labels[start:end] = ['x', 'y', 'z']
 
+
     # There shouldn't be any unfilled column labels at this point, but if there are,
     # log that information and skip table if flag is set.
     if None in labels:
-        labels = [unicode(l) for l in labels]
+        labels = [str(l) for l in labels]
         msg = 'Failed to identify at least one column label: [%s]. Skipping table!' % ', '.join(labels)
         if config.EXCLUDE_TABLES_WITH_MISSING_LABELS:
             logger.error(msg)
@@ -270,7 +280,7 @@ def parse_table(data):
     standard_cols = identify_standard_columns(labels)
     group_cols = identify_repeating_groups(labels)
     logger.debug("Labels: " + ', '.join(labels))
-    logger.debug("Standard columns:" + ', '.join([unicode(x) for x in standard_cols if x is not None]))
+    logger.debug("Standard columns:" + ', '.join([str(x) for x in standard_cols if x is not None]))
 
     # Store a boolean list indicating which columns belong to a group
     cols_in_group = [False] * n_cols
@@ -279,18 +289,20 @@ def parse_table(data):
         for i in range(onset, onset+length):
             cols_in_group[i] = True
 
-    # Also store non-group labels for easy lookup later
-    nongroup_labels = [l for (i,l) in enumerate(labels) if not cols_in_group[i]]
-
     # Loop over rows in table
     group_row = None
-    activation_num = 0
     
     for r in data:
+        # Strip whitespace and replace empty cells with empty strings
+        r = [x.strip() or '' for x in r if x is not None]
 
         logger.debug(r)
 
         n_cells = len(r)
+
+        if n_cells != len(labels):
+            logger.warning("Skipping row with %d cells (expected %d): %s" % (n_cells, len(labels), r))
+            continue 
 
         # Skip row if any value matches the column label--assume we're in header
         match_lab = False
@@ -317,10 +329,7 @@ def parse_table(data):
 
         # Skip any additional header rows
         if n_cells != n_cols or regex.search('@@', ' '.join(r)): continue
-
-
-
-
+    
       
         # If we don't have to worry about groups, the entire row is a single activation
         if not len(group_cols):
@@ -339,7 +348,7 @@ def parse_table(data):
                 # for the key first.
                 groups = [multicol_labels[g]] if g in multicol_labels else []
                 if group_row is not None: groups.append(group_row)
-                group_specific_cols = range(onset, onset+length)
+                group_specific_cols = list(range(onset, onset+length))
 
                 # Select columns that belong to this activation: all columns that do not 
                 # belong to any group, plus any columns that belong only to this group.
@@ -356,6 +365,7 @@ def parse_table(data):
                 activation = create_activation(activation_columns, activation_labels, activation_scs, groups)
                 if activation.validate():
                     table.activations.append(activation)
+
     table.finalize()
     return table if len(table.activations) else None
 

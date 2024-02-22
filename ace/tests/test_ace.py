@@ -1,7 +1,6 @@
 import unittest
 import os
 from ace import sources, database, datatable, export, scrape, config
-import json
 from os.path import dirname, join, exists, sep as pathsep
 import os
 import shutil
@@ -60,7 +59,7 @@ class TestACE(unittest.TestCase):
         self.assertEqual(t.number, '1')
         self.assertIsNotNone(t.caption)
         for a in t.activations:
-            print [a.x, a.y, a.z]
+            print([a.x, a.y, a.z])
         # Note: only 12 regions, but there are data for 2 experiments,
         # so it's appropriate to treat as 24 activations.
         self.assertEqual(t.n_activations, 24)
@@ -74,7 +73,7 @@ class TestACE(unittest.TestCase):
 
     def testJournalScraping(self):
         scrape_path = join(get_test_data_path(), 'scrape_test')
-        os.mkdir(scrape_path)
+        os.makedirs(scrape_path, exist_ok=True)
         # Test with PLoS ONE because it's OA
         scraper = scrape.Scraper(scrape_path)
         scraper.retrieve_journal_articles('PLoS ONE', delay=5.0, mode='direct', 
