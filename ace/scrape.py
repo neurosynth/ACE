@@ -76,20 +76,13 @@ class PubMedAPI:
         return response
     
     def efetch(self, input_id, retmode='txt', rettype='medline', db = 'pubmed', **kwargs):
-        if (access_db == "pmc"):
-            params = {
-                "db": "pmc",
-                "id": input_id, # assuming that the input id would be pmcid
-                "retmode": retmode,
-                "rettype": rettype
-            }
-        else:
-            params = {
-                "db": "pubmed",
-                "id": input_id, # assuming that the input id would be pmid
-                "retmode": retmode,
-                "rettype": rettype
-            }
+        params = {
+            "db": db,
+            "id": input_id, # type of input id should change with the type of db being accessed
+            "retmode": retmode,
+            "rettype": rettype
+        }
+        
         
         response = self.get("efetch", params=params, **kwargs)
         return response
@@ -97,22 +90,13 @@ class PubMedAPI:
     def elink(self, pmid, retmode='ref', access_db = 'pubmed', **kwargs):
         params = {
             "dbfrom": "pubmed",
-            "id": pmid
+            "id": pmid,
+            "retmode": retmode
         }
         if access_db == "pmc":
-            params = {
-                "dbfrom": "pubmed",
-                "id": pmid,
-                "linkname": "pubmed_pmc",
-                "retmode": retmode
-            }
+            params["linkname"] = "pubmed_pmc"
         else:
-            params = {
-                "dbfrom": "pubmed",
-                "id": pmid,
-                "cmd": "prlinks",
-                "retmode": retmode
-            }
+            params["cmd"] = "prlinks"
         
         response = self.get("elink", params=params, **kwargs)
         return response
