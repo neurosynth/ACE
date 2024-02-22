@@ -95,6 +95,10 @@ class PubMedAPI:
         return response
     
     def elink(self, pmid, retmode='ref', access_db = 'pubmed', **kwargs):
+        params = {
+            "dbfrom": "pubmed",
+            "id": pmid
+        }
         if access_db == "pmc":
             params = {
                 "dbfrom": "pubmed",
