@@ -104,7 +104,7 @@ class PubMedAPI:
                 "dbfrom": "pubmed",
                 "id": pmid,
                 "linkname": "pubmed_pmc",
-                "retmode": "json"
+                "retmode": retmode
             }
         else:
             params = {
