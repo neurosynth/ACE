@@ -374,7 +374,7 @@ class Scraper:
     
     def has_pmc_openaccess_entry(self, pmid):
         ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
-        pmid_content = json.loads(self._client.elink(pmid, access_db='pmc'))
+        pmid_content = json.loads(self._client.elink(pmid, access_db='pmc', retmode='json'))
         pmcid = pmid_content['linksets'][0]['linksetdbs'][0]['links'][0]
         content = self._client.efetch(input_id=pmcid, retmode="xml", access_db="pmc")
         return (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())) 
