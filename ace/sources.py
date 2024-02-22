@@ -36,7 +36,7 @@ class SourceManager:
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
         for config_file in glob('%s/*json' % source_dir):
             class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(config_file, database, table_dir)
+            cls = getattr(module, class_name + 'Source')(database, config=config_file, table_dir=table_dir)
             self.sources[class_name] = cls
 
     def identify_source(self, html):
@@ -71,24 +71,25 @@ class Source(metaclass=abc.ABCMeta):
 
     }
 
-    def __init__(self, config, database, table_dir=None):
-
-        config = json.load(open(config, 'rb'))
+    def __init__(self, database, config=None, table_dir=None):
         self.database = database
         self.table_dir = table_dir
+        self.entities = {}
 
-        valid_keys = ['name', 'identifiers', 'entities', 'delay']
+        if config is not None:
+            config = json.load(open(config, 'rb'))
+            valid_keys = ['name', 'identifiers', 'entities', 'delay']
 
-        for k, v in list(config.items()):
-            if k in valid_keys:
-                setattr(self, k, v)
+            for k, v in list(config.items()):
+                if k in valid_keys:
+                    setattr(self, k, v)
 
-        # Append any source-specific entities found in the config file to
-        # the standard list
-        if self.entities is None:
-            self.entities = Source.ENTITIES
-        else:
-            self.entities.update(Source.ENTITIES)
+            # Append any source-specific entities found in the config file to
+            # the standard list
+            if self.entities is None:
+                self.entities = Source.ENTITIES
+            else:
+                self.entities.update(Source.ENTITIES)
 
     @abc.abstractmethod
     def parse_article(self, html, pmid=None, metadata_dir=None):
@@ -107,6 +108,10 @@ class Source(metaclass=abc.ABCMeta):
 
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
+        # Remove all scripts and styles
+        for script in soup(["script", "style"]):
+            script.extract()
+        # Get text
         text = soup.get_text()
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
@@ -159,7 +164,27 @@ class Source(metaclass=abc.ABCMeta):
 
         self.article.neurovault_links = nv_links
 
-    @abc.abstractmethod
+    def extract_text(self, soup):
+        ''' Extract text from the article.
+         Publisher specific extraction of body text should be done in a subclass.
+         '''
+
+        text = soup.get_text()
+
+        # Remove any remaining HTML tags
+        text = re.sub(r'<[^>]+>', '', text)
+
+        # Remove any remaining unicode characters
+        text = re.sub(r'\\u[0-9]+', '', text)
+
+        # Remove any remaining entities
+        text = self.decode_html_entities(text)
+
+        # Remove any remaining whitespace
+        text = re.sub(r'\s+', ' ', text)
+
+        self.article.text = text
+
     def parse_table(self, table):
         ''' Takes HTML for a single table and returns a Table. '''
         # Formatting issues sometimes prevent table extraction, so just return
@@ -218,12 +243,10 @@ class Source(metaclass=abc.ABCMeta):
         logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data)
 
-    @abc.abstractmethod
     def extract_doi(self, soup):
         ''' Every Source subclass must be able to extract its doi. '''
         return
 
-    @abc.abstractmethod
     def extract_pmid(self, soup):
         ''' Every Source subclass must be able to extract its PMID. '''
         return
@@ -232,11 +255,13 @@ class Source(metaclass=abc.ABCMeta):
         ''' Re-encode HTML entities as innocuous little Unicode characters. '''
         # Any entities BeautifulSoup passes through thatwe don't like, e.g.,
         # &nbsp/x0a
-        patterns = re.compile('(' + '|'.join(re.escape(
-            k) for k in list(self.entities.keys())) + ')')
-        replacements = lambda m: self.entities[m.group(0)]
-        return patterns.sub(replacements, html)
-        # return html
+        if self.entities:
+            patterns = re.compile('(' + '|'.join(re.escape(
+                k) for k in list(self.entities.keys())) + ')')
+            replacements = lambda m: self.entities[m.group(0)]
+            return patterns.sub(replacements, html)
+        else:
+            return html
 
     def _download_table(self, url):
         ''' For Sources that have tables in separate files, a helper for 
@@ -258,6 +283,14 @@ class Source(metaclass=abc.ABCMeta):
         table_html = self.decode_html_entities(table_html)
         return(BeautifulSoup(table_html))
 
+class DefaultSource(Source):
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(DefaultSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        self.article.missing_source = True
+        return self.article
 
 
 class HighWireSource(Source):
@@ -311,6 +344,92 @@ class HighWireSource(Source):
 
     def extract_pmid(self, soup):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
+
+    def extract_text(self, soup):
+        # If div has class "main-content-wrapper" or "article" or "fulltext-view"
+        # extract all text from it
+
+        # Assuming you have a BeautifulSoup object called soup
+        div = soup.find_all("div", class_="article")
+        if div:
+            div = div[0]
+            div_classes = ["ref-list", "abstract", "copyright-statement", "fn-group", "history-list", "license"]
+            for class_ in div_classes:
+                for tag in div.find_all(class_=class_):
+                    tag.extract()
+            soup = div
+
+        return super(HighWireSource, self).extract_text(soup)
+
+
+class OUPSource(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(OUPSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+
+        # Exclude modal tables to prevent duplicates
+        all_tables = set(soup.select('div.table-full-width-wrap'))
+        modal_tables = set(soup.select('div.table-full-width-wrap.table-modal'))
+        result = all_tables - modal_tables
+        for (i, tc) in enumerate(result):
+            table_html = tc.find('table')
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+                try:
+                    t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
+                    t.label = tc.find('span', class_='label').text.strip()
+                except:
+                    pass
+                try:
+                    t.caption = tc.find('span', class_='caption').get_text()
+                except:
+                    pass
+                try:
+                    t.notes = tc.find('span', class_='fn').get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def parse_table(self, table):
+        return super(OUPSource, self).parse_table(table)
+
+    def extract_doi(self, soup):
+        try:
+            return soup.find('meta', {'name': 'citation_doi'})['content']
+        except:
+            return ''
+
+    def extract_pmid(self, soup):
+        pmid = soup.find('meta', {'name': 'citation_pmid'})
+        if pmid:
+            return pmid['content']
+        else:
+            return ''
+
+    def extract_text(self, soup):
+        # If div has class "main-content-wrapper" or "article" or "fulltext-view"
+        # extract all text from it
+
+        # Assuming you have a BeautifulSoup object called soup
+        div = soup.find_all("div", class_="article-body")
+        if div:
+            div = div[0]
+            div_classes = ["ref-list", "abstract", "copyright-statement", "fn-group", "history-list", "license"]
+            for class_ in div_classes:
+                for tag in div.find_all(class_=class_):
+                    tag.extract()
+            soup = div
+
+        return super(OUPSource, self).extract_text(soup)
 
 
 class ScienceDirectSource(Source):

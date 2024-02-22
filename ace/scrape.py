@@ -12,7 +12,7 @@ import os
 import random
 import xmltodict
 from requests.adapters import HTTPAdapter, Retry
-from selenium import webdriver
+import undetected_chromedriver as uc
 import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -101,7 +101,11 @@ def get_pmid_from_doi(doi, api_key=None):
     '''
     query = f"{doi}[aid]"
     data = PubMedAPI(api_key=api_key).esearch(query=query)
-    return data[0]
+    if data:
+        data = data[0]
+    else:
+        data = None
+    return data
 
 
 def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
@@ -138,7 +142,11 @@ def parse_PMID_xml(xml):
     ''' Take XML-format PubMed metadata and convert it to a dictionary
     with standardized field names. '''
 
-    di = xmltodict.parse(xml)['PubmedArticleSet']['PubmedArticle']
+    di = xmltodict.parse(xml)['PubmedArticleSet']
+    if not di:
+        return None
+    
+    di = di['PubmedArticle']
     article = di['MedlineCitation']['Article']
 
     if 'ArticleDate' in article:
@@ -161,14 +169,17 @@ def parse_PMID_xml(xml):
     if doi_source is not None and doi_source['@EIdType'] == 'doi':
         doi = doi_source['#text']
 
-    authors = article['AuthorList']['Author']
+    authors = article.get('AuthorList', None)
+    
+    if authors:
+        authors = authors['Author']
 
-    _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
-    if isinstance(authors, list):
-        authors = [_get_author(a) for a in authors if 'ForeName' in a]
-    else:
-        authors = [_get_author(authors)]
-    authors = ';'.join(authors)
+        _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
+        if isinstance(authors, list):
+            authors = [_get_author(a) for a in authors if 'ForeName' in a]
+        else:
+            authors = [_get_author(authors)]
+        authors = ';'.join(authors)
 
     if 'MeshHeadingList' in di['MedlineCitation']:
         mesh = di['MedlineCitation']['MeshHeadingList']['MeshHeading']
@@ -179,9 +190,13 @@ def parse_PMID_xml(xml):
     if abstract != '':
         abstract = abstract.get('AbstractText', '')
 
+    cit = di['PubmedData']['ArticleIdList']['ArticleId']
+    if isinstance(cit, list):
+        cit = cit[1]
+
     metadata = {
         'authors': authors,
-        'citation': di['PubmedData']['ArticleIdList']['ArticleId'][1]['#text'],
+        'citation': cit['#text'],
         'comment': abstract,
         'doi': doi,
         'keywords': '',
@@ -201,13 +216,29 @@ def parse_PMID_xml(xml):
                 if 'DescriptorName' in a:
                     a = a['DescriptorName']
                 a = a['#text']
+                
                 to_join.append(a)
             v = ' | '.join(to_join)
         elif isinstance(v, Mapping):
-            v = v['#text']
+            v = v.get('#text', '')
         metadata[k] = v
 
     return metadata
+
+def _validate_scrape(html):
+    """ Checks to see if scraping was successful. 
+    For example, checks to see if Cloudfare interfered """
+
+    patterns = ['Checking if you are a human', 
+    'Please turn JavaScript on and reload the page', 
+    'Checking if the site connection is secure',
+    'Enable JavaScript and cookies to continue']
+
+    for pattern in patterns:
+        if pattern in html:
+            return False
+
+    return True
 
 ''' Class for journal Scraping. The above free-floating methods should 
 probably be refactored into this class eventually. '''
@@ -239,21 +270,28 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
-            driver = webdriver.Chrome()
-            driver.get(url)
-            url = driver.current_url
-            driver.get(url)
-
-            # Check for URL substitution and get the new one if it's changed
-            url = driver.current_url  # After the redirect from PubMed
+            for attempt in range(10):
+                try:
+                    driver = uc.Chrome(headless=True)
+                    driver.implicitly_wait(5)
+                    driver.set_page_load_timeout(5)
+                    driver.get(url)
+                    url = driver.current_url
+                except TimeoutException:
+                    driver.quit()
+                    logger.info(f"Timeout exception #{attempt}. Retrying...")
+                else:
+                    break
+            else:
+                logger.info("Timeout exception. Giving up.")
+                return None
 
             html = driver.page_source
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
                 driver.get(new_url)
-                sleep(3
-                )
+                sleep(2)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
@@ -272,6 +310,8 @@ class Scraper:
                     pass
                             
             logger.info(journal.lower())
+            timeout = 5
+            html = driver.page_source
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
                 ## Find links with class data-table-url, and click on them
                 ## to load the table data.
@@ -284,6 +324,20 @@ class Scraper:
                         driver.execute_script("arguments[0].scrollIntoView();", link)
                         link.click()
                         sleep(0.5 + random.random() * 1)
+
+            # If title has ScienceDirect in in title
+            elif ' - ScienceDirect' in driver.page_source:
+                try:
+                    element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
+                    WebDriverWait(driver, timeout).until(element_present)
+                except TimeoutException:
+                    pass
+            elif 'Wiley Online Library</title>' in driver.page_source:
+                try:
+                    element_present = EC.presence_of_element_located((By.ID, 'article__content'))
+                    WebDriverWait(driver, timeout).until(element_present)
+                except TimeoutException:
+                    pass
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -359,22 +413,27 @@ class Scraper:
         if not overwrite and os.path.isfile(filename): 
             logger.info("\tAlready exists! Skipping...")
             
-            return None
+            return None, None
 
         # Save the HTML
         doc = self.get_html_by_pmid(id, journal, mode=mode)
+        valid = None
         if doc:
-            with filename.open('w') as f:
-                f.write(doc)
+            valid = _validate_scrape(doc)
+            if valid:
+                with filename.open('w') as f:
+                    f.write(doc)
+            if not valid:
+                logger.info("\tScrape failed! Skipping...")
 
             # Insert random delay until next request.
             if delay is not None:
                 sleep_time = random.random() * float(delay*2)
                 sleep(sleep_time)
         
-        return filename
+        return filename, valid
 
-    def retrieve_journal_articles(self, journal, delay=None, mode='browser', search=None,
+    def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
                                 skip_pubmed_central=True):
 
@@ -382,6 +441,8 @@ class Scraper:
         already exist in the storage directory.
         Args:
             journal: The name of the journal (as it appears in PubMed).
+            pmids: A list of PMIDs to retrieve.
+            dois: A list of DOIs to retrieve. 
             delay: Mean delay between requests.
             mode: When 'browser', use selenium to load articles in Chrome. When 
                 'direct', attempts to fetch the HTML directly via requests module.
@@ -402,52 +463,50 @@ class Scraper:
             skip_pubmed_central: When True, skips articles that are available from
                 PubMed Central. 
         '''
-        ids = self.search_pubmed(journal, search)
-        if shuffle:
-            random.shuffle(ids)
-        else:
-            ids.sort()
 
-        logger.info("Found %d records.\n" % len(ids))
-
-        # Make directory if it doesn't exist
+        if journal is None and dois is None and pmids is None:
+            raise ValueError("Either journal, pmids, or dois must be provided.")
         
-        out_dir = (self.store / 'html' / journal)
+        if journal is not None:
+            logger.info("Getting PMIDs for articles from %s..." % journal)
+            pmids = self.search_pubmed(journal, search)
 
-        articles_found = 0
+        if dois is not None:
+            logger.info("Retrieving articles from %s..." % ', '.join(dois))
+            pmids = [get_pmid_from_doi(doi) for doi in dois]
 
-        for id in ids:
-            if min_pmid is not None and int(id) < min_pmid: continue
-            if max_pmid is not None and int(id) > max_pmid: continue
-            if limit is not None and articles_found >= limit: break
+            # Remove None values and log missing DOIs
+            pmids = [pmid for pmid in pmids if pmid is not None]
+            missing_dois = [doi for doi, pmid in zip(dois, pmids) if pmid is None]
+            if len(missing_dois) > 0:
+                logger.info("Missing DOIs: %s" % ', '.join(missing_dois))
 
-            if skip_pubmed_central and self.has_pmc_entry(id):
-                logger.info(f"\tPubMed Central entry found! Skipping {id}...")
-                continue
+        if shuffle:
+            random.shuffle(pmids)
 
-            if not out_dir.exists():
-                (self.store / 'html' / journal).mkdir(parents=True, exist_ok=True)
-
-            filename = self.process_article(id, journal, delay, mode, overwrite)
-            if filename:
-                articles_found += 1
-
-    def retrieve_by_dois(self, dois, delay=None, mode='browser', overwrite=False, skip_pubmed_central=True):
-        ''' Retrieve all PubMed articles by DOI into a single flat folder. '''
-        for doi in dois:
-            pmid = get_pmid_from_doi(doi)
-
-            if pmid:
-                if skip_pubmed_central and self.has_pmc_entry(pmid):
-                    logger.info(f"\tPubMed Central entry found! Skipping {pmid}...")
-                    continue
-
+        logger.info("Found %d records.\n" % len(pmids))
+        
+        invalid_articles = []
+        for pmid in pmids:
+            if journal is None:
                 # Get the journal name
                 metadata = get_pubmed_metadata(pmid)
                 journal = metadata['journal']
 
-                filename = self.process_article(
-                    pmid, journal, delay, mode, overwrite=overwrite)
+            if min_pmid is not None and int(pmid) < min_pmid: continue
+            if max_pmid is not None and int(pmid) > max_pmid: continue  
+            if limit is not None and articles_found >= limit: break
 
-            else:
-                logger.info(f"\tNo PMID found for DOI {doi}!")
+            if skip_pubmed_central and self.has_pmc_entry(pmid):
+                logger.info(f"\tPubMed Central entry found! Skipping {pmid}...")
+                continue
+
+            out_dir = (self.store / 'html' / journal)
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite)
+
+            if not valid:
+                invalid_articles.append(filename)
+
+        return invalid_articles

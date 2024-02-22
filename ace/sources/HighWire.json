@@ -1,11 +1,9 @@
 {
   "name": "HighWire",
   "identifiers": [
-    "http://schema.highwire.org/Linking",
-    "highwire-journal-article"
+    "highwire-journal"
   ],
   "entities": {
-  	
   },
   "delay": 10
 }
