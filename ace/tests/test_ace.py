@@ -67,7 +67,7 @@ def test_plos_source(test_data_path, source_manager):
 
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 6
+    assert len(db.articles) == 8
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
