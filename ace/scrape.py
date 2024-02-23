@@ -246,6 +246,8 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
+            html_list = []
+
             driver = webdriver.Chrome()
             driver.get(url)
             url = driver.current_url
@@ -292,6 +294,39 @@ class Scraper:
                         link.click()
                         sleep(0.5 + random.random() * 1)
 
+            table_https_links = []
+            
+            if ("SpringerLink" in html) or ("Springer" in html):
+                # For the accept cookies button
+                accept_button = driver.find_element(By.XPATH, "//button[@data-cc-action='accept']")
+                accept_button.click()
+
+                # Collecting web elements containing sai
+                table_web_element = driver.find_elements(By.LINK_TEXT, "Full size table")
+
+                for items in table_web_element:
+                    table_https_links.append(items.get_attribute('href'))
+
+                # appending original paper
+                html_list.append(html)
+
+                # Extracting htmls for all the 
+                if table_https_links:
+                    for links in table_https_links:
+                        driver.get(links)
+                        html_list.append(driver.page_source)
+                
+                # Starter for the new combined html
+                comb_html = BeautifulSoup('<html><head><title>Combined SpringerLink Page</title></head><body></body></html>', 'html.parser')
+                for it in html_list:
+                    
+                    temp_soup = BeautifulSoup(it,'html.parser')
+                    comb_html.body.extend(temp_soup.body.contents)
+                driver.quit()
+                return str(comb_html)
+
+
+
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             ## Uncomment next line and insert ID to search for specific element.
@@ -299,7 +334,7 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-            html = driver.page_source
+            
             driver.quit()
             return html
 
@@ -375,7 +410,7 @@ class Scraper:
             
             return None
 
-        # Save the HTML
+        # Save the HTML 
         doc = self.get_html_by_pmid(id, journal, mode=mode)
         if doc:
             with filename.open('w') as f:
