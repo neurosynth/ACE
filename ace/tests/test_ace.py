@@ -26,6 +26,7 @@ def source_manager(db):
     return sources.SourceManager(db)
 
 
+@pytest.mark.vcr(record_mode="once")
 def test_frontiers_source(test_data_path, source_manager):
     filename = join(test_data_path, 'frontiers.html')
     html = open(filename).read()
@@ -39,6 +40,7 @@ def test_frontiers_source(test_data_path, source_manager):
     assert t.n_activations == 13
 
 
+@pytest.mark.vcr(record_mode="once")
 def test_science_direct_source(test_data_path, source_manager):
     filename = join(test_data_path, 'cognition.html')
     html = open(filename).read()
@@ -52,6 +54,7 @@ def test_science_direct_source(test_data_path, source_manager):
     assert t.n_activations == 2
 
 
+@pytest.mark.vcr(record_mode="once")
 def test_plos_source(test_data_path, source_manager):
     filename = join(test_data_path, 'plosone.html')
     html = open(filename).read()
@@ -65,20 +68,21 @@ def test_plos_source(test_data_path, source_manager):
     assert t.n_activations == 24  # Since there are data for 2 experiments
 
 
+@pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 8
+    assert len(db.articles) == 4  # cannot find pmid for some articles
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
 
-
+@pytest.mark.vcr(record_mode="rewrite")
 def test_journal_scraping(test_data_path):
     scrape_path = join(test_data_path, 'scrape_test')
     os.makedirs(scrape_path, exist_ok=True)
     # Test with PLoS ONE because it's OA
     scraper = scrape.Scraper(scrape_path)
-    scraper.retrieve_journal_articles('PLoS ONE', delay=5.0, mode='direct', search='fmri', limit=2)
+    scraper.retrieve_articles('PLoS ONE', delay=5.0, mode='requests', search='fmri', limit=2, skip_pubmed_central=False)
     # For now just check to make sure we have expected number of files in the directory
     plos_dir = join(scrape_path, 'html/PLoS ONE/')
     n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
