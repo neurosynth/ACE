@@ -287,7 +287,10 @@ def parse_table(data):
     for g in group_cols:
         onset, length = [int(i) for i in g.split('/')]
         for i in range(onset, onset+length):
-            cols_in_group[i] = True
+            try:
+                cols_in_group[i] = True
+            except IndexError:
+                return None
 
     # Loop over rows in table
     group_row = None

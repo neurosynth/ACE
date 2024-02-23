@@ -8,6 +8,7 @@ ace/datatable.py
 ace/evaluate.py
 ace/export.py
 ace/extract.py
+ace/ingest.py
 ace/label.py
 ace/scrape.py
 ace/sources.py
@@ -21,6 +22,7 @@ ace.egg-info/top_level.txt
 ace/sources/Frontiers.json
 ace/sources/HighWire.json
 ace/sources/JournalOfCognitiveNeuroscience.json
+ace/sources/OUP.json
 ace/sources/Plos.json
 ace/sources/Sage.json
 ace/sources/ScienceDirect.json
@@ -28,6 +30,8 @@ ace/sources/Springer.json
 ace/sources/Wiley.json
 ace/tests/__init__.py
 ace/tests/test_ace.py
+ace/tests/data/brain.html
+ace/tests/data/cerebral_cortex.html
 ace/tests/data/frontiers.html
 ace/tests/data/jcogneuro.html
 ace/tests/data/jneuro.html
