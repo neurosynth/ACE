@@ -4,3 +4,6 @@ requests
 simplejson
 sqlalchemy
 selenium
+undetected-chromedriver
+tqdm
+xmltodict
