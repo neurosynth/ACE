@@ -6,7 +6,7 @@ from pathlib import Path
 from collections import Mapping
 import requests
 from time import sleep
-import config
+from ace import config
 from bs4 import BeautifulSoup
 import logging
 import os
