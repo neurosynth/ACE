@@ -316,11 +316,17 @@ class Scraper:
                         driver.get(links)
                         html_list.append(driver.page_source)
                 
-                # Starter for the new combined html
+                # Starter for the new combined html and including the head element to access DOI and other important information
                 comb_html = BeautifulSoup('<html><head><title>Combined SpringerLink Page</title></head><body></body></html>', 'html.parser')
-                for it in html_list:
+                
+                initial_soup = BeautifulSoup(html_list[0], 'html.parser')
+
+                comb_html.head.extend(initial_soup.head.contents)
+                comb_html.body.extend(initial_soup.body.contents)
+
+                for it in html_list[1:]:
                     
-                    temp_soup = BeautifulSoup(it,'html.parser')
+                    temp_soup = BeautifulSoup(it,'html.parser')    
                     comb_html.body.extend(temp_soup.body.contents)
                 driver.quit()
                 return str(comb_html)
