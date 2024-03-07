@@ -8,6 +8,7 @@ ace/datatable.py
 ace/evaluate.py
 ace/export.py
 ace/extract.py
+ace/ingest.py
 ace/label.py
 ace/scrape.py
 ace/sources.py
@@ -33,4 +34,5 @@ ace/tests/data/jcogneuro.html
 ace/tests/data/jneuro.html
 ace/tests/data/neuroimage.html
 ace/tests/data/plosone.html
+ace/tests/data/springer.html
 ace/tests/data/wiley.html

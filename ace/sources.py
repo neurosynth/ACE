@@ -116,7 +116,6 @@ class Source(metaclass=abc.ABCMeta):
         
         self.article = database.Article(text, pmid=pmid, metadata=metadata)
         self.extract_neurovault(soup)
-        self.extract_text(soup)
         return soup
 
     def extract_neurovault(self, soup):
@@ -584,6 +583,8 @@ class SageSource(Source):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
 
+# Thing I need to change
+# Currently does not work
 class SpringerSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):
@@ -592,24 +593,38 @@ class SpringerSource(Source):
         if not soup:
             return False
 
-        # Extract tables
+        # Extract table; going to take the approach of opening and parsing the table via links
+        # To download tables, we need the content URL and the number of tables
+        content_url = soup.find('meta', {'name': 'citation_fulltext_html_url'})['content']
+
+        n_tables = len(soup.find_all('span', string='Full size table'))
+
+        # Now download each table and parse it
+        # <table class="data last-table">
         tables = []
-        table_containers = soup.findAll(
-            'figure', {'id': re.compile('^Tab\d+$')})
-        for (i, tc) in enumerate(table_containers):
-            table_html = tc.find('table')
-            t = self.parse_table(table_html)
-            # If Table instance is returned, add other properties
+        for i in range(n_tables):
+            t_num = i + 1
+            url = '%s/tables/%d.html' % (content_url, t_num)
+            table_soup = self._download_table(url)
+            # no need for tc as there should only be one table per html being passed in from table soup
+            tc = table_soup.find(class_='data last-table')
+            t = self.parse_table(tc)
             if t:
-                t.position = i + 1
-                t.number = tc['id'][3::].strip()
-                t.label = tc.find('span', class_='CaptionNumber').get_text()
+                t.position = t_num
+                
+                # temp_title contains the label and the caption for the said table
+                temp_title = tc.find(class_=f'table-{t_num}-title').get_text().split()
+
+                # grabbing the first two elements for the label
+                t.label = temp_title[:2]
+                t.number = temp_title[1]
                 try:
-                    t.caption = tc.find(class_='CaptionContent').p.get_text()
+                    # grabbing the rest of the element for the caption/title of the table
+                    t.caption =  temp_title[2:]
                 except:
                     pass
                 try:
-                    t.notes = tc.find(class_='TableFooter').p.get_text()
+                    t.notes = tc.find(class_='c-article-table-footer').get_text()
                 except:
                     pass
                 tables.append(t)
@@ -621,9 +636,8 @@ class SpringerSource(Source):
         return super(SpringerSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        content = soup.find('p', class_='ArticleDOI').get_text()
-        print(content)
-        return content.split(' ')[1]
+        content = soup.find('meta', attrs={'name': "citation_doi"}).get('content')
+        return content
 
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))

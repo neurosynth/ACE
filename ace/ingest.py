@@ -4,6 +4,10 @@ from . import sources, config
 
 logger = logging.getLogger(__name__)
 
+# The actual function that takes articles and adds them to the database
+# imports sources; sources is a module that contains the classes for each
+# source of articles.
+
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
                     pmid_filenames=False, metadata_dir=None, **kwargs):
     ''' Process articles and add their data to the DB.
@@ -31,6 +35,8 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
 
     manager = sources.SourceManager(db, table_dir)
 
+
+    # files are not being executed properly
     if isinstance(files, str):
         from glob import glob
         files = glob(files)
@@ -38,6 +44,8 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
             from random import shuffle
             shuffle(files)
             files = files[:limit]
+
+    logger.info(str(len(files)))
 
     for i, f in enumerate(files):
         logger.info("Processing article %s..." % f)

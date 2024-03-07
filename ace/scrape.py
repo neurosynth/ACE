@@ -6,7 +6,7 @@ from pathlib import Path
 from collections import Mapping
 import requests
 from time import sleep
-import config
+from . import config
 from bs4 import BeautifulSoup
 import logging
 import os
@@ -131,7 +131,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
 
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        xml = PubMedAPI(api_key=api_key).efetch(input_id=pmid,  retmode='xml', rettype='medline', access_db="pubmed")
+        xml = PubMedAPI(api_key=api_key).efetch(input_id=pmid,  retmode='xml', rettype='medline', db="pubmed")
         if store is not None and save and xml is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
@@ -401,7 +401,7 @@ class Scraper:
         ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
         pmid_content = json.loads(self._client.elink(pmid, access_db='pmc', retmode='json'))
         pmcid = pmid_content['linksets'][0]['linksetdbs'][0]['links'][0]
-        content = self._client.efetch(input_id=pmcid, retmode="xml", access_db="pmc")
+        content = self._client.efetch(input_id=pmcid, retmode="xml", db="pmc")
         return (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())) 
     
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):

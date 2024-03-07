@@ -5,5 +5,7 @@ Summary: Automated Coordinate Extraction
 Home-page: http://github.com/neurosynth/ace
 Maintainer: Tal Yarkoni
 Maintainer-email: tyarkoni@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
 Provides-Extra: test
-License-File: LICENSE
