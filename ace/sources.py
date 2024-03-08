@@ -106,6 +106,10 @@ class Source(metaclass=abc.ABCMeta):
         if pmid is None:
             pmid = self.extract_pmid(soup)
 
+        # did our best to find PMID, but failed
+        if not pmid:
+            return False
+
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
         # Remove all scripts and styles
@@ -118,10 +122,9 @@ class Source(metaclass=abc.ABCMeta):
                 self.database.delete_article(pmid)
             else:
                 return False
-        
+
         self.article = database.Article(text, pmid=pmid, metadata=metadata)
         self.extract_neurovault(soup)
-        self.extract_text(soup)
         return soup
 
     def extract_neurovault(self, soup):
@@ -413,7 +416,7 @@ class OUPSource(Source):
         if pmid:
             return pmid['content']
         else:
-            return ''
+            return None
 
     def extract_text(self, soup):
         # If div has class "main-content-wrapper" or "article" or "fulltext-view"

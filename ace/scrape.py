@@ -6,7 +6,7 @@ from pathlib import Path
 from collections import Mapping
 import requests
 from time import sleep
-import config
+from ace import config
 from bs4 import BeautifulSoup
 import logging
 import os
@@ -135,7 +135,7 @@ def get_pubmed_metadata(pmid, parse=True, store=None, save=True, api_key=None):
 
     else:
         logger.info("Retrieving metadata for PubMed article %s..." % str(pmid))
-        xml = PubMedAPI(api_key=api_key).efetch(input_id=pmid,  retmode='xml', rettype='medline', access_db="pubmed")
+        xml = PubMedAPI(api_key=api_key).efetch(input_id=pmid,  retmode='xml', rettype='medline', db='pubmed')
         if store is not None and save and xml is not None:
             if not os.path.exists(store):
                 os.makedirs(store)
@@ -149,7 +149,7 @@ def parse_PMID_xml(xml):
     ''' Take XML-format PubMed metadata and convert it to a dictionary
     with standardized field names. '''
 
-    di = xmltodict.parse(xml)['PubmedArticleSet']
+    di = xmltodict.parse(xml).get('PubmedArticleSet')
     if not di:
         return None
     
@@ -459,7 +459,7 @@ class Scraper:
             dois: A list of DOIs to retrieve. 
             delay: Mean delay between requests.
             mode: When 'browser', use selenium to load articles in Chrome. When 
-                'direct', attempts to fetch the HTML directly via requests module.
+                'requests', attempts to fetch the HTML directly via requests module.
             search: An optional search string to append to the PubMed query.
                 Primarily useful for journals that are not specific to neuroimaging.
             limit: Optional max number of articles to fetch. Note that only new articles 
@@ -477,10 +477,10 @@ class Scraper:
             skip_pubmed_central: When True, skips articles that are available from
                 PubMed Central. 
         '''
-
+        articles_found = 0
         if journal is None and dois is None and pmids is None:
             raise ValueError("Either journal, pmids, or dois must be provided.")
-        
+
         if journal is not None:
             logger.info("Getting PMIDs for articles from %s..." % journal)
             pmids = self.search_pubmed(journal, search)
@@ -499,7 +499,7 @@ class Scraper:
             random.shuffle(pmids)
 
         logger.info("Found %d records.\n" % len(pmids))
-        
+
         invalid_articles = []
         for pmid in pmids:
             if journal is None:
@@ -522,5 +522,7 @@ class Scraper:
 
             if not valid:
                 invalid_articles.append(filename)
+            else:
+                articles_found += 1
 
         return invalid_articles
