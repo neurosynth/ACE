@@ -1,6 +1,6 @@
 # Database stuff and models
 
-from sqlalchemy import (TypeDecorator, Table, Column, Integer, Float, String,
+from sqlalchemy import (TypeDecorator, Table, Column, Integer, Float, String, Boolean,
                         ForeignKey, DateTime, Text)
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
@@ -71,7 +71,7 @@ class Database:
     def print_stats(self):
         ''' Summarize the current state of the DB. '''
         n_articles = self.session.query(Article).count()
-        n_articles_with_coordinates = self.session.query(Table).filter(Table.n_activations>0).distinct('article_id').count()
+        n_articles_with_coordinates = self.session.query(Article).join(Table).filter(Table.n_activations>0).distinct('article_id').count()
         n_tables = self.session.query(Table).count()
         n_activations = self.session.query(Activation).count()
         n_links = self.session.query(NeurovaultLink).count()
@@ -209,12 +209,23 @@ class Activation(Base):
     statistic = Column(String(100))
     p_value = Column(String(100))
 
+    missing_source = Column(Boolean, default=False)
+
     def __init__(self):
         self.problems = []
         self.columns = {}
 
     def set_coords(self, x, y, z):
-        self.x, self.y, self.z = [float(e) for e in [x, y, z]]
+        new_xyz = []
+        for c in [x, y, z]:
+            if c == '' or c is None:
+                c = None
+            else:
+                c = c.replace(' ', '').replace('--', '-').rstrip('.')
+                c = float(c)
+            new_xyz.append(c)
+
+        self.x, self.y, self.z = new_xyz
 
     def add_col(self, key, val):
         self.columns[key] = val
