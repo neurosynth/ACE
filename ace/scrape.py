@@ -347,42 +347,6 @@ class Scraper:
                     WebDriverWait(driver, timeout).until(element_present)
                 except TimeoutException:
                     pass
-            table_https_links = []
-
-            if ("SpringerLink" in html) or ("Springer" in html):
-                # For the accept cookies button
-                accept_button = driver.find_element(By.XPATH, "//button[@data-cc-action='accept']")
-                accept_button.click()
-
-                # Collecting web elements containing sai
-                table_web_element = driver.find_elements(By.LINK_TEXT, "Full size table")
-
-                for items in table_web_element:
-                    table_https_links.append(items.get_attribute('href'))
-
-                # appending original paper
-                html_list.append(html)
-
-                # Extracting htmls for all the 
-                if table_https_links:
-                    for links in table_https_links:
-                        driver.get(links)
-                        html_list.append(driver.page_source)
-
-                # Starter for the new combined html and including the head element to access DOI and other important information
-                comb_html = BeautifulSoup('<html><head><title>Combined SpringerLink Page</title></head><body></body></html>', 'html.parser')
-
-                initial_soup = BeautifulSoup(html_list[0], 'html.parser')
-
-                comb_html.head.extend(initial_soup.head.contents)
-                comb_html.body.extend(initial_soup.body.contents)
-
-                for it in html_list[1:]:
-
-                    temp_soup = BeautifulSoup(it,'html.parser')    
-                    comb_html.body.extend(temp_soup.body.contents)
-                driver.quit()
-                return str(comb_html)
 
             ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
             # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
