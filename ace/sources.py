@@ -762,7 +762,7 @@ class SpringerSource(Source):
         return super(SpringerSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        content = soup.find('meta', attrs={'name': "citation_doi"}).get('content')
+        content = soup.find('meta', attrs={'name': "citation_doi"})['content']
         return content
 
     def extract_pmid(self, soup):
