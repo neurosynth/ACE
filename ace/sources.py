@@ -1,5 +1,5 @@
 # coding: utf-8
-  # use unicode everywhere
+# use unicode everywhere
 from bs4 import BeautifulSoup
 import re
 import os
@@ -565,7 +565,7 @@ class FrontiersSource(Source):
             return soup.find('article-id', {'pub-id-type': 'doi'}).text
         except:
             return ''
-        
+
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
@@ -614,7 +614,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
             return soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})['content']
         except:
             return ''
-        
+
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
