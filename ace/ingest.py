@@ -37,8 +37,6 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
 
     manager = sources.SourceManager(db, table_dir)
 
-
-    # files are not being executed properly
     if isinstance(files, str):
         from glob import glob
         files = glob(files)
