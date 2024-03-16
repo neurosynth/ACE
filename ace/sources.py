@@ -726,8 +726,6 @@ class SageSource(Source):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
 
-# Thing I need to change
-# Currently does not work
 class SpringerSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):
@@ -748,7 +746,6 @@ class SpringerSource(Source):
             t_num = i + 1
             url = '%s/tables/%d' % (content_url, t_num)
             table_soup = self._download_table(url)
-            # tc 
             tc = table_soup.find(class_='data last-table')
             t = self.parse_table(tc)
             if t:
