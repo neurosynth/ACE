@@ -277,7 +277,6 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
-            html_list = []
 
             for attempt in range(10):
                 try:
