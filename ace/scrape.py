@@ -404,11 +404,6 @@ class Scraper:
                 return url
         except Exception as err:
             return url
-
-    def has_pmc_entry(self, pmid):
-        ''' Check if a PubMed Central entry exists for a given PubMed ID. '''
-        content = self._client.efetch(input_id=pmid, retmode='xml')
-        return '<ArticleId IdType="pmc">' in str(content)
     
     def has_pmc_openaccess_entry(self, pmid):
         ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
@@ -511,8 +506,8 @@ class Scraper:
             if max_pmid is not None and int(pmid) > max_pmid: continue  
             if limit is not None and articles_found >= limit: break
 
-            if skip_pubmed_central and self.has_pmc_entry(pmid):
-                logger.info(f"\tPubMed Central entry found! Skipping {pmid}...")
+            if skip_pubmed_central and self.has_pmc_openaccess_entry(pmid):
+                logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
 
             out_dir = (self.store / 'html' / journal)
