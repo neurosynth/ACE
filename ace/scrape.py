@@ -78,7 +78,7 @@ class PubMedAPI:
     def efetch(self, input_id, retmode='txt', rettype='medline', db = 'pubmed', **kwargs):
         params = {
             "db": db,
-            "id": input_id, # type of input id should change with the type of db being accessed
+            "id": input_id,
             "retmode": retmode,
             "rettype": rettype
         }
@@ -404,13 +404,27 @@ class Scraper:
                 return url
         except Exception as err:
             return url
+
     
     def has_pmc_openaccess_entry(self, pmid):
         ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
         pmid_content = json.loads(self._client.elink(pmid, access_db='pmc', retmode='json'))
-        pmcid = pmid_content['linksets'][0]['linksetdbs'][0]['links'][0]
-        content = self._client.efetch(input_id=pmcid, retmode="xml", access_db="pmc")
-        return (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())) 
+        pubmed_ids_list = []
+        
+        if 'linksets' in pmid_content:
+            for linkset in pmid_content['linksets']:
+                if 'linksetdbs' in linkset:
+                    for lsdbs in linkset['linksetdbs']:
+                        if lsdbs['dbto'] == 'pmc':
+                            pubmed_ids_list += lsdbs['links']
+
+
+        for pmcid in pubmed_ids_list:
+            content = self._client.efetch(input_id=pmcid, retmode="xml", db="pmc")
+            if (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())):
+                return True
+        else:
+            return False
     
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
