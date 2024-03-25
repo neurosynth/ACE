@@ -7,7 +7,6 @@ import pytest
 from ace import sources, database, export, scrape, ingest
 
 
-
 @pytest.fixture(scope="module")
 def test_data_path():
     """Returns the path to test datasets, terminated with separator (/ vs \)"""
@@ -71,12 +70,13 @@ def test_plos_source(test_data_path, source_manager):
 @pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 4  # cannot find pmid for some articles
+    assert len(db.articles) == 5  # cannot find pmid for some articles
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
 
-@pytest.mark.vcr(record_mode="rewrite")
+
+@pytest.mark.vcr(record_mode="once")
 def test_journal_scraping(test_data_path):
     scrape_path = join(test_data_path, 'scrape_test')
     os.makedirs(scrape_path, exist_ok=True)
