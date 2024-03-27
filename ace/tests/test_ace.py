@@ -4,6 +4,8 @@ from os.path import dirname, join, exists, sep as pathsep
 
 import pytest
 
+from bs4 import BeautifulSoup
+
 from ace import sources, database, export, scrape, ingest
 
 
@@ -66,6 +68,19 @@ def test_plos_source(test_data_path, source_manager):
     assert t.caption is not None
     assert t.n_activations == 24  # Since there are data for 2 experiments
 
+@pytest.mark.vcr(record_mode="once")
+def test_springer_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'springer.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '1'
+    assert t.caption is not None
+    assert t.n_activations == 12
+
 
 @pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
@@ -88,3 +103,23 @@ def test_journal_scraping(test_data_path):
     n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
     assert n_files == 2
     shutil.rmtree(scrape_path)
+
+def test_springer_exclusive(test_data_path):
+    filename = join(test_data_path, 'plosone.html')
+    plosone = open(filename).read()
+    filename1 = join(test_data_path, 'brain.html')
+    brain = open(filename1).read()
+    filename2 = join(test_data_path, 'cerebral_cortex.html')
+    cerebral_cortex = open(filename2).read()
+    filename3 = join(test_data_path, 'frontiers.html')
+    frontiers = open(filename3).read()
+    filename4 = join(test_data_path, 'cognition.html')
+    cognition = open(filename4).read()
+    filename5 = join(test_data_path, 'jcogneuro.html')
+    jcogneuro = open(filename5).read()
+
+    soup_bundle = [plosone, brain, cerebral_cortex, frontiers, cognition, jcogneuro]
+
+    for ingredients in soup_bundle:
+        soup = BeautifulSoup(ingredients, 'html.parser')
+        assert "Springer" not in soup
