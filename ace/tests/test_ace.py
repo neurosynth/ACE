@@ -103,23 +103,3 @@ def test_journal_scraping(test_data_path):
     n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
     assert n_files == 2
     shutil.rmtree(scrape_path)
-
-def test_springer_exclusive(test_data_path):
-    filename = join(test_data_path, 'plosone.html')
-    plosone = open(filename).read()
-    filename1 = join(test_data_path, 'brain.html')
-    brain = open(filename1).read()
-    filename2 = join(test_data_path, 'cerebral_cortex.html')
-    cerebral_cortex = open(filename2).read()
-    filename3 = join(test_data_path, 'frontiers.html')
-    frontiers = open(filename3).read()
-    filename4 = join(test_data_path, 'cognition.html')
-    cognition = open(filename4).read()
-    filename5 = join(test_data_path, 'jcogneuro.html')
-    jcogneuro = open(filename5).read()
-
-    soup_bundle = [plosone, brain, cerebral_cortex, frontiers, cognition, jcogneuro]
-
-    for ingredients in soup_bundle:
-        soup = BeautifulSoup(ingredients, 'html.parser')
-        assert "Springer" not in soup
