@@ -277,6 +277,7 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
+
             for attempt in range(10):
                 try:
                     driver = uc.Chrome(headless=True)
@@ -353,7 +354,7 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-            html = driver.page_source
+            
             driver.quit()
             return html
 
@@ -438,7 +439,7 @@ class Scraper:
             
             return None, None
 
-        # Save the HTML
+        # Save the HTML 
         doc = self.get_html_by_pmid(id, journal, mode=mode)
         valid = None
         if doc:

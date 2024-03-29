@@ -4,8 +4,9 @@ from os.path import dirname, join, exists, sep as pathsep
 
 import pytest
 
-from ace import sources, database, export, scrape, ingest
+from bs4 import BeautifulSoup
 
+from ace import sources, database, export, scrape, ingest
 
 
 @pytest.fixture(scope="module")
@@ -67,16 +68,30 @@ def test_plos_source(test_data_path, source_manager):
     assert t.caption is not None
     assert t.n_activations == 24  # Since there are data for 2 experiments
 
+@pytest.mark.vcr(record_mode="once")
+def test_springer_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'springer.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '1'
+    assert t.caption is not None
+    assert t.n_activations == 12
+
 
 @pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 4  # cannot find pmid for some articles
+    assert len(db.articles) == 5  # cannot find pmid for some articles
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
 
-@pytest.mark.vcr(record_mode="rewrite")
+
+@pytest.mark.vcr(record_mode="once")
 def test_journal_scraping(test_data_path):
     scrape_path = join(test_data_path, 'scrape_test')
     os.makedirs(scrape_path, exist_ok=True)

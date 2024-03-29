@@ -5,6 +5,10 @@ from .scrape import _validate_scrape
 
 logger = logging.getLogger(__name__)
 
+# The actual function that takes articles and adds them to the database
+# imports sources; sources is a module that contains the classes for each
+# source of articles.
+
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
     pmid_filenames=False, metadata_dir=None, force_ingest=True, **kwargs):
     ''' Process articles and add their data to the DB.

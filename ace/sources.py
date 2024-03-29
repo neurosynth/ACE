@@ -1,5 +1,5 @@
 # coding: utf-8
-  # use unicode everywhere
+# use unicode everywhere
 from bs4 import BeautifulSoup
 import re
 import os
@@ -7,11 +7,11 @@ import json
 import abc
 import importlib
 from glob import glob
-from . import datatable
-from . import tableparser
-from . import scrape
-from . import config
-from . import database
+from ace import datatable
+from ace import tableparser
+from ace import scrape
+from ace import config
+from ace import database
 import logging
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,8 @@ class SourceManager:
 
 # A single source of articles--i.e., a publisher or journal
 class Source(metaclass=abc.ABCMeta):
-
+    # need to include the \\u2009 which is the thin space to which the table is being invalidated due to those characters
+    # -\\u2009int
     ENTITIES = {
         '&nbsp;': ' ',
         '&minus;': '-',
@@ -68,6 +69,7 @@ class Source(metaclass=abc.ABCMeta):
         '\\u0160': '',
         '\\u0145': "'",
         '\\u0146': "'",
+        '\u2009': "",     # Various whitespaces within tables
 
     }
 
@@ -471,7 +473,10 @@ class ScienceDirectSource(Source):
         return super(ScienceDirectSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return list(soup.find('div', {'id': 'article-identifier-links'}).children)[0]['href'].replace('https://doi.org/', '')
+        try:
+            return list(soup.find('div', {'id': 'article-identifier-links'}).children)[0]['href'].replace('https://doi.org/', '')
+        except:
+            return ''
 
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
@@ -510,8 +515,11 @@ class PlosSource(Source):
         return super(PlosSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('article-id', {'pub-id-type': 'doi'}).text
-
+        try:
+            return soup.find('article-id', {'pub-id-type': 'doi'}).text
+        except:
+            return ''
+        
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
@@ -553,7 +561,10 @@ class FrontiersSource(Source):
         return super(FrontiersSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('article-id', {'pub-id-type': 'doi'}).text
+        try:
+            return soup.find('article-id', {'pub-id-type': 'doi'}).text
+        except:
+            return ''
 
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
@@ -599,7 +610,10 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         return super(JournalOfCognitiveNeuroscienceSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})['content']
+        try:
+            return soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})['content']
+        except:
+            return ''
 
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
@@ -646,8 +660,11 @@ class WileySource(Source):
         return super(WileySource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('meta', {'name': 'citation_doi'})['content']
-
+        try:
+            return soup.find('meta', {'name': 'citation_doi'})['content']
+        except:
+            return ''
+    
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
@@ -700,8 +717,11 @@ class SageSource(Source):
         return super(SageSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        return soup.find('meta', {'name': 'citation_doi'})['content']
-
+        try:
+            return soup.find('meta', {'name': 'citation_doi'})['content']
+        except: 
+            return ''
+        
     def extract_pmid(self, soup):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
@@ -714,24 +734,38 @@ class SpringerSource(Source):
         if not soup:
             return False
 
-        # Extract tables
+        # Extract table; going to take the approach of opening and parsing the table via links
+        # To download tables, we need the content URL and the number of tables
+        content_url = soup.find('meta', {'name': 'citation_fulltext_html_url'})['content']
+
+        n_tables = len(soup.find_all('span', string='Full size table'))
+
+        # Now download each table and parse it
         tables = []
-        table_containers = soup.findAll(
-            'figure', {'id': re.compile('^Tab\d+$')})
-        for (i, tc) in enumerate(table_containers):
-            table_html = tc.find('table')
-            t = self.parse_table(table_html)
-            # If Table instance is returned, add other properties
+        for i in range(n_tables):
+            t_num = i + 1
+            url = '%s/tables/%d' % (content_url, t_num)
+            table_soup = self._download_table(url)
+            tc = table_soup.find(class_='data last-table')
+            t = self.parse_table(tc)
             if t:
-                t.position = i + 1
-                t.number = tc['id'][3::].strip()
-                t.label = tc.find('span', class_='CaptionNumber').get_text()
+                t.position = t_num
+                
+                # id_name is the id HTML element that cotains the title, label and table number that needs to be parse
+                # temp_title sets it up to where the title can be parsed and then categorized
+                id_name = f"table-{t_num}-title"
+                temp_title = table_soup.find('h1', attrs={'id': id_name}).get_text().split()
+
+                # grabbing the first two elements for the label and then making them a string object
+                t.label = " ".join(temp_title[:2])
+                t.number = str(temp_title[1])
                 try:
-                    t.caption = tc.find(class_='CaptionContent').p.get_text()
+                    # grabbing the rest of the element for the caption/title of the table and then making them a string object
+                    t.caption =  " ".join(temp_title[2:])
                 except:
                     pass
                 try:
-                    t.notes = tc.find(class_='TableFooter').p.get_text()
+                    t.notes = table_soup.find(class_='c-article-table-footer').get_text()
                 except:
                     pass
                 tables.append(t)
@@ -743,9 +777,10 @@ class SpringerSource(Source):
         return super(SpringerSource, self).parse_table(table)
 
     def extract_doi(self, soup):
-        content = soup.find('p', class_='ArticleDOI').get_text()
-        print(content)
-        return content.split(' ')[1]
-
+        try: 
+            return soup.find('meta', attrs={'name': "citation_doi"})['content']
+        except:
+            return ''
+        
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))

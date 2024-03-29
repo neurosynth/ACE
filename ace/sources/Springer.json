@@ -1,8 +1,7 @@
 {
   "name": "Springer",
   "identifiers": [
-    "- Springer</title>",
-    "SpringerLink</title>"
+    "<meta content=\"Springer\" name=\"dc.publisher\"/>"
   ],
   "entities": {
 
