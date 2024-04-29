@@ -181,12 +181,15 @@ def parse_PMID_xml(xml):
     if authors:
         authors = authors['Author']
 
-        _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
-        if isinstance(authors, list):
-            authors = [_get_author(a) for a in authors if 'ForeName' in a]
-        else:
-            authors = [_get_author(authors)]
-        authors = ';'.join(authors)
+        try:
+            _get_author = lambda a: a['LastName'] + ', ' + a['ForeName']
+            if isinstance(authors, list):
+                authors = [_get_author(a) for a in authors if 'ForeName' in a]
+            else:
+                authors = [_get_author(authors)]
+            authors = ';'.join(authors)
+        except:
+            authors = None
 
     if 'MeshHeadingList' in di['MedlineCitation']:
         mesh = di['MedlineCitation']['MeshHeadingList']['MeshHeading']
@@ -423,6 +426,8 @@ class Scraper:
             content = self._client.efetch(input_id=pmcid, retmode="xml", db="pmc")
             if (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())):
                 return True
+            else:
+                logger.info("PMC non-open access")
         else:
             return False
     
