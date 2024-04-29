@@ -69,5 +69,6 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
             db.add(article)
             if commit and (i % 100 == 0 or i == len(files) - 1):
                 db.save()
+    db.save()
 
     return missing_sources
