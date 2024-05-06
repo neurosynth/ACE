@@ -592,7 +592,9 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
             if t:
                 t.position = i + 1
-                t.number = re.search('T(\d+).+$', tc['content-id']).group(1)
+                s = re.search('T(\d+).+$', tc['content-id'])
+                if s:
+                    t.number = s.group(1)
                 caption = tc.find('div', class_='caption')
                 if caption:
                     t.label = caption.get_text()
