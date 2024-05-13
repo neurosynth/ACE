@@ -21,6 +21,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from tqdm import tqdm
+import concurrent.futures
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,26 @@ def get_url(url, delay=0.0, verbose=False):
     sleep(delay)
     r = requests.get(url, headers=headers, timeout=5.0)
     return r.text
+
+def _convert_pmid_to_pmc(pmids):
+    url_template = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids="
+    logger.info("Converting PMIDs to PMCIDs...")
+
+    # Chunk the PMIDs into groups of 200
+    pmids = [str(p) for p in pmids]
+    pmid_chunks = [pmids[i:i + 200] for i in range(0, len(pmids), 200)]
+
+    pmc_ids = []
+    for chunk in tqdm(pmid_chunks):
+        pmid_str = ','.join(chunk)
+        url = url_template + pmid_str
+        response = get_url(url)
+        # Respionse <record requested-id="23193288" pmcid="PMC3531191" pmid="23193288" doi="10.1093/nar/gks1163">
+        pmc_ids += re.findall(r'<record requested-id="[^"]+" pmcid="([^"]+)" pmid="([^"]+)" doi="[^"]+">', response)
+
+    logger.info(f"Found {len(pmc_ids)} PMCIDs from {len(pmids)} PMIDs.")
+        
+    return pmc_ids
 
 
 class PubMedAPI:
@@ -285,10 +307,10 @@ class Scraper:
                 try:
                     driver = uc.Chrome(headless=True)
                     driver.implicitly_wait(5)
-                    driver.set_page_load_timeout(5)
+                    driver.set_page_load_timeout(10)
                     driver.get(url)
                     url = driver.current_url
-                except TimeoutException:
+                except (TimeoutException, OSError):
                     driver.quit()
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
                 else:
@@ -410,28 +432,13 @@ class Scraper:
             return url
 
     
-    def has_pmc_openaccess_entry(self, pmid):
-        ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
-        pmid_content = json.loads(self._client.elink(pmid, access_db='pmc', retmode='json'))
-        pubmed_ids_list = []
-        
-        if 'linksets' in pmid_content:
-            for linkset in pmid_content['linksets']:
-                if 'linksetdbs' in linkset:
-                    for lsdbs in linkset['linksetdbs']:
-                        if lsdbs['dbto'] == 'pmc':
-                            pubmed_ids_list += lsdbs['links']
+    def is_pmc_open_acess(self, pmcid):
+        oa_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id="
 
-
-        for pmcid in pubmed_ids_list:
-            content = self._client.efetch(input_id=pmcid, retmode="xml", db="pmc")
-            if (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())):
-                return True
-            else:
-                logger.info("PMC non-open access")
-        else:
-            return False
+        response = get_url(oa_url + pmcid)
     
+        return 'idIsNotOpenAccess' not in response
+
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
         logger.info("Processing %s..." % id)
@@ -515,8 +522,13 @@ class Scraper:
 
         logger.info("Found %d records.\n" % len(pmids))
 
+        if skip_pubmed_central:
+            all_ids = _convert_pmid_to_pmc(pmids)
+        else:
+            all_ids = [(None, pmid) for pmid in pmids]
+        
         invalid_articles = []
-        for pmid in pmids:
+        for pmcid, pmid in all_ids:
             if journal is None:
                 # Get the journal name
                 metadata = get_pubmed_metadata(pmid)
@@ -526,7 +538,7 @@ class Scraper:
             if max_pmid is not None and int(pmid) > max_pmid: continue  
             if limit is not None and articles_found >= limit: break
 
-            if skip_pubmed_central and self.has_pmc_openaccess_entry(pmid):
+            if skip_pubmed_central and self.is_pmc_open_acess(pmcid):
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
 
