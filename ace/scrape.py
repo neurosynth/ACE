@@ -26,11 +26,26 @@ import concurrent.futures
 
 logger = logging.getLogger(__name__)
 
-def get_url(url, delay=0.0, verbose=False):
+def get_url(url, n_retries=5, timeout=5.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
-    sleep(delay)
-    r = requests.get(url, headers=headers, timeout=5.0)
-    return r.text
+
+    def exponential_backoff(retries):
+        return 2 ** retries
+
+    retries = 0
+    while retries < n_retries:
+
+        try:
+            r = requests.get(url, headers=headers, timeout=timeout)
+            return r.text
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Request failed: {e}")
+            sleep_time = exponential_backoff(retries)
+            logger.info(f"Retrying in {sleep_time} seconds...")
+            sleep(sleep_time)
+            retries += 1
+    logger.error("Exceeded maximum number of retries.")
+    return None
 
 def _convert_pmid_to_pmc(pmids):
     url_template = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids="
@@ -301,18 +316,21 @@ class Scraper:
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-        if mode == 'browser':
+        options = uc.ChromeOptions()
+        options.add_argument('--headless')
 
-            for attempt in range(10):
+        if mode == 'browser':
+            driver = uc.Chrome(options=options)
+            for attempt in range(15):
                 try:
-                    driver = uc.Chrome(headless=True)
-                    driver.implicitly_wait(5)
                     driver.set_page_load_timeout(10)
                     driver.get(url)
                     url = driver.current_url
-                except (TimeoutException, OSError):
+                except:
                     driver.quit()
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
+                    sleep(5)
+                    continue
                 else:
                     break
             else:
@@ -323,6 +341,7 @@ class Scraper:
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
+                driver = uc.Chrome(options=options)
                 driver.get(new_url)
                 sleep(2)
                 if journal.lower() in ['human brain mapping',
@@ -359,13 +378,13 @@ class Scraper:
                         sleep(0.5 + random.random() * 1)
 
             # If title has ScienceDirect in in title
-            elif ' - ScienceDirect' in driver.page_source:
+            elif ' - ScienceDirect' in html:
                 try:
                     element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
                     WebDriverWait(driver, timeout).until(element_present)
                 except TimeoutException:
                     pass
-            elif 'Wiley Online Library</title>' in driver.page_source:
+            elif 'Wiley Online Library</title>' in html:
                 try:
                     element_present = EC.presence_of_element_located((By.ID, 'article__content'))
                     WebDriverWait(driver, timeout).until(element_present)
@@ -522,11 +541,31 @@ class Scraper:
 
         logger.info("Found %d records.\n" % len(pmids))
 
+        # If journal is provided, check for existing articles
+        if journal is not None:
+            logger.info("Retrieving articles from %s..." % journal)
+            journal_path = (self.store / 'html' / journal)
+            if journal_path.exists():
+                existing = journal_path.glob('*.html')
+                existing = [int(f.stem) for f in existing]
+                n_existing = len(existing)
+                pmids = [pmid for pmid in pmids if int(pmid) not in existing]
+                logger.info(f"Found {n_existing} existing articles.")
+
+        # Filter out articles that are outside the PMID range
+        pmids = [
+            pmid
+            for pmid in pmids 
+            if (min_pmid is None or int(pmid) >= min_pmid) and (max_pmid is None or int(pmid) <= max_pmid)
+            ]
+    
+        logger.info(f"Retrieving {len(pmids)} articles...")
+        
         if skip_pubmed_central:
             all_ids = _convert_pmid_to_pmc(pmids)
         else:
             all_ids = [(None, pmid) for pmid in pmids]
-        
+
         invalid_articles = []
         for pmcid, pmid in all_ids:
             if journal is None:
@@ -534,16 +573,11 @@ class Scraper:
                 metadata = get_pubmed_metadata(pmid)
                 journal = metadata['journal']
 
-            if min_pmid is not None and int(pmid) < min_pmid: continue
-            if max_pmid is not None and int(pmid) > max_pmid: continue  
             if limit is not None and articles_found >= limit: break
 
             if skip_pubmed_central and self.is_pmc_open_acess(pmcid):
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
-
-            out_dir = (self.store / 'html' / journal)
-            out_dir.mkdir(parents=True, exist_ok=True)
 
             filename, valid = self.process_article(pmid, journal, delay, mode, overwrite)
 
