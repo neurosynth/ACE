@@ -1,7 +1,7 @@
 # coding: utf-8
   # use unicode everywhere
 import re
-import json
+import sys
 from pathlib import Path
 from collections import Mapping
 import requests
@@ -14,17 +14,29 @@ import random
 import xmltodict
 from requests.adapters import HTTPAdapter, Retry
 import undetected_chromedriver as uc
-import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from tqdm import tqdm
-import concurrent.futures
+from time import time
 
 logger = logging.getLogger(__name__)
+
+def _quit_driver(driver):
+    try:
+        logger.debug("Terminating the UC browser")
+        os.kill(driver.browser_pid, 15)
+        if "linux" in sys.platform:
+            os.waitpid(driver.browser_pid, 0)
+            time.sleep(0.02)
+        else:
+            time.sleep(0.04)
+    except (AttributeError, ChildProcessError, RuntimeError, OSError):
+        time.sleep(0.05)
+    except Exception:
+        pass
 
 def get_url(url, n_retries=5, timeout=5.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
@@ -316,10 +328,11 @@ class Scraper:
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-        options = uc.ChromeOptions()
-        options.add_argument('--headless')
+
 
         if mode == 'browser':
+            options = uc.ChromeOptions()
+            options.add_argument('--headless')
             driver = uc.Chrome(options=options)
             for attempt in range(15):
                 try:
@@ -327,7 +340,7 @@ class Scraper:
                     driver.get(url)
                     url = driver.current_url
                 except:
-                    driver.quit()
+                    _quit_driver(driver)
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
                     sleep(5)
                     continue
@@ -341,6 +354,8 @@ class Scraper:
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
+                options = uc.ChromeOptions()
+                options.add_argument('--headless')
                 driver = uc.Chrome(options=options)
                 driver.get(new_url)
                 sleep(2)
@@ -399,7 +414,7 @@ class Scraper:
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
             
-            driver.quit()
+            _quit_driver(driver)
             return html
 
         elif mode == 'requests':
