@@ -101,7 +101,15 @@ def test_journal_scraping(test_data_path):
     os.makedirs(scrape_path, exist_ok=True)
     # Test with PLoS ONE because it's OA
     scraper = scrape.Scraper(scrape_path)
-    scraper.retrieve_articles('PLoS ONE', delay=5.0, mode='requests', search='fmri', limit=2, skip_pubmed_central=False)
+    scraper.retrieve_articles(
+        'PLoS ONE',
+        delay=5.0,
+        mode='requests',
+        search='fmri',
+        limit=2,
+        skip_pubmed_central=False,
+        invalid_article_log_file=join(scrape_path, 'invalid_articles.log')
+    )
     # For now just check to make sure we have expected number of files in the directory
     plos_dir = join(scrape_path, 'html/PLoS ONE/')
     n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])

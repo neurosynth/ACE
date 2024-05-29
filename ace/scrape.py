@@ -492,7 +492,7 @@ class Scraper:
 
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
-                                skip_pubmed_central=True):
+                                skip_pubmed_central=True, invalid_article_log_file=None):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -518,7 +518,8 @@ class Scraper:
                 this will be processed. 
             shuffle: When True, articles are retrieved in random order.
             skip_pubmed_central: When True, skips articles that are available from
-                PubMed Central. 
+                PubMed Central.
+            invalid_article_log_file: Optional path to a file to log files where scraping failed.
         '''
         articles_found = 0
         if journal is None and dois is None and pmids is None:
@@ -585,6 +586,9 @@ class Scraper:
 
             if not valid:
                 invalid_articles.append(filename)
+                if invalid_article_log_file is not None:
+                    with open(invalid_article_log_file, 'a') as f:
+                        f.write(f"{pmid}\n")
             else:
                 articles_found += 1
 
