@@ -222,7 +222,7 @@ def parse_table(data):
         r = [x or '' for x in r]
         found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
         for j, val in enumerate(r):
-            val = val.strip()
+            val = val.strip().replace('\n', '\t')
             if val != '' and val[-1] == '.':
                 val = val[:-1].strip()
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
