@@ -20,7 +20,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from tqdm import tqdm
-from time import time
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +35,8 @@ def _quit_driver(driver):
             time.sleep(0.04)
     except (AttributeError, ChildProcessError, RuntimeError, OSError):
         time.sleep(0.05)
-    except Exception:
-        pass
 
-def get_url(url, n_retries=5, timeout=5.0, verbose=False):
+def get_url(url, n_retries=5, timeout=10.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
 
     def exponential_backoff(retries):
@@ -354,6 +352,7 @@ class Scraper:
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
+                _quit_driver(driver)
                 options = uc.ChromeOptions()
                 options.add_argument('--headless')
                 driver = uc.Chrome(options=options)
