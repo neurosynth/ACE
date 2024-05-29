@@ -21,14 +21,51 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from tqdm import tqdm
+import concurrent.futures
 
 logger = logging.getLogger(__name__)
 
-def get_url(url, delay=0.0, verbose=False):
+def get_url(url, n_retries=5, timeout=5.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
-    sleep(delay)
-    r = requests.get(url, headers=headers, timeout=5.0)
-    return r.text
+
+    def exponential_backoff(retries):
+        return 2 ** retries
+
+    retries = 0
+    while retries < n_retries:
+
+        try:
+            r = requests.get(url, headers=headers, timeout=timeout)
+            return r.text
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Request failed: {e}")
+            sleep_time = exponential_backoff(retries)
+            logger.info(f"Retrying in {sleep_time} seconds...")
+            sleep(sleep_time)
+            retries += 1
+    logger.error("Exceeded maximum number of retries.")
+    return None
+
+def _convert_pmid_to_pmc(pmids):
+    url_template = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids="
+    logger.info("Converting PMIDs to PMCIDs...")
+
+    # Chunk the PMIDs into groups of 200
+    pmids = [str(p) for p in pmids]
+    pmid_chunks = [pmids[i:i + 200] for i in range(0, len(pmids), 200)]
+
+    pmc_ids = []
+    for chunk in tqdm(pmid_chunks):
+        pmid_str = ','.join(chunk)
+        url = url_template + pmid_str
+        response = get_url(url)
+        # Respionse <record requested-id="23193288" pmcid="PMC3531191" pmid="23193288" doi="10.1093/nar/gks1163">
+        pmc_ids += re.findall(r'<record requested-id="[^"]+" pmcid="([^"]+)" pmid="([^"]+)" doi="[^"]+">', response)
+
+    logger.info(f"Found {len(pmc_ids)} PMCIDs from {len(pmids)} PMIDs.")
+        
+    return pmc_ids
 
 
 class PubMedAPI:
@@ -239,10 +276,12 @@ def _validate_scrape(html):
     """ Checks to see if scraping was successful. 
     For example, checks to see if Cloudfare interfered """
 
-    patterns = ['Checking if you are a human', 
-    'Please turn JavaScript on and reload the page', 
+    patterns = ['Checking if you are a human',
+    'Please turn JavaScript on and reload the page',
     'Checking if the site connection is secure',
-    'Enable JavaScript and cookies to continue']
+    'Enable JavaScript and cookies to continue',
+    'There was a problem providing the content you requested',
+    '<title>Redirecting</title>']
 
     for pattern in patterns:
         if pattern in html:
@@ -279,18 +318,21 @@ class Scraper:
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-        if mode == 'browser':
+        options = uc.ChromeOptions()
+        options.add_argument('--headless')
 
-            for attempt in range(10):
+        if mode == 'browser':
+            driver = uc.Chrome(options=options)
+            for attempt in range(15):
                 try:
-                    driver = uc.Chrome(headless=True)
-                    driver.implicitly_wait(5)
-                    driver.set_page_load_timeout(5)
+                    driver.set_page_load_timeout(10)
                     driver.get(url)
                     url = driver.current_url
-                except TimeoutException:
+                except:
                     driver.quit()
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
+                    sleep(5)
+                    continue
                 else:
                     break
             else:
@@ -301,6 +343,7 @@ class Scraper:
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
+                driver = uc.Chrome(options=options)
                 driver.get(new_url)
                 sleep(2)
                 if journal.lower() in ['human brain mapping',
@@ -337,13 +380,13 @@ class Scraper:
                         sleep(0.5 + random.random() * 1)
 
             # If title has ScienceDirect in in title
-            elif ' - ScienceDirect' in driver.page_source:
+            elif ' - ScienceDirect' in html:
                 try:
                     element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
                     WebDriverWait(driver, timeout).until(element_present)
                 except TimeoutException:
                     pass
-            elif 'Wiley Online Library</title>' in driver.page_source:
+            elif 'Wiley Online Library</title>' in html:
                 try:
                     element_present = EC.presence_of_element_located((By.ID, 'article__content'))
                     WebDriverWait(driver, timeout).until(element_present)
@@ -410,28 +453,13 @@ class Scraper:
             return url
 
     
-    def has_pmc_openaccess_entry(self, pmid):
-        ''' Check if a PubMed Central Open Access entry exists for a given PMID'''
-        pmid_content = json.loads(self._client.elink(pmid, access_db='pmc', retmode='json'))
-        pubmed_ids_list = []
-        
-        if 'linksets' in pmid_content:
-            for linkset in pmid_content['linksets']:
-                if 'linksetdbs' in linkset:
-                    for lsdbs in linkset['linksetdbs']:
-                        if lsdbs['dbto'] == 'pmc':
-                            pubmed_ids_list += lsdbs['links']
+    def is_pmc_open_acess(self, pmcid):
+        oa_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id="
 
-
-        for pmcid in pubmed_ids_list:
-            content = self._client.efetch(input_id=pmcid, retmode="xml", db="pmc")
-            if (('open-access' in str(content).lower()) or ('open access' in str(content).lower()) or ('openaccess' in str(content).lower())):
-                return True
-            else:
-                logger.info("PMC non-open access")
-        else:
-            return False
+        response = get_url(oa_url + pmcid)
     
+        return 'idIsNotOpenAccess' not in response
+
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
 
         logger.info("Processing %s..." % id)
@@ -515,23 +543,43 @@ class Scraper:
 
         logger.info("Found %d records.\n" % len(pmids))
 
+        # If journal is provided, check for existing articles
+        if journal is not None:
+            logger.info("Retrieving articles from %s..." % journal)
+            journal_path = (self.store / 'html' / journal)
+            if journal_path.exists():
+                existing = journal_path.glob('*.html')
+                existing = [int(f.stem) for f in existing]
+                n_existing = len(existing)
+                pmids = [pmid for pmid in pmids if int(pmid) not in existing]
+                logger.info(f"Found {n_existing} existing articles.")
+
+        # Filter out articles that are outside the PMID range
+        pmids = [
+            pmid
+            for pmid in pmids 
+            if (min_pmid is None or int(pmid) >= min_pmid) and (max_pmid is None or int(pmid) <= max_pmid)
+            ]
+    
+        logger.info(f"Retrieving {len(pmids)} articles...")
+        
+        if skip_pubmed_central:
+            all_ids = _convert_pmid_to_pmc(pmids)
+        else:
+            all_ids = [(None, pmid) for pmid in pmids]
+
         invalid_articles = []
-        for pmid in pmids:
+        for pmcid, pmid in all_ids:
             if journal is None:
                 # Get the journal name
                 metadata = get_pubmed_metadata(pmid)
                 journal = metadata['journal']
 
-            if min_pmid is not None and int(pmid) < min_pmid: continue
-            if max_pmid is not None and int(pmid) > max_pmid: continue  
             if limit is not None and articles_found >= limit: break
 
-            if skip_pubmed_central and self.has_pmc_openaccess_entry(pmid):
+            if skip_pubmed_central and self.is_pmc_open_acess(pmcid):
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
-
-            out_dir = (self.store / 'html' / journal)
-            out_dir.mkdir(parents=True, exist_ok=True)
 
             filename, valid = self.process_article(pmid, journal, delay, mode, overwrite)
 

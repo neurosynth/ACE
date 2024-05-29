@@ -1,7 +1,8 @@
 {
   "name": "Springer",
   "identifiers": [
-    "<meta content=\"Springer\" name=\"dc.publisher\"/>"
+    "<meta content=\"Springer\" name=\"dc.publisher\"/>",
+    "meta property=\"og:site_name\" content=\"SpringerLink\""
   ],
   "entities": {
 
