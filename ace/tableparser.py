@@ -46,7 +46,7 @@ def identify_standard_columns(labels):
             s = 'statistic' if not found_coords or labels[i - 1] != 'y' else 'z'
         elif regex.search('rdinate', lab):
             continue
-        elif lab == 't' or regex.search('^(z|t).*(score|value)', lab):
+        elif lab == 't' or regex.search('^(max.*(z|t).*|.*(z|t).*(score|value|max))$', lab):
             s = 'statistic'
         elif regex.search('p[\-\s]+.*val', lab):
             s = 'p_value'
@@ -171,7 +171,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
             # If they're not, keep only leading numbers. The exception is that ScienceDirect 
             # journals often follow the minus sign with a space (e.g., - 35), which we strip.
             if regex.match('[xyz]$', sc):
-                m = regex.match('([-])s?(\d+\.*\d*)$', col)
+                m = regex.match('([-])\s?(\d+\.*\d*)$', col)
                 if m:
                     col = "%s%s" % (m.group(1), m.group(2))
                 if not regex.match('([-]*\d+)\.*\d*$', col):
@@ -222,7 +222,7 @@ def parse_table(data):
         r = [x or '' for x in r]
         found_xyz = regex.search('\d+.*\d+.*\d+', '/'.join(r))  # use this later
         for j, val in enumerate(r):
-            val = val.strip().replace('\n', '\t')
+            val = val.strip().replace('\n', '\t')  # regex doesn't match with newlines in the string
             if val != '' and val[-1] == '.':
                 val = val[:-1].strip()
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
@@ -332,8 +332,7 @@ def parse_table(data):
 
         # Skip any additional header rows
         if n_cells != n_cols or regex.search('@@', ' '.join(r)): continue
-    
-      
+
         # If we don't have to worry about groups, the entire row is a single activation
         if not len(group_cols):
             activation = create_activation(r, labels, standard_cols, group_row)
