@@ -276,10 +276,12 @@ def _validate_scrape(html):
     """ Checks to see if scraping was successful. 
     For example, checks to see if Cloudfare interfered """
 
-    patterns = ['Checking if you are a human', 
-    'Please turn JavaScript on and reload the page', 
+    patterns = ['Checking if you are a human',
+    'Please turn JavaScript on and reload the page',
     'Checking if the site connection is secure',
-    'Enable JavaScript and cookies to continue']
+    'Enable JavaScript and cookies to continue',
+    'There was a problem providing the content you requested',
+    '<title>Redirecting</title>']
 
     for pattern in patterns:
         if pattern in html:
