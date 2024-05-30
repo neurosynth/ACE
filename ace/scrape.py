@@ -24,7 +24,55 @@ from selenium.webdriver.common.by import By
 from tqdm import tqdm
 import concurrent.futures
 
+
+from .config import USER_AGENTS
+from tempfile import mkdtemp
+
 logger = logging.getLogger(__name__)
+
+BROWSER_USER_DATA_DIR = mkdtemp()
+BROWSER_DATA_PATH = mkdtemp()
+BROWSER_DISK_CACHE_DIR = mkdtemp()
+
+
+def create_driver():
+    """create a new Chrome driver with the appropriate settings"""
+    options = uc.ChromeOptions()
+    # disable the AutomationControlled feature of Blink rendering engine
+    options.add_argument('--disable-blink-features=AutomationControlled')
+
+    # disable pop-up blocking (could make the browser more detectable)
+    options.add_argument('--disable-popup-blocking')
+    # disable extensions
+    options.add_argument('--disable-extensions')
+    # disable sandbox mode (could make the browser more detectable)
+    options.add_argument('--no-sandbox')
+
+    options.add_argument("--headless=new")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-dev-tools")
+    options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
+    options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
+    options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
+    user_agent = random.choice(USER_AGENTS)
+    options.add_argument(f'--user-agent={user_agent}')
+
+    driver = uc.Chrome(options=options)
+
+    # Change the property value of the navigator for webdriver to undefined
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+    # Further remove WebDriver hints using CDP commands
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+        'source': '''
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        '''
+    })
+
+    return driver
+
 
 def get_url(url, n_retries=5, timeout=5.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
@@ -318,11 +366,8 @@ class Scraper:
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-        options = uc.ChromeOptions()
-        options.add_argument('--headless')
-
         if mode == 'browser':
-            driver = uc.Chrome(options=options)
+            driver = create_driver()
             for attempt in range(15):
                 try:
                     driver.set_page_load_timeout(10)
@@ -338,13 +383,27 @@ class Scraper:
             else:
                 logger.info("Timeout exception. Giving up.")
                 return None
-
-            html = driver.page_source
+            for attempt in range(10):
+                try:
+                    html = driver.page_source
+                except:
+                    logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.quit()
+                    driver = create_driver()
+                    driver.get(url)
+                    sleep(8)
+                else:
+                    break
+    
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
-                driver = uc.Chrome(options=options)
-                driver.get(new_url)
+                try:
+                    driver.get(new_url)
+                except:
+                    driver.quit()
+                    driver = create_driver()
+                    driver.get(new_url)
                 sleep(2)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
@@ -362,10 +421,20 @@ class Scraper:
                     alert.dismiss()
                 except:
                     pass
-                            
+
             logger.info(journal.lower())
             timeout = 5
-            html = driver.page_source
+            for attempt in range(10):
+                try:
+                    html = driver.page_source
+                except:
+                    logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.quit()
+                    driver = create_driver()
+                    driver.get(url)
+                    sleep(8)
+                else:
+                    break
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
                 ## Find links with class data-table-url, and click on them
                 ## to load the table data.
@@ -400,7 +469,7 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-            
+
             driver.quit()
             return html
 
