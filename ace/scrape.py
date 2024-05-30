@@ -405,7 +405,12 @@ class Scraper:
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
-                driver.get(new_url)
+                try:
+                    driver.get(new_url)
+                except:
+                    driver.quit()
+                    driver = create_driver()
+                    driver.get(new_url)
                 sleep(2)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
