@@ -22,7 +22,99 @@ from selenium.webdriver.common.by import By
 from tqdm import tqdm
 import time
 
+
+from .config import USER_AGENTS
+from tempfile import mkdtemp
+
 logger = logging.getLogger(__name__)
+
+BROWSER_USER_DATA_DIR = mkdtemp()
+BROWSER_DATA_PATH = mkdtemp()
+BROWSER_DISK_CACHE_DIR = mkdtemp()
+
+
+def create_driver():
+    """create a new Chrome driver with the appropriate settings"""
+    options = uc.ChromeOptions()
+    # disable the AutomationControlled feature of Blink rendering engine
+    options.add_argument('--disable-blink-features=AutomationControlled')
+
+    # disable pop-up blocking (could make the browser more detectable)
+    options.add_argument('--disable-popup-blocking')
+    # disable extensions
+    options.add_argument('--disable-extensions')
+    # disable sandbox mode (could make the browser more detectable)
+    options.add_argument('--no-sandbox')
+
+    options.add_argument("--headless=new")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-dev-tools")
+    options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
+    options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
+    options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
+    user_agent = random.choice(USER_AGENTS)
+    options.add_argument(f'--user-agent={user_agent}')
+
+    driver = uc.Chrome(options=options)
+
+    # Change the property value of the navigator for webdriver to undefined
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+    # Further remove WebDriver hints using CDP commands
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+        'source': '''
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        '''
+    })
+
+    return driver
+
+
+BROWSER_USER_DATA_DIR = mkdtemp()
+BROWSER_DATA_PATH = mkdtemp()
+BROWSER_DISK_CACHE_DIR = mkdtemp()
+
+
+def create_driver():
+    """create a new Chrome driver with the appropriate settings"""
+    options = uc.ChromeOptions()
+    # disable the AutomationControlled feature of Blink rendering engine
+    options.add_argument('--disable-blink-features=AutomationControlled')
+
+    # disable pop-up blocking (could make the browser more detectable)
+    options.add_argument('--disable-popup-blocking')
+    # disable extensions
+    options.add_argument('--disable-extensions')
+    # disable sandbox mode (could make the browser more detectable)
+    options.add_argument('--no-sandbox')
+
+    options.add_argument("--headless=new")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-dev-tools")
+    options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
+    options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
+    options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
+    user_agent = random.choice(USER_AGENTS)
+    options.add_argument(f'--user-agent={user_agent}')
+
+    driver = uc.Chrome(options=options)
+
+    # Change the property value of the navigator for webdriver to undefined
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+    # Further remove WebDriver hints using CDP commands
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+        'source': '''
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        '''
+    })
+
+    return driver
+
 
 def _quit_driver(driver):
     driver.close()
@@ -291,10 +383,12 @@ def _validate_scrape(html):
     """ Checks to see if scraping was successful. 
     For example, checks to see if Cloudfare interfered """
 
-    patterns = ['Checking if you are a human', 
-    'Please turn JavaScript on and reload the page', 
+    patterns = ['Checking if you are a human',
+    'Please turn JavaScript on and reload the page',
     'Checking if the site connection is secure',
-    'Enable JavaScript and cookies to continue']
+    'Enable JavaScript and cookies to continue',
+    'There was a problem providing the content you requested',
+    '<title>Redirecting</title>']
 
     for pattern in patterns:
         if pattern in html:
@@ -331,12 +425,8 @@ class Scraper:
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-
-
         if mode == 'browser':
-            options = uc.ChromeOptions()
-            options.add_argument('--headless')
-            driver = uc.Chrome(options=options)
+            driver = create_driver()
             for attempt in range(15):
                 try:
                     driver.set_page_load_timeout(10)
@@ -352,16 +442,27 @@ class Scraper:
             else:
                 logger.info("Timeout exception. Giving up.")
                 return None
-
-            html = driver.page_source
+            for attempt in range(10):
+                try:
+                    html = driver.page_source
+                except:
+                    logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.quit()
+                    driver = create_driver()
+                    driver.get(url)
+                    sleep(8)
+                else:
+                    break
+    
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
-                _quit_driver(driver)
-                options = uc.ChromeOptions()
-                options.add_argument('--headless')
-                driver = uc.Chrome(options=options)
-                driver.get(new_url)
+                try:
+                    driver.get(new_url)
+                except:
+                    _quit_driver(driver)
+                driver = create_driver()
+                    driver.get(new_url)
                 sleep(2)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
@@ -379,10 +480,20 @@ class Scraper:
                     alert.dismiss()
                 except:
                     pass
-                            
+
             logger.info(journal.lower())
             timeout = 5
-            html = driver.page_source
+            for attempt in range(10):
+                try:
+                    html = driver.page_source
+                except:
+                    logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.quit()
+                    driver = create_driver()
+                    driver.get(url)
+                    sleep(8)
+                else:
+                    break
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
                 ## Find links with class data-table-url, and click on them
                 ## to load the table data.
@@ -509,7 +620,7 @@ class Scraper:
 
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
-                                skip_pubmed_central=True):
+                                skip_pubmed_central=True, invalid_article_log_file=None):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -535,7 +646,8 @@ class Scraper:
                 this will be processed. 
             shuffle: When True, articles are retrieved in random order.
             skip_pubmed_central: When True, skips articles that are available from
-                PubMed Central. 
+                PubMed Central.
+            invalid_article_log_file: Optional path to a file to log files where scraping failed.
         '''
         articles_found = 0
         if journal is None and dois is None and pmids is None:
@@ -602,6 +714,9 @@ class Scraper:
 
             if not valid:
                 invalid_articles.append(filename)
+                if invalid_article_log_file is not None:
+                    with open(invalid_article_log_file, 'a') as f:
+                        f.write(f"{pmid}\n")
             else:
                 articles_found += 1
 

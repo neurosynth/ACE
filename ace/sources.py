@@ -280,10 +280,10 @@ class Source(metaclass=abc.ABCMeta):
             if os.path.exists(filename):
                 table_html = open(filename).read()
             else:
-                table_html = scrape.get_url(url, delay=delay)
+                table_html = scrape.get_url(url)
                 open(filename, 'w').write(table_html.encode('utf-8'))
         else:
-            table_html = scrape.get_url(url, delay=delay)
+            table_html = scrape.get_url(url)
 
         table_html = self.decode_html_entities(table_html)
         return(BeautifulSoup(table_html))

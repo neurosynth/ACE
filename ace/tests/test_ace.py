@@ -4,8 +4,6 @@ from os.path import dirname, join, exists, sep as pathsep
 
 import pytest
 
-from bs4 import BeautifulSoup
-
 from ace import sources, database, export, scrape, ingest
 
 
@@ -13,6 +11,12 @@ from ace import sources, database, export, scrape, ingest
 def test_data_path():
     """Returns the path to test datasets, terminated with separator (/ vs \)"""
     return join(dirname(__file__), 'data') + pathsep
+
+
+@pytest.fixture(scope="module")
+def test_weird_data_path():
+    """Returns the path to test datasets, terminated with separator (/ vs \)"""
+    return join(dirname(__file__), 'weird_data') + pathsep
 
 
 @pytest.fixture(scope="module")
@@ -97,9 +101,56 @@ def test_journal_scraping(test_data_path):
     os.makedirs(scrape_path, exist_ok=True)
     # Test with PLoS ONE because it's OA
     scraper = scrape.Scraper(scrape_path)
-    scraper.retrieve_articles('PLoS ONE', delay=5.0, mode='requests', search='fmri', limit=2, skip_pubmed_central=False)
+    scraper.retrieve_articles(
+        'PLoS ONE',
+        delay=5.0,
+        mode='requests',
+        search='fmri',
+        limit=2,
+        skip_pubmed_central=False,
+        invalid_article_log_file=join(scrape_path, 'invalid_articles.log')
+    )
     # For now just check to make sure we have expected number of files in the directory
     plos_dir = join(scrape_path, 'html/PLoS ONE/')
     n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
     assert n_files == 2
     shutil.rmtree(scrape_path)
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_cerebral_cortex_source(test_weird_data_path, source_manager):
+    pmid = '11532885'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 5
+    total_activations = sum([t.n_activations for t in tables])
+    assert total_activations == 44  # across 5 tables
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_neuropsychologia_source(test_weird_data_path, source_manager):
+    pmid = '29366950'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 1
+    assert tables[0].n_activations == 10
+
+
+# this paper grabs brodmann areas as coordinates, but is not a priority to fix.
+@pytest.mark.vcr(record_mode="once")
+def test_brain_research_source(test_weird_data_path, source_manager):
+    pmid = '18760263'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 2
+    total_activations = sum([t.n_activations for t in tables])
+    assert total_activations == 26  # across 2 tables
