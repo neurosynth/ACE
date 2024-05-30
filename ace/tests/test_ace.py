@@ -108,7 +108,8 @@ def test_journal_scraping(test_data_path):
         search='fmri',
         limit=2,
         skip_pubmed_central=False,
-        invalid_article_log_file=join(scrape_path, 'invalid_articles.log')
+        invalid_article_log_file=join(scrape_path, 'invalid_articles.log'),
+        prefer_pmc_source=True,
     )
     # For now just check to make sure we have expected number of files in the directory
     plos_dir = join(scrape_path, 'html/PLoS ONE/')
