@@ -47,6 +47,8 @@ def create_driver():
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-dev-tools")
 
+    prefs = {"profile.managed_default_content_settings.images": 2}
+    options.add_experimental_option("prefs", prefs)
     user_agent = random.choice(USER_AGENTS)
     options.add_argument(f'--user-agent={user_agent}')
 
