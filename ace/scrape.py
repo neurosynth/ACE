@@ -28,14 +28,12 @@ from tempfile import mkdtemp
 
 logger = logging.getLogger(__name__)
 
-BROWSER_USER_DATA_DIR = mkdtemp()
-BROWSER_DATA_PATH = mkdtemp()
-BROWSER_DISK_CACHE_DIR = mkdtemp()
-
 
 def create_driver():
     """create a new Chrome driver with the appropriate settings"""
     options = uc.ChromeOptions()
+    options.add_argument("--headless")
+
     # disable the AutomationControlled feature of Blink rendering engine
     options.add_argument('--disable-blink-features=AutomationControlled')
 
@@ -46,12 +44,9 @@ def create_driver():
     # disable sandbox mode (could make the browser more detectable)
     options.add_argument('--no-sandbox')
 
-    options.add_argument("--headless=new")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-dev-tools")
-    options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
-    options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
-    options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
+
     user_agent = random.choice(USER_AGENTS)
     options.add_argument(f'--user-agent={user_agent}')
 
@@ -60,51 +55,7 @@ def create_driver():
     # Change the property value of the navigator for webdriver to undefined
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-    # Further remove WebDriver hints using CDP commands
-    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
-        'source': '''
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-        '''
-    })
-
-    return driver
-
-
-BROWSER_USER_DATA_DIR = mkdtemp()
-BROWSER_DATA_PATH = mkdtemp()
-BROWSER_DISK_CACHE_DIR = mkdtemp()
-
-
-def create_driver():
-    """create a new Chrome driver with the appropriate settings"""
-    options = uc.ChromeOptions()
-    # disable the AutomationControlled feature of Blink rendering engine
-    options.add_argument('--disable-blink-features=AutomationControlled')
-
-    # disable pop-up blocking (could make the browser more detectable)
-    options.add_argument('--disable-popup-blocking')
-    # disable extensions
-    options.add_argument('--disable-extensions')
-    # disable sandbox mode (could make the browser more detectable)
-    options.add_argument('--no-sandbox')
-
-    options.add_argument("--headless=new")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-dev-tools")
-    options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
-    options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
-    options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
-    user_agent = random.choice(USER_AGENTS)
-    options.add_argument(f'--user-agent={user_agent}')
-
-    driver = uc.Chrome(options=options)
-
-    # Change the property value of the navigator for webdriver to undefined
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-    # Further remove WebDriver hints using CDP commands
+    # # Further remove WebDriver hints using CDP commands
     driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
         'source': '''
             Object.defineProperty(navigator, 'webdriver', {
@@ -450,7 +401,7 @@ class Scraper:
                     driver.quit()
                     driver = create_driver()
                     driver.get(url)
-                    sleep(8)
+                    sleep(2)
                 else:
                     break
     
@@ -459,7 +410,6 @@ class Scraper:
             if url != new_url:
                 driver = create_driver()
                 driver.get(new_url)
-                sleep(2)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
@@ -487,7 +437,7 @@ class Scraper:
                     driver.quit()
                     driver = create_driver()
                     driver.get(url)
-                    sleep(8)
+                    sleep(2)
                 else:
                     break
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
