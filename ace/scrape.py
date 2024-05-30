@@ -25,6 +25,7 @@ import time
 logger = logging.getLogger(__name__)
 
 def _quit_driver(driver):
+    driver.close()
     try:
         os.kill(driver.browser_pid, 15)
         if "linux" in sys.platform:
