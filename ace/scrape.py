@@ -395,8 +395,10 @@ class Scraper:
                     html = driver.page_source
                 except:
                     logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.quit()
+                    driver = create_driver()
                     driver.get(url)
-                    sleep(5)
+                    sleep(8)
                 else:
                     break
     
@@ -429,8 +431,10 @@ class Scraper:
                     html = driver.page_source
                 except:
                     logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.quit()
+                    driver = create_driver()
                     driver.get(url)
-                    sleep(5)
+                    sleep(8)
                 else:
                     break
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
