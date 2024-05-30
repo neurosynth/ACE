@@ -24,7 +24,62 @@ from selenium.webdriver.common.by import By
 from tqdm import tqdm
 import concurrent.futures
 
+
+from .config import USER_AGENTS
+from tempfile import mkdtemp
+
 logger = logging.getLogger(__name__)
+
+BROWSER_USER_DATA_DIR = mkdtemp()
+BROWSER_DATA_PATH = mkdtemp()
+BROWSER_DISK_CACHE_DIR = mkdtemp()
+
+
+def create_driver():
+    """create a new Chrome driver with the appropriate settings"""
+    options = uc.ChromeOptions()
+    # disable the AutomationControlled feature of Blink rendering engine
+    options.add_argument('--disable-blink-features=AutomationControlled')
+
+    # disable pop-up blocking
+    options.add_argument('--disable-popup-blocking')
+    # disable extensions
+    options.add_argument('--disable-extensions')
+    # disable sandbox mode
+    options.add_argument('--no-sandbox')
+    # disable cache (did not help with 429)
+    options.add_argument('--disable-cache')
+
+    # disable shared memory usage
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument("--headless=new")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-dev-tools")
+    options.add_argument("--no-zygote")
+    options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
+    options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
+    options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
+    user_agent = random.choice(USER_AGENTS)
+    options.add_argument(f'--user-agent={user_agent}')
+
+    driver = uc.Chrome(options=options)
+
+    # Change the property value of the navigator for webdriver to undefined
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+    # Further remove WebDriver hints using CDP commands
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+        'source': '''
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        '''
+    })
+
+    return driver
+
 
 def get_url(url, n_retries=5, timeout=5.0, verbose=False):
     headers = {'User-Agent': config.USER_AGENT_STRING}
@@ -318,11 +373,8 @@ class Scraper:
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
-        options = uc.ChromeOptions()
-        options.add_argument('--headless')
-
         if mode == 'browser':
-            driver = uc.Chrome(options=options)
+            driver = create_driver()
             for attempt in range(15):
                 try:
                     driver.set_page_load_timeout(10)
@@ -343,7 +395,6 @@ class Scraper:
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
-                driver = uc.Chrome(options=options)
                 driver.get(new_url)
                 sleep(2)
                 if journal.lower() in ['human brain mapping',
@@ -362,7 +413,7 @@ class Scraper:
                     alert.dismiss()
                 except:
                     pass
-                            
+
             logger.info(journal.lower())
             timeout = 5
             html = driver.page_source
@@ -400,7 +451,7 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-            
+
             driver.quit()
             return html
 
