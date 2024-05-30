@@ -593,7 +593,7 @@ class Scraper:
 
             if limit is not None and articles_found >= limit: break
 
-            if skip_pubmed_central and self.is_pmc_open_acess(pmcid):
+            if skip_pubmed_central and pmcid and self.is_pmc_open_acess(pmcid):
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
 
