@@ -78,8 +78,6 @@ def _convert_pmid_to_pmc(pmids):
     missing_pmids = [(None, p) for p in pmids if p not in pmids_found]
 
     pmc_ids = pmc_ids + missing_pmids
-
-    assert 0
         
     return pmc_ids
 
