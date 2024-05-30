@@ -47,7 +47,7 @@ def create_driver():
     options.add_argument('--disable-extensions')
     # disable sandbox mode
     options.add_argument('--no-sandbox')
-    # disable cache (did not help with 429)
+    # disable cache
     options.add_argument('--disable-cache')
 
     # disable shared memory usage
@@ -390,8 +390,16 @@ class Scraper:
             else:
                 logger.info("Timeout exception. Giving up.")
                 return None
-
-            html = driver.page_source
+            for attempt in range(10):
+                try:
+                    html = driver.page_source
+                except:
+                    logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.get(url)
+                    sleep(5)
+                else:
+                    break
+    
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
@@ -416,7 +424,15 @@ class Scraper:
 
             logger.info(journal.lower())
             timeout = 5
-            html = driver.page_source
+            for attempt in range(10):
+                try:
+                    html = driver.page_source
+                except:
+                    logger.info(f"Source Page #{attempt}. Retrying...")
+                    driver.get(url)
+                    sleep(5)
+                else:
+                    break
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
                 ## Find links with class data-table-url, and click on them
                 ## to load the table data.
