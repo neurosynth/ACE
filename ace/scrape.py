@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 def _quit_driver(driver):
     try:
-        logger.debug("Terminating the UC browser")
         os.kill(driver.browser_pid, 15)
         if "linux" in sys.platform:
             os.waitpid(driver.browser_pid, 0)
@@ -74,6 +73,13 @@ def _convert_pmid_to_pmc(pmids):
         pmc_ids += re.findall(r'<record requested-id="[^"]+" pmcid="([^"]+)" pmid="([^"]+)" doi="[^"]+">', response)
 
     logger.info(f"Found {len(pmc_ids)} PMCIDs from {len(pmids)} PMIDs.")
+
+    pmids_found = set([p[1] for p in pmc_ids])
+    missing_pmids = [(None, p) for p in pmids if p not in pmids_found]
+
+    pmc_ids = pmc_ids + missing_pmids
+
+    assert 0
         
     return pmc_ids
 
