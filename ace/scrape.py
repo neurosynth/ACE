@@ -41,23 +41,16 @@ def create_driver():
     # disable the AutomationControlled feature of Blink rendering engine
     options.add_argument('--disable-blink-features=AutomationControlled')
 
-    # disable pop-up blocking
+    # disable pop-up blocking (could make the browser more detectable)
     options.add_argument('--disable-popup-blocking')
     # disable extensions
     options.add_argument('--disable-extensions')
-    # disable sandbox mode
+    # disable sandbox mode (could make the browser more detectable)
     options.add_argument('--no-sandbox')
-    # disable cache
-    options.add_argument('--disable-cache')
 
-    # disable shared memory usage
-    options.add_argument('--disable-dev-shm-usage')
     options.add_argument("--headless=new")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument("--disable-gpu")
     options.add_argument("--disable-dev-tools")
-    options.add_argument("--no-zygote")
     options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
     options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
     options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
