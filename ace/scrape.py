@@ -490,7 +490,7 @@ class Scraper:
 
     def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True):
         base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
-        
+
         if prefer_pmc_source:
             query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode=json"
             try:
@@ -581,7 +581,7 @@ class Scraper:
             if delay is not None:
                 sleep_time = random.random() * float(delay*2)
                 sleep(sleep_time)
-        
+
         return filename, valid
 
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
