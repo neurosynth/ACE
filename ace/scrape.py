@@ -519,7 +519,7 @@ class Scraper:
                 if pmc_url:
                     return self.get_html(pmc_url, journal, mode='requests')
                 elif prefer_pmc_source == "only":
-                    logger.info("\tScrape failed! Skipping...")
+                    logger.info("\tNo PMC source found! Skipping...")
                     return
             except requests.RequestException as e:
                 logger.error(f"Request failed: {e}")
@@ -531,7 +531,7 @@ class Scraper:
             return self.get_html(query, journal, mode=mode)
 
         if prefer_pmc_source == "only":
-            logger.info("\tScrape failed! Skipping...")
+            logger.info("\tNo PMC source found!! Skipping...")
             return
 
         # Fallback if no PMC link found
