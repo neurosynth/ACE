@@ -242,7 +242,7 @@ class Source(metaclass=abc.ABCMeta):
                     logger.error(str(err))
                 if not config.IGNORE_BAD_ROWS:
                     raise
-        
+
         if data.data[data.n_rows- 1].count(None) == data.n_cols:
             data.data.pop()
         logger.debug("\t\tTrying to parse table...")
@@ -752,7 +752,7 @@ class SpringerSource(Source):
             t = self.parse_table(tc)
             if t:
                 t.position = t_num
-                
+
                 # id_name is the id HTML element that cotains the title, label and table number that needs to be parse
                 # temp_title sets it up to where the title can be parsed and then categorized
                 id_name = f"table-{t_num}-title"
@@ -786,3 +786,36 @@ class SpringerSource(Source):
         
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
+
+
+class PMCSource(Source):
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(PMCSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        tables = []
+        for (i, tc) in enumerate(soup.findAll('div', {'class': 'table-wrap'})):
+            t = self.parse_table(tc)
+            if t:
+                t.position = i + 1
+                t.label = tc.find('h3').text
+                t.number = t.label.split(' ')[-1].strip()
+                try:
+                    t.caption = tc.find({"div": {"class": "caption"}}).text
+                except:
+                    pass
+                try:
+                    t.notes = tc.find('div', class_='tblwrap-foot').text
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def extract_pmid(self, soup):
+        return soup.find('meta', {'name': 'citation_pmid'})['content']
+
+    def extract_doi(self, soup):
+        return soup.find('meta', {'name': 'citation_doi'})['content']
