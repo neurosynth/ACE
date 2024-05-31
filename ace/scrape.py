@@ -1,7 +1,7 @@
 # coding: utf-8
   # use unicode everywhere
 import re
-import json
+import sys
 from pathlib import Path
 from collections import Mapping
 import requests
@@ -14,15 +14,13 @@ import random
 import xmltodict
 from requests.adapters import HTTPAdapter, Retry
 import undetected_chromedriver as uc
-import selenium.webdriver.support.ui as ui
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from tqdm import tqdm
-import concurrent.futures
+import time
 
 
 from .config import USER_AGENTS
@@ -30,14 +28,12 @@ from tempfile import mkdtemp
 
 logger = logging.getLogger(__name__)
 
-BROWSER_USER_DATA_DIR = mkdtemp()
-BROWSER_DATA_PATH = mkdtemp()
-BROWSER_DISK_CACHE_DIR = mkdtemp()
-
 
 def create_driver():
     """create a new Chrome driver with the appropriate settings"""
     options = uc.ChromeOptions()
+    options.add_argument("--headless")
+
     # disable the AutomationControlled feature of Blink rendering engine
     options.add_argument('--disable-blink-features=AutomationControlled')
 
@@ -48,21 +44,28 @@ def create_driver():
     # disable sandbox mode (could make the browser more detectable)
     options.add_argument('--no-sandbox')
 
-    options.add_argument("--headless=new")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-dev-tools")
-    options.add_argument(f"--user-data-dir={BROWSER_USER_DATA_DIR}")
-    options.add_argument(f"--data-path={BROWSER_DATA_PATH}")
-    options.add_argument(f"--disk-cache-dir={BROWSER_DISK_CACHE_DIR}")
+
+    prefs = {"profile.managed_default_content_settings.images": 2}
+    options.add_experimental_option("prefs", prefs)
     user_agent = random.choice(USER_AGENTS)
     options.add_argument(f'--user-agent={user_agent}')
 
-    driver = uc.Chrome(options=options)
+    try:
+        driver = uc.Chrome(options=options)
+    except Exception as e:
+        logger.error(f"Error creating Chrome driver: {e}")
+
+        # Try again with a temporary directory
+        tmpdir = mkdtemp()
+        options.add_argument(f"--user-data-dir={tmpdir}")
+        driver = uc.Chrome(options=options)
 
     # Change the property value of the navigator for webdriver to undefined
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-    # Further remove WebDriver hints using CDP commands
+    # # Further remove WebDriver hints using CDP commands
     driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
         'source': '''
             Object.defineProperty(navigator, 'webdriver', {
@@ -74,7 +77,19 @@ def create_driver():
     return driver
 
 
-def get_url(url, n_retries=5, timeout=5.0, verbose=False):
+def _quit_driver(driver):
+    driver.close()
+    try:
+        os.kill(driver.browser_pid, 15)
+        if "linux" in sys.platform:
+            os.waitpid(driver.browser_pid, 0)
+            time.sleep(0.02)
+        else:
+            time.sleep(0.04)
+    except (AttributeError, ChildProcessError, RuntimeError, OSError):
+        time.sleep(0.05)
+
+def get_url(url, n_retries=5, timeout=10.0, verbose=False):
     headers = {'User-Agent': random.choice(USER_AGENTS)}
 
     def exponential_backoff(retries):
@@ -112,6 +127,11 @@ def _convert_pmid_to_pmc(pmids):
         pmc_ids += re.findall(r'<record requested-id="[^"]+" pmcid="([^"]+)" pmid="([^"]+)" doi="[^"]+">', response)
 
     logger.info(f"Found {len(pmc_ids)} PMCIDs from {len(pmids)} PMIDs.")
+
+    pmids_found = set([p[1] for p in pmc_ids])
+    missing_pmids = [(None, p) for p in pmids if p not in pmids_found]
+
+    pmc_ids = pmc_ids + missing_pmids
         
     return pmc_ids
 
@@ -374,7 +394,7 @@ class Scraper:
                     driver.get(url)
                     url = driver.current_url
                 except:
-                    driver.quit()
+                    _quit_driver(driver)
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
                     sleep(5)
                     continue
@@ -391,20 +411,15 @@ class Scraper:
                     driver.quit()
                     driver = create_driver()
                     driver.get(url)
-                    sleep(8)
+                    sleep(2)
                 else:
                     break
     
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
-                try:
-                    driver.get(new_url)
-                except:
-                    driver.quit()
-                    driver = create_driver()
-                    driver.get(new_url)
-                sleep(2)
+                driver = create_driver()
+                driver.get(new_url)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
@@ -432,7 +447,7 @@ class Scraper:
                     driver.quit()
                     driver = create_driver()
                     driver.get(url)
-                    sleep(8)
+                    sleep(2)
                 else:
                     break
             if journal.lower() in ['journal of neuroscience', 'j neurosci']:
@@ -469,8 +484,8 @@ class Scraper:
             # This next line helps minimize the number of blank articles saved from ScienceDirect,
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
-
-            driver.quit()
+            
+            _quit_driver(driver)
             return html
 
         elif mode == 'requests':
@@ -676,7 +691,7 @@ class Scraper:
 
             if limit is not None and articles_found >= limit: break
 
-            if skip_pubmed_central and self.is_pmc_open_acess(pmcid):
+            if skip_pubmed_central and pmcid and self.is_pmc_open_acess(pmcid):
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
 
