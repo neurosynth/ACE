@@ -518,16 +518,21 @@ class Scraper:
 
                 if pmc_url:
                     return self.get_html(pmc_url, journal, mode='requests')
+                elif prefer_pmc_source == "only":
+                    logger.info("\tScrape failed! Skipping...")
+                    return
             except requests.RequestException as e:
                 logger.error(f"Request failed: {e}")
-                raise
             except KeyError as e:
                 logger.error(f"Key error: {e} - JSON content: {json_content}")
-                raise Exception("Unexpected JSON format from PubMed API.")
         else:
             query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
             logger.info(query)
             return self.get_html(query, journal, mode=mode)
+
+        if prefer_pmc_source == "only":
+            logger.info("\tScrape failed! Skipping...")
+            return
 
         # Fallback if no PMC link found
         query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
@@ -632,7 +637,8 @@ class Scraper:
             prefer_pmc_source: Optional
                 When True, preferentially retrieve articles from PubMed Central, using requests instead of browser
                 (regardless of mode). This is useful for journals that have full-text articles available on PMC,
-                but are not open-access.
+                but are not open-access. If set to "only", will only retrieve articles from PMC, and
+                skip articles it cannot retrieve from PMC.
         '''
         articles_found = 0
         if journal is None and dois is None and pmids is None:
