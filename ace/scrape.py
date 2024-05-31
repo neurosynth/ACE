@@ -507,7 +507,7 @@ class Scraper:
         base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
         if pmcid:
             try:
-                pmc_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/"
+                pmc_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/"
                 return self.get_html(pmc_url, journal, mode='requests')
 
             except requests.RequestException as e:
@@ -551,7 +551,7 @@ class Scraper:
         oa_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id="
 
         response = get_url(oa_url + pmcid)
-    
+
         return 'idIsNotOpenAccess' not in response
 
     def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, pmcid=None):
@@ -660,9 +660,9 @@ class Scraper:
             for pmid in pmids 
             if (min_pmid is None or int(pmid) >= min_pmid) and (max_pmid is None or int(pmid) <= max_pmid)
             ]
-    
+
         logger.info(f"Retrieving {len(pmids)} articles...")
-        
+
         if skip_pubmed_central or prefer_pmc_source:
             all_ids = _convert_pmid_to_pmc(pmids)
         else:
