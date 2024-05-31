@@ -52,7 +52,15 @@ def create_driver():
     user_agent = random.choice(USER_AGENTS)
     options.add_argument(f'--user-agent={user_agent}')
 
-    driver = uc.Chrome(options=options)
+    try:
+        driver = uc.Chrome(options=options)
+    except Exception as e:
+        logger.error(f"Error creating Chrome driver: {e}")
+
+        # Try again with a temporary directory
+        tmpdir = mkdtemp()
+        options.add_argument(f"--user-data-dir={tmpdir}")
+        driver = uc.Chrome(options=options)
 
     # Change the property value of the navigator for webdriver to undefined
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
