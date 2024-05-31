@@ -415,7 +415,7 @@ class Scraper:
                 else:
                     break
     
-            new_url = self.check_for_substitute_url(url, html, journal)
+            new_url = self.check_for_substitute_url(url, journal)
 
             if url != new_url:
                 driver = create_driver()
@@ -493,7 +493,7 @@ class Scraper:
             r = requests.get(url, headers=headers)
             # For some journals, we can do better than the returned HTML, so get the final URL and 
             # substitute a better one.
-            url = self.check_for_substitute_url(r.url, r.text, journal)
+            url = self.check_for_substitute_url(r.url, journal)
             if url != r.url:
                 r = requests.get(url, headers=headers)
                 # XML content is usually misidentified as ISO-8859-1, so we need to manually set utf-8.
