@@ -6,19 +6,15 @@ from pathlib import Path
 from collections import Mapping
 import requests
 from time import sleep
-from ace import config
-from bs4 import BeautifulSoup
 import logging
 import os
 import random
 import xmltodict
-from requests.adapters import HTTPAdapter, Retry
 import undetected_chromedriver as uc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
 from tqdm import tqdm
 import time
 
@@ -438,7 +434,7 @@ class Scraper:
 
         if prefer_pmc_source:
             try:
-                response = self._client.elink(pmid, retmode='json')
+                response = self._client.elink(pmid, retmode='json', return_content=False)
                 response.raise_for_status()  # Raise an HTTPError for bad responses
                 json_content = response.json()
 
