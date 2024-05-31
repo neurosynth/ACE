@@ -503,43 +503,23 @@ class Scraper:
             return r.text
 
 
-    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True):
+    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', pmcid=None):
         base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
-
-        if prefer_pmc_source:
-            query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode=json"
+        if pmcid:
             try:
-                response = requests.get(query, headers={'User-Agent': random.choice(USER_AGENTS)})
-                response.raise_for_status()  # Raise an HTTPError for bad responses
-                json_content = response.json()
+                pmc_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/"
+                return self.get_html(pmc_url, journal, mode='requests')
 
-                providers = {obj['provider']['nameabbr']: obj["url"]["value"] for obj in json_content['linksets'][0]['idurllist'][0]['objurls']}
-                pmc_url = providers.get('PMC')
-
-                if pmc_url:
-                    return self.get_html(pmc_url, journal, mode='requests')
-                elif prefer_pmc_source == "only":
-                    logger.info("\tNo PMC source found! Skipping...")
-                    return
             except requests.RequestException as e:
                 logger.error(f"Request failed: {e}")
-            except KeyError as e:
-                logger.error(f"Key error: {e} - JSON content: {json_content}")
+                logger.info(f"Failed to retrieve article from PMC...")
         else:
             query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
             logger.info(query)
             return self.get_html(query, journal, mode=mode)
 
-        if prefer_pmc_source == "only":
-            logger.info("\tNo PMC source found!! Skipping...")
-            return
 
-        # Fallback if no PMC link found
-        query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
-        return self.get_html(query, journal, mode=mode)
-
-
-    def check_for_substitute_url(self, url, html, journal):
+    def check_for_substitute_url(self, url, journal):
         ''' For some journals/publishers, we can get a better document version by modifying the 
         URL passed from PubMed. E.g., we can get XML with embedded tables from PLoS ONE instead of 
         the standard HTML, which displays tables as images. For some journals (e.g., Frontiers),  
@@ -574,7 +554,7 @@ class Scraper:
     
         return 'idIsNotOpenAccess' not in response
 
-    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, prefer_pmc_source=True):
+    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, pmcid=None):
 
         logger.info("Processing %s..." % id)
         journal_path = (self.store / 'html' / journal)
@@ -587,7 +567,7 @@ class Scraper:
             return None, None
 
         # Save the HTML 
-        doc = self.get_html_by_pmid(id, journal, mode=mode, prefer_pmc_source=prefer_pmc_source)
+        doc = self.get_html_by_pmid(id, journal, mode=mode, pmcid=pmcid)
         valid = None
         if doc:
             valid = _validate_scrape(doc)
@@ -683,7 +663,7 @@ class Scraper:
     
         logger.info(f"Retrieving {len(pmids)} articles...")
         
-        if skip_pubmed_central:
+        if skip_pubmed_central or prefer_pmc_source:
             all_ids = _convert_pmid_to_pmc(pmids)
         else:
             all_ids = [(None, pmid) for pmid in pmids]
@@ -701,7 +681,11 @@ class Scraper:
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
 
-            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite, prefer_pmc_source)
+            if prefer_pmc_source == "only" and not pmcid:
+                logger.info(f"\tNo PubMed Central entry found! Skipping {pmid}...")
+                continue
+
+            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite, pmcid=pmcid)
 
             if not valid:
                 invalid_articles.append(filename)
