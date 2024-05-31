@@ -6,24 +6,20 @@ from pathlib import Path
 from collections import Mapping
 import requests
 from time import sleep
-from ace import config
-from bs4 import BeautifulSoup
 import logging
 import os
 import random
 import xmltodict
-from requests.adapters import HTTPAdapter, Retry
 import undetected_chromedriver as uc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
 from tqdm import tqdm
 import time
 
-
-from .config import USER_AGENTS
+from ace.utils import PubMedAPI
+from ace.config import USER_AGENTS
 from tempfile import mkdtemp
 
 logger = logging.getLogger(__name__)
@@ -134,77 +130,6 @@ def _convert_pmid_to_pmc(pmids):
     pmc_ids = pmc_ids + missing_pmids
         
     return pmc_ids
-
-
-class PubMedAPI:
-    def __init__(self, api_key=None):
-        if api_key is None:
-            # Look for api key in environment variable
-            api_key = os.environ.get('PUBMED_API_KEY')
-        self.api_key = api_key
-        self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-        self.headers = {'User-Agent': random.choice(USER_AGENTS)}
-
-        self.session = requests.Session()
-        retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 400])
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
-
-
-    def get(self, util, params=None, return_content=True):
-        url = f"{self.base_url}/{util}.fcgi"
-        if self.api_key:
-            params['api_key'] = self.api_key
-            
-        response = self.session.get(url, params=params, headers=self.headers, timeout=10)
-
-        if response.status_code != 200:
-            raise Exception(f"PubMed API returned status code {response.status_code} for {url}")
-
-        if return_content:
-            response = response.content
-
-        return response
-        
-    def esearch(self, query, retstart=None, retmax=10000, extract_ids=True, **kwargs):
-        params = {
-            "db": "pubmed",
-            "term": query,
-            "retmax": str(retmax),
-        }
-        if retstart is not None:
-            params["retstart"] = str(retstart)
-            
-        response = self.get("esearch", params=params, **kwargs)
-        if extract_ids:
-            soup = BeautifulSoup(response)
-            response = [t.string for t in soup.find_all('id')]
-        return response
-    
-    def efetch(self, input_id, retmode='txt', rettype='medline', db = 'pubmed', **kwargs):
-        params = {
-            "db": db,
-            "id": input_id,
-            "retmode": retmode,
-            "rettype": rettype
-        }
-        
-        
-        response = self.get("efetch", params=params, **kwargs)
-        return response
-    
-    def elink(self, pmid, retmode='ref', access_db = 'pubmed', **kwargs):
-        params = {
-            "dbfrom": "pubmed",
-            "id": pmid,
-            "retmode": retmode
-        }
-        if access_db == "pmc":
-            params["linkname"] = "pubmed_pmc"
-        else:
-            params["cmd"] = "prlinks"
-        
-        response = self.get("elink", params=params, **kwargs)
-        return response
 
 
 def get_pmid_from_doi(doi, api_key=None):
@@ -349,7 +274,8 @@ def _validate_scrape(html):
     'Checking if the site connection is secure',
     'Enable JavaScript and cookies to continue',
     'There was a problem providing the content you requested',
-    '<title>Redirecting</title>']
+    '<title>Redirecting</title>',
+    '<title>Page not available - PMC</title>']
 
     for pattern in patterns:
         if pattern in html:
