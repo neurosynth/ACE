@@ -32,6 +32,20 @@ def source_manager(db):
 
 
 @pytest.mark.vcr(record_mode="once")
+def test_pmc_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'pmc.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '3'
+    assert t.caption is not None
+    assert t.n_activations == 11
+
+
+@pytest.mark.vcr(record_mode="once")
 def test_frontiers_source(test_data_path, source_manager):
     filename = join(test_data_path, 'frontiers.html')
     html = open(filename).read()
@@ -89,7 +103,7 @@ def test_springer_source(test_data_path, source_manager):
 @pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 5  # cannot find pmid for some articles
+    assert len(db.articles) == 6  # cannot find pmid for some articles
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
@@ -108,7 +122,8 @@ def test_journal_scraping(test_data_path):
         search='fmri',
         limit=2,
         skip_pubmed_central=False,
-        invalid_article_log_file=join(scrape_path, 'invalid_articles.log')
+        invalid_article_log_file=join(scrape_path, 'invalid_articles.log'),
+        prefer_pmc_source=True,
     )
     # For now just check to make sure we have expected number of files in the directory
     plos_dir = join(scrape_path, 'html/PLoS ONE/')

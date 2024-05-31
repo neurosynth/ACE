@@ -90,7 +90,7 @@ def _quit_driver(driver):
         time.sleep(0.05)
 
 def get_url(url, n_retries=5, timeout=10.0, verbose=False):
-    headers = {'User-Agent': config.USER_AGENT_STRING}
+    headers = {'User-Agent': random.choice(USER_AGENTS)}
 
     def exponential_backoff(retries):
         return 2 ** retries
@@ -143,7 +143,7 @@ class PubMedAPI:
             api_key = os.environ.get('PUBMED_API_KEY')
         self.api_key = api_key
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-        self.headers = {'User-Agent': config.USER_AGENT_STRING}
+        self.headers = {'User-Agent': random.choice(USER_AGENTS)}
 
         self.session = requests.Session()
         retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 400])
@@ -489,7 +489,7 @@ class Scraper:
             return html
 
         elif mode == 'requests':
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1464.0 Safari/537.36'}
+            headers = {'User-Agent': random.choice(USER_AGENTS)}
             r = requests.get(url, headers=headers)
             # For some journals, we can do better than the returned HTML, so get the final URL and 
             # substitute a better one.
@@ -503,9 +503,39 @@ class Scraper:
             return r.text
 
 
-    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref'):
-        query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=%s&cmd=prlinks&retmode=%s" % (pmid, retmode)
-        logger.info(query)
+    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True):
+        base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
+
+        if prefer_pmc_source:
+            query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode=json"
+            try:
+                response = requests.get(query, headers={'User-Agent': random.choice(USER_AGENTS)})
+                response.raise_for_status()  # Raise an HTTPError for bad responses
+                json_content = response.json()
+
+                providers = {obj['provider']['nameabbr']: obj["url"]["value"] for obj in json_content['linksets'][0]['idurllist'][0]['objurls']}
+                pmc_url = providers.get('PMC')
+
+                if pmc_url:
+                    return self.get_html(pmc_url, journal, mode='requests')
+                elif prefer_pmc_source == "only":
+                    logger.info("\tScrape failed! Skipping...")
+                    return
+            except requests.RequestException as e:
+                logger.error(f"Request failed: {e}")
+            except KeyError as e:
+                logger.error(f"Key error: {e} - JSON content: {json_content}")
+        else:
+            query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
+            logger.info(query)
+            return self.get_html(query, journal, mode=mode)
+
+        if prefer_pmc_source == "only":
+            logger.info("\tScrape failed! Skipping...")
+            return
+
+        # Fallback if no PMC link found
+        query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
         return self.get_html(query, journal, mode=mode)
 
 
@@ -544,7 +574,7 @@ class Scraper:
     
         return 'idIsNotOpenAccess' not in response
 
-    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False):
+    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, prefer_pmc_source=True):
 
         logger.info("Processing %s..." % id)
         journal_path = (self.store / 'html' / journal)
@@ -557,7 +587,7 @@ class Scraper:
             return None, None
 
         # Save the HTML 
-        doc = self.get_html_by_pmid(id, journal, mode=mode)
+        doc = self.get_html_by_pmid(id, journal, mode=mode, prefer_pmc_source=prefer_pmc_source)
         valid = None
         if doc:
             valid = _validate_scrape(doc)
@@ -571,12 +601,12 @@ class Scraper:
             if delay is not None:
                 sleep_time = random.random() * float(delay*2)
                 sleep(sleep_time)
-        
+
         return filename, valid
 
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
-                                skip_pubmed_central=True, invalid_article_log_file=None):
+                                skip_pubmed_central=True, invalid_article_log_file=None, prefer_pmc_source=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -604,6 +634,11 @@ class Scraper:
             skip_pubmed_central: When True, skips articles that are available from
                 PubMed Central.
             invalid_article_log_file: Optional path to a file to log files where scraping failed.
+            prefer_pmc_source: Optional
+                When True, preferentially retrieve articles from PubMed Central, using requests instead of browser
+                (regardless of mode). This is useful for journals that have full-text articles available on PMC,
+                but are not open-access. If set to "only", will only retrieve articles from PMC, and
+                skip articles it cannot retrieve from PMC.
         '''
         articles_found = 0
         if journal is None and dois is None and pmids is None:
@@ -666,7 +701,7 @@ class Scraper:
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
                 continue
 
-            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite)
+            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite, prefer_pmc_source)
 
             if not valid:
                 invalid_articles.append(filename)
