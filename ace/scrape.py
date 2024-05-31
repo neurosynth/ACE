@@ -274,7 +274,8 @@ def _validate_scrape(html):
     'Checking if the site connection is secure',
     'Enable JavaScript and cookies to continue',
     'There was a problem providing the content you requested',
-    '<title>Redirecting</title>']
+    '<title>Redirecting</title>',
+    '<title>Page not available - PMC</title>']
 
     for pattern in patterns:
         if pattern in html:
