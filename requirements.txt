@@ -4,6 +4,6 @@ requests
 simplejson
 sqlalchemy
 selenium
-undetected-chromedriver
+seleniumbase
 tqdm
 xmltodict
