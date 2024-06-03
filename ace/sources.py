@@ -313,6 +313,7 @@ class HighWireSource(Source):
 
         # Now download each table and parse it
         tables = []
+        logger.info(f"Found {n_tables} tables.")
         for i in range(n_tables):
             t_num = i + 1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
@@ -380,8 +381,9 @@ class OUPSource(Source):
         # Exclude modal tables to prevent duplicates
         all_tables = set(soup.select('div.table-full-width-wrap'))
         modal_tables = set(soup.select('div.table-full-width-wrap.table-modal'))
-        result = all_tables - modal_tables
-        for (i, tc) in enumerate(result):
+        table_containers = all_tables - modal_tables
+        logger.info(f"Found {len(table_containers)} tables.")
+        for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             t = self.parse_table(table_html)
             if t:
@@ -446,7 +448,9 @@ class ScienceDirectSource(Source):
 
         # Extract tables
         tables = []
-        for (i, tc) in enumerate(soup.find_all('div', {'class': 'tables'})):
+        table_containers = soup.find_all('div', {'class': 'tables'})
+        logger.info(f"Found {len(table_containers)} tables.")
+        for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             t = self.parse_table(table_html)
             if t:
@@ -491,7 +495,9 @@ class PlosSource(Source):
 
         # Extract tables
         tables = []
-        for (i, tc) in enumerate(soup.find_all('table-wrap')):
+        table_containers = soup.find_all('table-wrap')
+        logger.info(f"Found {len(table_containers)} tables.")
+        for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             t = self.parse_table(table_html)
             if t:
@@ -536,6 +542,7 @@ class FrontiersSource(Source):
         tables = []
         table_containers = soup.findAll(
             'table-wrap', {'id': re.compile('^T\d+$')})
+        logger.info(f"Found {len(table_containers)} tables.")
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             t = self.parse_table(table_html)
@@ -583,7 +590,9 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         tables = []
 
         # Now download each table and parse it
-        for i, tc in enumerate(soup.find_all('div', {'class': 'table-wrap'})):
+        table_containers = soup.find_all('div', {'class': 'table-wrap'})
+        logger.info(f"Found {len(table_containers)} tables.")
+        for i, tc in enumerate(table_containers):
             table_html = tc.find('table', {'role': 'table'})
             if not table_html:
                 continue
@@ -633,7 +642,7 @@ class WileySource(Source):
         tables = []
         table_containers = soup.findAll('div', {
                                         'class': re.compile('article-table-content|table'), 'id': re.compile('^(.*?)\-tbl\-\d+$|^t(bl)*\d+$')})
-        print(("Found %d tables." % len(table_containers)))
+        logger.info(f"Found {len(table_containers)} tables.")
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
             try:
@@ -687,7 +696,7 @@ class SageSource(Source):
                                 'name': 'citation_public_url'})['content']
 
         n_tables = len(soup.find_all('span', class_='table-label'))
-
+        logger.info(f"Found {n_tables} tables.")
         # Now download each table and parse it
         tables = []
         for i in range(n_tables):
@@ -741,7 +750,7 @@ class SpringerSource(Source):
         content_url = soup.find('meta', {'name': 'citation_fulltext_html_url'})['content']
 
         n_tables = len(soup.find_all('span', string='Full size table'))
-
+        logger.info(f"Found {n_tables} tables.")
         # Now download each table and parse it
         tables = []
         for i in range(n_tables):
@@ -795,7 +804,9 @@ class PMCSource(Source):
             return False
 
         tables = []
-        for (i, tc) in enumerate(soup.findAll('div', {'class': 'table-wrap'})):
+        table_containers = soup.findAll('div', {'class': 'table-wrap'})
+        logger.info(f"Found {len(table_containers)} tables.")
+        for (i, tc) in enumerate(table_containers):
             t = self.parse_table(tc)
             if t:
                 t.position = i + 1
