@@ -275,7 +275,14 @@ def _validate_scrape(html):
     'Enable JavaScript and cookies to continue',
     'There was a problem providing the content you requested',
     '<title>Redirecting</title>',
-    '<title>Page not available - PMC</title>']
+    '<title>Page not available - PMC</title>',
+    'Your request cannot be processed at this time. Please try again later',
+    '403 Forbidden',
+    'Page not found — ScienceDirect',
+    'This site can’t be reached',
+    'used Cloudflare to restrict access',
+    '502 Bad Gateway',
+    ]
 
     for pattern in patterns:
         if pattern in html:
