@@ -799,8 +799,8 @@ class PMCSource(Source):
             t = self.parse_table(tc)
             if t:
                 t.position = i + 1
-                t.label = tc.find('h3').text
-                t.number = t.label.split(' ')[-1].strip()
+                t.label = tc.find('h3').text if tc.find('h3') else None
+                t.number = t.label.split(' ')[-1].strip() if t.label else None
                 try:
                     t.caption = tc.find({"div": {"class": "caption"}}).text
                 except:

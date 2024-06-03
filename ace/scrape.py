@@ -194,7 +194,7 @@ def parse_PMID_xml(xml):
                 if 'DescriptorName' in a:
                     a = a['DescriptorName']
                 a = a['#text']
-                
+
                 to_join.append(a)
             v = ' | '.join(to_join)
         elif isinstance(v, Mapping):
