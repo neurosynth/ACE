@@ -190,3 +190,13 @@ def test_wiley_label(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 1
+
+
+def test_elsivier_table_parse(test_weird_data_path, source_manager):
+    pmid = '12417470'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 4 # should be 6, but the tables are ill formatted

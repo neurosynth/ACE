@@ -234,7 +234,7 @@ class Source(metaclass=abc.ABCMeta):
                     #   rowspan > 1. So we have to check if there are None values left over
                     # in the DataTable's current row after we finish filling
                     # it.
-                    if i + 1 == n_cells and cols_found_in_row < n_cols and data[j].count(None) > c_num:
+                    if i + 1 == n_cells and cols_found_in_row < n_cols and (len(data.data) == j+1) and data[j].count(None) > c_num:
                         c_num += n_cols - cols_found_in_row
                     data.add_val(c.get_text(), r_num, c_num)
             except Exception as err:
