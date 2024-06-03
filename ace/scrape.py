@@ -10,80 +10,18 @@ import logging
 import os
 import random
 import xmltodict
-import undetected_chromedriver as uc
+from seleniumbase import Driver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from tqdm import tqdm
-import time
 
 from ace.utils import PubMedAPI
 from ace.config import USER_AGENTS
-from tempfile import mkdtemp
 
 logger = logging.getLogger(__name__)
 
-
-def create_driver():
-    """create a new Chrome driver with the appropriate settings"""
-    options = uc.ChromeOptions()
-    options.add_argument("--headless")
-
-    # disable the AutomationControlled feature of Blink rendering engine
-    options.add_argument('--disable-blink-features=AutomationControlled')
-
-    # disable pop-up blocking (could make the browser more detectable)
-    options.add_argument('--disable-popup-blocking')
-    # disable extensions
-    options.add_argument('--disable-extensions')
-    # disable sandbox mode (could make the browser more detectable)
-    options.add_argument('--no-sandbox')
-
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-dev-tools")
-
-    prefs = {"profile.managed_default_content_settings.images": 2}
-    options.add_experimental_option("prefs", prefs)
-    user_agent = random.choice(USER_AGENTS)
-    options.add_argument(f'--user-agent={user_agent}')
-
-    try:
-        driver = uc.Chrome(options=options)
-    except Exception as e:
-        logger.error(f"Error creating Chrome driver: {e}")
-
-        # Try again with a temporary directory
-        tmpdir = mkdtemp()
-        options.add_argument(f"--user-data-dir={tmpdir}")
-        driver = uc.Chrome(options=options)
-
-    # Change the property value of the navigator for webdriver to undefined
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-    # # Further remove WebDriver hints using CDP commands
-    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
-        'source': '''
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-        '''
-    })
-
-    return driver
-
-
-def _quit_driver(driver):
-    driver.close()
-    try:
-        os.kill(driver.browser_pid, 15)
-        if "linux" in sys.platform:
-            os.waitpid(driver.browser_pid, 0)
-            time.sleep(0.02)
-        else:
-            time.sleep(0.04)
-    except (AttributeError, ChildProcessError, RuntimeError, OSError):
-        time.sleep(0.05)
 
 def get_url(url, n_retries=5, timeout=10.0, verbose=False):
     headers = {'User-Agent': random.choice(USER_AGENTS)}
@@ -320,14 +258,18 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
-            driver = create_driver()
+            driver = Driver(
+                uc=True,
+                headless2=True,
+                agent=random.choice(USER_AGENTS),
+            )
             for attempt in range(15):
                 try:
                     driver.set_page_load_timeout(10)
                     driver.get(url)
                     url = driver.current_url
                 except:
-                    _quit_driver(driver)
+                    driver.quit()
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
                     sleep(5)
                     continue
@@ -342,7 +284,11 @@ class Scraper:
                 except:
                     logger.info(f"Source Page #{attempt}. Retrying...")
                     driver.quit()
-                    driver = create_driver()
+                    driver = Driver(
+                        uc=True,
+                        headless2=True,
+                        agent=random.choice(USER_AGENTS),
+                    )
                     driver.get(url)
                     sleep(2)
                 else:
@@ -351,7 +297,11 @@ class Scraper:
             new_url = self.check_for_substitute_url(url, html, journal)
 
             if url != new_url:
-                driver = create_driver()
+                driver = Driver(
+                    uc=True,
+                    headless2=True,
+                    agent=random.choice(USER_AGENTS),
+                )
                 driver.get(new_url)
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
@@ -378,7 +328,11 @@ class Scraper:
                 except:
                     logger.info(f"Source Page #{attempt}. Retrying...")
                     driver.quit()
-                    driver = create_driver()
+                    driver = Driver(
+                        uc=True,
+                        headless2=True,
+                        agent=random.choice(USER_AGENTS),
+                    )
                     driver.get(url)
                     sleep(2)
                 else:
@@ -418,7 +372,7 @@ class Scraper:
             # which loads content via Ajax requests only after the page is done loading. There is 
             # probably a better way to do this...
             
-            _quit_driver(driver)
+            driver.quit()
             return html
 
         elif mode == 'requests':

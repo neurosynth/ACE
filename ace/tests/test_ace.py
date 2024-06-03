@@ -128,8 +128,9 @@ def test_journal_scraping(test_data_path):
     # For now just check to make sure we have expected number of files in the directory
     plos_dir = join(scrape_path, 'html/PLoS ONE/')
     n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
-    assert n_files == 2
     shutil.rmtree(scrape_path)
+    assert n_files == 2
+   
 
 
 @pytest.mark.vcr(record_mode="once")
