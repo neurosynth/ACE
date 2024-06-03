@@ -1,6 +1,7 @@
 {
     "name": "PMC",
     "identifiers": [
+      "<meta name=\"ncbi_db\" content=\"pmc\" />",
       "<meta name=\"ncbi_db\" content=\"pmc\">"
     ],
     "entities": {
