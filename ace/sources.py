@@ -645,6 +645,7 @@ class WileySource(Source):
         logger.info(f"Found {len(table_containers)} tables.")
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
+            footer = None
             try:
                 # Remove footer, which appears inside table
                 footer = table_html.tfoot.extract()
@@ -656,11 +657,20 @@ class WileySource(Source):
                 t.position = i + 1
                 # t.number = tc['id'][3::].strip()
                 t.number = re.search('t[bl0\-]*(\d+)$', tc['id']).group(1)
-                t.label = tc.find('span', class_='label').get_text()
-                t.caption = tc.find('caption').get_text()
+                try:
+                    t.label = tc.find('span', class_='label').get_text()
+                except:
+                    pass
+                try:
+                    t.caption = tc.find('caption').get_text()
+                except AttributeError:
+                    caption = tc.find('div', {'header': 'article-table-caption'})
+                    t.caption = caption.get_text() if caption else None
                 try:
                     t.notes = footer.get_text()
-                except:
+                except AttributeError:
+                    notes = tc.find('div', {'class': 'article-section__table-footnotes'})
+                    t.notes = notes.get_text() if caption else None
                     pass
                 tables.append(t)
 
