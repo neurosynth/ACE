@@ -16,74 +16,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from tqdm import tqdm
-import time
 
 from ace.utils import PubMedAPI
 from ace.config import USER_AGENTS
-from tempfile import mkdtemp
 
 logger = logging.getLogger(__name__)
 
-
-# def create_driver():
-#     """create a new Chrome driver with the appropriate settings"""
-#     options = uc.ChromeOptions()
-#     options.add_argument("--headless")
-
-#     # disable the AutomationControlled feature of Blink rendering engine
-#     options.add_argument('--disable-blink-features=AutomationControlled')
-
-#     # disable pop-up blocking (could make the browser more detectable)
-#     options.add_argument('--disable-popup-blocking')
-#     # disable extensions
-#     options.add_argument('--disable-extensions')
-#     # disable sandbox mode (could make the browser more detectable)
-#     options.add_argument('--no-sandbox')
-
-#     options.add_argument("--window-size=1920,1080")
-#     options.add_argument("--disable-dev-tools")
-
-#     prefs = {"profile.managed_default_content_settings.images": 2}
-#     options.add_experimental_option("prefs", prefs)
-#     user_agent = random.choice(USER_AGENTS)
-#     options.add_argument(f'--user-agent={user_agent}')
-
-#     try:
-#         driver = uc.Chrome(options=options)
-#     except Exception as e:
-#         logger.error(f"Error creating Chrome driver: {e}")
-
-#         # Try again with a temporary directory
-#         tmpdir = mkdtemp()
-#         options.add_argument(f"--user-data-dir={tmpdir}")
-#         driver = uc.Chrome(options=options)
-
-    # # Change the property value of the navigator for webdriver to undefined
-    # driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-    # # # Further remove WebDriver hints using CDP commands
-    # driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
-    #     'source': '''
-    #         Object.defineProperty(navigator, 'webdriver', {
-    #             get: () => undefined
-    #         });
-    #     '''
-    # })
-
-    # return driver
-
-
-# def _quit_driver(driver):
-#     driver.close()
-#     try:
-#         os.kill(driver.browser_pid, 15)
-#         if "linux" in sys.platform:
-#             os.waitpid(driver.browser_pid, 0)
-#             time.sleep(0.02)
-#         else:
-#             time.sleep(0.04)
-#     except (AttributeError, ChildProcessError, RuntimeError, OSError):
-#         time.sleep(0.05)
 
 def get_url(url, n_retries=5, timeout=10.0, verbose=False):
     headers = {'User-Agent': random.choice(USER_AGENTS)}
