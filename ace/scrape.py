@@ -519,7 +519,8 @@ class Scraper:
                 this will be processed. 
             shuffle: When True, articles are retrieved in random order.
             skip_pubmed_central: When True, skips articles that are available from
-                PubMed Central.
+                PubMed Central. This will also write a file with the skipped pmcids
+                to use with pubget.
             invalid_article_log_file: Optional path to a file to log files where scraping failed.
             prefer_pmc_source: Optional
                 When True, preferentially retrieve articles from PubMed Central, using requests instead of browser
@@ -567,9 +568,9 @@ class Scraper:
             for pmid in pmids 
             if (min_pmid is None or int(pmid) >= min_pmid) and (max_pmid is None or int(pmid) <= max_pmid)
             ]
-    
+
         logger.info(f"Retrieving {len(pmids)} articles...")
-        
+
         if skip_pubmed_central:
             all_ids = _convert_pmid_to_pmc(pmids)
         else:
@@ -586,6 +587,8 @@ class Scraper:
 
             if skip_pubmed_central and pmcid and self.is_pmc_open_acess(pmcid):
                 logger.info(f"\tPubMed Central OpenAccess entry found! Skipping {pmid}...")
+                with open('openaccess_pmcids.txt', 'a') as f:
+                    f.write(f"{pmcid}\n")
                 continue
 
             filename, valid = self.process_article(pmid, journal, delay, mode, overwrite, prefer_pmc_source)
