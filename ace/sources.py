@@ -792,7 +792,7 @@ class SpringerSource(Source):
             return soup.find('meta', attrs={'name': "citation_doi"})['content']
         except:
             return ''
-        
+  
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
@@ -807,20 +807,22 @@ class PMCSource(Source):
         table_containers = soup.findAll('div', {'class': 'table-wrap'})
         logger.info(f"Found {len(table_containers)} tables.")
         for (i, tc) in enumerate(table_containers):
-            t = self.parse_table(tc)
-            if t:
-                t.position = i + 1
-                t.label = tc.find('h3').text if tc.find('h3') else None
-                t.number = t.label.split(' ')[-1].strip() if t.label else None
-                try:
-                    t.caption = tc.find({"div": {"class": "caption"}}).text
-                except:
-                    pass
-                try:
-                    t.notes = tc.find('div', class_='tblwrap-foot').text
-                except:
-                    pass
-                tables.append(t)
+            sub_tables = tc.findAll('div', {'class': 'xtable'})
+            for st in sub_tables:
+                t = self.parse_table(st)
+                if t:
+                    t.position = i + 1
+                    t.label = tc.find('h3').text if tc.find('h3') else None
+                    t.number = t.label.split(' ')[-1].strip() if t.label else None
+                    try:
+                        t.caption = tc.find({"div": {"class": "caption"}}).text
+                    except:
+                        pass
+                    try:
+                        t.notes = tc.find('div', class_='tblwrap-foot').text
+                    except:
+                        pass
+                    tables.append(t)
 
         self.article.tables = tables
         return self.article
