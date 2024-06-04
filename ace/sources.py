@@ -58,18 +58,19 @@ class Source(metaclass=abc.ABCMeta):
         # '&kappa;': 'kappa',
         '\xa0': ' ',        # Unicode non-breaking space
         # '\x3e': ' ',
-        '\\u2212': '-',      # Various unicode dashes
-        '\\u2012': '-',
-        '\\u2013': '-',
-        '\\u2014': '-',
-        '\\u2015': '-',
-        '\\u8211': '-',
-        '\\u0150': '-',
-        '\\u0177': '',
-        '\\u0160': '',
-        '\\u0145': "'",
-        '\\u0146': "'",
+        '\u2212': '-',      # Various unicode dashes
+        '\u2012': '-',
+        '\u2013': '-',
+        '\u2014': '-',
+        '\u2015': '-',
+        '\u8211': '-',
+        '\u0150': '-',
+        '\u0177': '',
+        '\u0160': '',
+        '\u0145': "'",
+        '\u0146': "'",
         '\u2009': "",     # Various whitespaces within tables
+        '\u2007': "",
 
     }
 

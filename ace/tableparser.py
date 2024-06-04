@@ -227,7 +227,7 @@ def parse_table(data):
                 val = val[:-1].strip()
             # If a value is provided and the cell isn't an overflow cell (i.e., '@@'), and
             # there is no current label assigned to this column...
-            if val != '' and not val.startswith('@@') and labels[j] is None:
+            if val != '' and val.lower() != "empty cell" and not val.startswith('@@') and labels[j] is None:
                 # Handle the first column separately, because first value in table
                 # is often mistaken for label if label is left blank.
                 # If all other labels have been found, or if there are lots of numbers
@@ -249,7 +249,7 @@ def parse_table(data):
     # Compact the list, although there shouldn't be any missing values at this point...
     # labels = [x.lower() for x in labels if x is not None]
     # Convert all labels to lowercase
-    labels = [x.lower() if x is not None else '' for x in labels]
+    labels = [x.lower() if x is not None else 'EMPTY_LABEL' for x in labels]
     n_cols = len(labels)
 
     # Sometimes tables have a single "Coordinates" column name
