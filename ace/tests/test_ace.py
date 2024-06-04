@@ -200,3 +200,13 @@ def test_elsivier_table_parse(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 4 # should be 6, but the tables are ill formatted
+
+
+def test_multi_column_float_conversion(test_weird_data_path, source_manager):
+    pmid = '26021218'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 2  # should be 0, but not removing innacurate tables yet.
