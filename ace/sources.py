@@ -198,6 +198,10 @@ class Source(metaclass=abc.ABCMeta):
 
         logger.debug("\t\tFound a table...")
 
+        # change <br/> to \n
+        for br in table.find_all("br"):
+            br.replace_with("\n")
+
         # Count columns. Check either just one row, or all of them.
         def n_cols_in_row(row):
             return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all(['th', 'td'])])
