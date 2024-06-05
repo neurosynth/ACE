@@ -306,7 +306,7 @@ class Scraper:
                 if journal.lower() in ['human brain mapping',
                                             'european journal of neuroscience',
                                             'brain and behavior','epilepsia']:
-                    sleep(0.5 + random() * 1)
+                    sleep(0.5 + random.random() * 1)
                     try:
                         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'relatedArticles')))
                     except TimeoutException:
