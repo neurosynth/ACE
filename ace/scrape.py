@@ -493,7 +493,7 @@ class Scraper:
 
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
-                                skip_pubmed_central=True, metadata_store=None, invalid_article_log_file=None, prefer_pmc_source=True):
+                                index_pmids=False, skip_pubmed_central=True, metadata_store=None, invalid_article_log_file=None, prefer_pmc_source=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -518,6 +518,9 @@ class Scraper:
             max_pmid: When a PMID is provided, only articles with PMIDs less than
                 this will be processed. 
             shuffle: When True, articles are retrieved in random order.
+            index_pmids: When True, will create a list of pmids already in the output.
+                When used in combination with overwrite=False, this will not download a pmid
+                even though it's in another directory.
             skip_pubmed_central: When True, skips articles that are available from
                 PubMed Central. This will also write a file with the skipped pmcids
                 to use with pubget.
@@ -562,6 +565,11 @@ class Scraper:
                 n_existing = len(existing)
                 pmids = [pmid for pmid in pmids if int(pmid) not in existing]
                 logger.info(f"Found {n_existing} existing articles.")
+
+        # filter out all pmids, not just based on folder
+        if index_pmids:
+            existing_pmids = [f.stem for f in (self.store / 'html').rglob('*.html')]
+            pmids = [pmid for pmid in pmids if pmid not in existing_pmids]
 
         # Filter out articles that are outside the PMID range
         pmids = [
