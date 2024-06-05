@@ -493,7 +493,7 @@ class Scraper:
 
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
-                                skip_pubmed_central=True, invalid_article_log_file=None, prefer_pmc_source=True):
+                                skip_pubmed_central=True, metadata_store=None, invalid_article_log_file=None, prefer_pmc_source=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -521,6 +521,7 @@ class Scraper:
             skip_pubmed_central: When True, skips articles that are available from
                 PubMed Central. This will also write a file with the skipped pmcids
                 to use with pubget.
+            metadata_store: Optional path to a directory to store/reference PubMed metadata.
             invalid_article_log_file: Optional path to a file to log files where scraping failed.
             prefer_pmc_source: Optional
                 When True, preferentially retrieve articles from PubMed Central, using requests instead of browser
@@ -577,11 +578,12 @@ class Scraper:
             all_ids = [(None, pmid) for pmid in pmids]
 
         invalid_articles = []
-        for pmcid, pmid in all_ids:
-            if journal is None:
-                # Get the journal name
-                metadata = get_pubmed_metadata(pmid)
-                journal = metadata['journal']
+
+        if journal is None:
+            all_iter = [
+                (pmcid, pmid, get_pubmed_metadata(pmid, store=metadata_store)) for pmcid, pmid in all_ids
+            ]
+        for pmcid, pmid, journal in all_iter:
 
             if limit is not None and articles_found >= limit: break
 
