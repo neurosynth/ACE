@@ -587,6 +587,8 @@ class Scraper:
                     all_iter.append((pmcid, pmid, "UNKNOWN"))
                     continue
                 all_iter.append((pmcid, pmid, metadata['journal']))
+        else:
+            all_iter = [(pmcid, pmid, journal) for pmcid, pmid in all_ids]
 
         for pmcid, pmid, journal in all_iter:
 
