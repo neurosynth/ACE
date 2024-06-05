@@ -121,6 +121,7 @@ def test_journal_scraping(test_data_path):
         mode='requests',
         search='fmri',
         limit=2,
+        index_pmids=True,
         skip_pubmed_central=False,
         invalid_article_log_file=join(scrape_path, 'invalid_articles.log'),
         prefer_pmc_source=True,
