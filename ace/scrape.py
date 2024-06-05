@@ -581,7 +581,7 @@ class Scraper:
 
         if journal is None:
             all_iter = [
-                (pmcid, pmid, get_pubmed_metadata(pmid, store=metadata_store)) for pmcid, pmid in all_ids
+                (pmcid, pmid, get_pubmed_metadata(pmid, store=metadata_store)['journal']) for pmcid, pmid in all_ids
             ]
         for pmcid, pmid, journal in all_iter:
 
