@@ -580,9 +580,14 @@ class Scraper:
         invalid_articles = []
 
         if journal is None:
-            all_iter = [
-                (pmcid, pmid, get_pubmed_metadata(pmid, store=metadata_store).get('journal', "UNKNOWN")) for pmcid, pmid in all_ids
-            ]
+            all_iter = []
+            for pmcid, pmid in all_ids:
+                metadata = get_pubmed_metadata(pmid, store=metadata_store)
+                if not metadata or 'journal' not in metadata:
+                    all_iter.append((pmcid, pmid, "UNKNOWN"))
+                    continue
+                all_iter.append((pmcid, pmid, metadata['journal']))
+
         for pmcid, pmid, journal in all_iter:
 
             if limit is not None and articles_found >= limit: break
