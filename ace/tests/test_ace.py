@@ -103,7 +103,7 @@ def test_springer_source(test_data_path, source_manager):
 @pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 6  # cannot find pmid for some articles
+    assert len(db.articles) == 7  # cannot find pmid for some articles
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
@@ -215,6 +215,16 @@ def test_multi_column_float_conversion(test_weird_data_path, source_manager):
 
 def test_frontier_table_identification(test_weird_data_path, source_manager):
     pmid = '26696806'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 0
+
+
+def test_schizophrenia_research_source(test_weird_data_path, source_manager):
+    pmid = '18439804'
     filename = join(test_weird_data_path, pmid + '.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
