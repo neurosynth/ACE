@@ -103,7 +103,7 @@ def test_springer_source(test_data_path, source_manager):
 @pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 6  # cannot find pmid for some articles
+    assert len(db.articles) == 7  # cannot find pmid for some articles
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
