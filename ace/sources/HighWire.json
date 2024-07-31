@@ -1,7 +1,9 @@
 {
   "name": "HighWire",
   "identifiers": [
-    "highwire-journal"
+    "highwire-journal",
+    "http://schema.highwire.org/Linking",
+    "highwire-journal-article"
   ],
   "entities": {
   },
