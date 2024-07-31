@@ -207,11 +207,15 @@ class Source(metaclass=abc.ABCMeta):
         def n_cols_in_row(row):
             return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all(['th', 'td'])])
 
-        if config.CAREFUL_PARSING:
+        search_table = table.find("tbody")
+        if search_table is None:
+            search_table = table
+
+        if config.CAREFUL_PARSING:            
             n_cols = max([n_cols_in_row(
-                row) for row in table.find('tbody').find_all('tr')])
+                row) for row in search_table.find_all('tr')])
         else:
-            n_cols = n_cols_in_row(table.find('tbody').find('tr'))
+            n_cols = n_cols_in_row(search_table.find('tr'))
 
         # Initialize grid and populate
         data = datatable.DataTable(0, n_cols)
