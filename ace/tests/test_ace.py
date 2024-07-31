@@ -231,3 +231,18 @@ def test_schizophrenia_research_source(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 0
+
+
+def test_find_tables_in_old_sciencedirect(test_weird_data_path, source_manager):
+    pmid = '22695256'
+    filename = join(test_weird_data_path, pmid + '.html')
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 3
+    extracted_coordinates = set([(a.x, a.y, a.z) for a in tables[-1].activations])
+    table_5_coordinates = set([(-18, -80, 20), (20, 16, 30)])
+    assert extracted_coordinates == table_5_coordinates
+

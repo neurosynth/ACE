@@ -458,6 +458,10 @@ class ScienceDirectSource(Source):
         # Extract tables
         tables = []
         table_containers = soup.find_all('div', {'class': 'tables'})
+        if len(table_containers) == 0:
+            # try old method
+            table_containers = soup.find_all('dl', {'class': 'table'})
+
         logger.info(f"Found {len(table_containers)} tables.")
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
@@ -465,7 +469,7 @@ class ScienceDirectSource(Source):
             if t:
                 t.position = i + 1
                 try:
-                    t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
+                    t.number = tc.find('span', class_='label').text.split(' ')[-1].strip() or tc['data-label'].split(' ')[-1].strip()
                     t.label = tc.find('span', class_='label').text.strip()
                 except:
                     pass
