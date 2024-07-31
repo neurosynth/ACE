@@ -211,3 +211,13 @@ def test_multi_column_float_conversion(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 2  # should be 0, but not removing innacurate tables yet.
+
+
+def test_frontier_table_identification(test_weird_data_path, source_manager):
+    pmid = '26696806'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 0
