@@ -676,7 +676,7 @@ class WileySource(Source):
                     caption = tc.find('div', {'header': 'article-table-caption'})
                     t.caption = caption.get_text() if caption else None
                 try:
-                    t.notes = footer.get_text()
+                    t.notes = footer.get_text() if footer else None
                 except AttributeError:
                     notes = tc.find('div', {'class': 'article-section__table-footnotes'})
                     t.notes = notes.get_text() if caption else None
