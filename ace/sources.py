@@ -760,6 +760,50 @@ class SageSource(Source):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
 
+class OldSpringerSource(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+
+        soup = super(OldSpringerSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+        table_containers = soup.findAll(
+            'figure', {'id': re.compile('^Tab\d+$')})
+        for (i, tc) in enumerate(table_containers):
+            table_html = tc.find('table')
+            t = self.parse_table(table_html)
+            # If Table instance is returned, add other properties
+            if t:
+                t.position = i + 1
+                t.number = tc['id'][3::].strip()
+                t.label = tc.find('span', class_='CaptionNumber').get_text()
+                try:
+                    t.caption = tc.find(class_='CaptionContent').p.get_text()
+                except:
+                    pass
+                try:
+                    t.notes = tc.find(class_='TableFooter').p.get_text()
+                except:
+                    pass
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def parse_table(self, table):
+        return super(OldSpringerSource, self).parse_table(table)
+
+    def extract_doi(self, soup):
+        content = soup.find('p', class_='ArticleDOI').get_text()
+        return content.split(' ')[1]
+
+    def extract_pmid(self, soup):
+        return scrape.get_pmid_from_doi(self.extract_doi(soup))
+
+
 class SpringerSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):
