@@ -235,7 +235,7 @@ class Source(metaclass=abc.ABCMeta):
                 for (i, c) in enumerate(cols):
                     r_num = (
                         int(c['rowspan'])
-                        if c.has_attr('rowspan') and c['colspan'] != "NaN" else 1
+                        if c.has_attr('rowspan') and c['rowspan'] != "NaN" else 1
                     )
                     c_num = (
                         int(c['colspan'])
