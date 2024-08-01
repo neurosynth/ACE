@@ -233,8 +233,14 @@ class Source(metaclass=abc.ABCMeta):
                 # * If a rowspan/colspan is explicitly provided, use it
                 # * If not, initially assume span == 1 for both rows and columns.
                 for (i, c) in enumerate(cols):
-                    r_num = int(c['rowspan']) if c.has_attr('rowspan') else 1
-                    c_num = int(c['colspan']) if c.has_attr('colspan') else 1
+                    r_num = (
+                        int(c['rowspan'])
+                        if c.has_attr('rowspan') and c['rowspan'] != "NaN" else 1
+                    )
+                    c_num = (
+                        int(c['colspan'])
+                        if c.has_attr('colspan') and c['colspan'] != "NaN" else 1
+                    )
                     cols_found_in_row += c_num
                     # * Check to make sure that we don't have unaccounted-for columns in the
                     #   row after including the current cell. If we do, adjust the colspan
