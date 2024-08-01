@@ -205,7 +205,11 @@ class Source(metaclass=abc.ABCMeta):
 
         # Count columns. Check either just one row, or all of them.
         def n_cols_in_row(row):
-            return sum([int(td['colspan']) if td.has_attr('colspan') else 1 for td in row.find_all(['th', 'td'])])
+            return sum([
+                int(td['colspan'])
+                if td.has_attr('colspan') and td['colspan'] != "NaN" else 1
+                for td in row.find_all(['th', 'td'])
+                ])
 
         search_table = table.find("tbody")
         if search_table is None:
