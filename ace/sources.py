@@ -215,9 +215,13 @@ class Source(metaclass=abc.ABCMeta):
         if search_table is None:
             search_table = table
 
-        if config.CAREFUL_PARSING:            
+        all_trs = search_table.find_all('tr')
+        if all_trs is None or len(all_trs) == 0:
+            return False
+
+        if config.CAREFUL_PARSING:
             n_cols = max([n_cols_in_row(
-                row) for row in search_table.find_all('tr')])
+                row) for row in all_trs])
         else:
             n_cols = n_cols_in_row(search_table.find('tr'))
 
