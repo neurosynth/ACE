@@ -246,3 +246,12 @@ def test_find_tables_in_old_sciencedirect(test_weird_data_path, source_manager):
     table_5_coordinates = set([(-18, -80, 20), (20, 16, 30)])
     assert extracted_coordinates == table_5_coordinates
 
+
+def test_old_springer_source(test_weird_data_path, source_manager):
+    pmid = '23813017'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 0
