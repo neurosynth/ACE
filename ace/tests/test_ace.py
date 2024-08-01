@@ -265,3 +265,13 @@ def test_old_table_parser(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 3
+
+
+def test_empty_columns(test_weird_data_path, source_manager):
+    pmid = '28432782'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 2
