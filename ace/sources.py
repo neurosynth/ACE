@@ -308,8 +308,12 @@ class Source(metaclass=abc.ABCMeta):
         else:
             table_html = scrape.get_url(url)
 
-        table_html = self.decode_html_entities(table_html)
-        return(BeautifulSoup(table_html))
+        if table_html:
+            table_html = self.decode_html_entities(table_html)
+            return BeautifulSoup(table_html)
+
+        return None
+
 
 class DefaultSource(Source):
     def parse_article(self, html, pmid=None, **kwargs):
@@ -341,6 +345,8 @@ class HighWireSource(Source):
             t_num = i + 1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
             table_soup = self._download_table(url)
+            if not table_soup:
+                continue
             tc = table_soup.find(class_='table-expansion')
             if tc:
                 t = tc.find('table', {'id': 'table-%d' % (t_num)})
@@ -740,6 +746,8 @@ class SageSource(Source):
             t_num = i + 1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
             table_soup = self._download_table(url)
+            if not table_soup:
+                continue
             tc = table_soup.find(class_='table-expansion')
             if tc:
                 t = tc.find('table', {'id': 'table-%d' % (t_num)})
@@ -838,6 +846,8 @@ class SpringerSource(Source):
             t_num = i + 1
             url = '%s/tables/%d' % (content_url, t_num)
             table_soup = self._download_table(url)
+            if not table_soup:
+                continue
             tc = table_soup.find(class_='data last-table')
             t = self.parse_table(tc)
             if t:
