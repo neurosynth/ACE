@@ -746,6 +746,8 @@ class SageSource(Source):
             t_num = i + 1
             url = '%s/T%d.expansion.html' % (content_url, t_num)
             table_soup = self._download_table(url)
+            if not table_soup:
+                continue
             tc = table_soup.find(class_='table-expansion')
             if tc:
                 t = tc.find('table', {'id': 'table-%d' % (t_num)})
@@ -844,6 +846,8 @@ class SpringerSource(Source):
             t_num = i + 1
             url = '%s/tables/%d' % (content_url, t_num)
             table_soup = self._download_table(url)
+            if not table_soup:
+                continue
             tc = table_soup.find(class_='data last-table')
             t = self.parse_table(tc)
             if t:
