@@ -275,3 +275,13 @@ def test_empty_columns(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 2
+
+@pytest.mark.vcr(record_mode="once")
+def test_stroke_table(test_weird_data_path, source_manager):
+    pmid = '38990127'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 2
