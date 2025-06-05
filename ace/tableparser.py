@@ -196,10 +196,11 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
         # Also need to remove space between minus sign and numbers; some ScienceDirect
         # journals leave a gap.
         if not i in standard_cols:
-            cs = '([\-\.\s]*\d{1,3}\.*\d{0,2})'
-            m = regex.search('%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), str(col).strip())
+            cs = '([-]?\d{1,3}\.?\d{0,2})'
+            clean_col = regex.sub(r'(?<!\d)\.(?!\d)', '', str(col))  # Remove dots not part of numbers
+            m = regex.search('\n*%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), clean_col)
             if m:
-                x, y, z = [regex.sub('-\s+', '-', c) for c in [m.group(1), m.group(2), m.group(3)]]
+                x, y, z = [regex.sub('-\s+', '-', c.strip()) for c in [m.group(1), m.group(2), m.group(3)]]
                 logger.info("Found multi-coordinate column: %s\n...and extracted: %s, %s, %s" % (col, x, y, z))
                 activation.set_coords(x, y, z)
 
