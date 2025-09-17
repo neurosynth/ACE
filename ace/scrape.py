@@ -117,6 +117,10 @@ def parse_PMID_xml(xml):
     ''' Take XML-format PubMed metadata and convert it to a dictionary
     with standardized field names. '''
 
+    if isinstance(xml, bytes):
+        xml = xml.decode("utf-8")  # convert bytes → str
+        
+    xml = re.sub(r'<!DOCTYPE[^>]*>', '', xml)
     di = xmltodict.parse(xml).get('PubmedArticleSet')
     if not di:
         return None
