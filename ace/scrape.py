@@ -3,7 +3,7 @@
 import re
 import sys
 from pathlib import Path
-from collections import Mapping
+from collections.abc import Mapping
 import requests
 from time import sleep
 import logging
