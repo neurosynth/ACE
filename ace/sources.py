@@ -16,6 +16,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Try to import readabilipy for enhanced HTML cleaning
+try:
+    from readabilipy import simple_json_from_html_string
+    READABILITY_AVAILABLE = True
+except ImportError:
+    READABILITY_AVAILABLE = False
+    logger.warning("readabilipy not installed. Install with 'pip install readabilipy' for enhanced HTML cleaning. "
+                     "Note: Node.js is also required for readabilipy to work.")
+
 
 class SourceManager:
 
@@ -74,6 +83,82 @@ class Source(metaclass=abc.ABCMeta):
 
     }
 
+    def _clean_html_with_readability(self, html):
+        """
+        Clean HTML content using Mozilla's readability algorithm via readabilipy.
+        
+        Falls back to basic BeautifulSoup cleaning if readabilipy is not available or fails.
+        
+        Args:
+            html: The HTML content to clean
+            
+        Returns:
+            The cleaned text content
+        """
+        global READABILITY_AVAILABLE
+        
+        # If readabilipy is not available, fall back to basic BeautifulSoup cleaning
+        if not READABILITY_AVAILABLE:
+            logger.warning("Falling back to basic HTML cleaning as readabilipy is not available")
+            return self._safe_clean_html(html)
+        
+        try:
+            # Use readabilipy with Mozilla's readability algorithm
+            article = simple_json_from_html_string(html, use_readability=True)
+            if article and 'content' in article and article['content']:
+                # Extract text content from the HTML
+                soup = BeautifulSoup(article['content'], "lxml")
+                # Get text content, preserving some structure
+                text_parts = []
+                for element in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                    text = element.get_text(strip=False)
+                    if text.strip():
+                        text_parts.append(text.strip())
+                return '\n\n'.join(text_parts) if text_parts else soup.get_text()
+            else:
+                # If readability failed to extract content, fall back to safe cleaning
+                logger.warning("Readability failed to extract content, falling back to basic HTML cleaning")
+                return self._safe_clean_html(html)
+        except Exception as e:
+            # If any error occurs, fall back to safe cleaning
+            logger.warning(f"Error using readabilipy, falling back to basic HTML cleaning: {e}")
+            return self._safe_clean_html(html)
+    
+    def _safe_clean_html(self, html):
+        """
+        Clean HTML content using BeautifulSoup as a fallback.
+        
+        Args:
+            html: The HTML content to clean
+            
+        Returns:
+            The cleaned text content
+        """
+        soup = BeautifulSoup(html, "lxml")
+
+        # 1. Remove non-text tags
+        for tag in soup(["script", "style", "noscript", "iframe", "svg", "canvas"]):
+            tag.decompose()
+
+        # 2. Remove comments
+        from bs4 import Comment
+        for comment in soup.find_all(string=lambda t: isinstance(t, Comment)):
+            comment.extract()
+
+        # 3. Strip heavy attributes but keep the tags/text
+        for tag in soup.find_all(True):
+            for attr in list(tag.attrs):
+                if attr in ["style", "onclick", "class", "id", "aria-hidden", "aria-label"]:
+                    del tag[attr]
+
+        # Extract text content
+        text_parts = []
+        for element in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+            text = element.get_text(strip=False)
+            if text.strip():
+                text_parts.append(text.strip())
+        return '\n\n'.join(text_parts) if text_parts else soup.get_text()
+
     def __init__(self, database, config=None, table_dir=None):
         self.database = database
         self.table_dir = table_dir
@@ -118,8 +203,9 @@ class Source(metaclass=abc.ABCMeta):
         # Remove all scripts and styles
         for script in soup(["script", "style"]):
             script.extract()
-        # Get text
-        text = soup.get_text()
+        
+        # Get text using readability
+        text = self._clean_html_with_readability(str(soup))
         if self.database.article_exists(pmid):
             if config.OVERWRITE_EXISTING_ROWS:
                 self.database.delete_article(pmid)
@@ -170,26 +256,6 @@ class Source(metaclass=abc.ABCMeta):
 
         self.article.neurovault_links = nv_links
 
-    def extract_text(self, soup):
-        ''' Extract text from the article.
-         Publisher specific extraction of body text should be done in a subclass.
-         '''
-
-        text = soup.get_text()
-
-        # Remove any remaining HTML tags
-        text = re.sub(r'<[^>]+>', '', text)
-
-        # Remove any remaining unicode characters
-        text = re.sub(r'\\u[0-9]+', '', text)
-
-        # Remove any remaining entities
-        text = self.decode_html_entities(text)
-
-        # Remove any remaining whitespace
-        text = re.sub(r'\s+', ' ', text)
-
-        self.article.text = text
 
     def parse_table(self, table):
         ''' Takes HTML for a single table and returns a Table. '''
@@ -380,21 +446,6 @@ class HighWireSource(Source):
     def extract_pmid(self, soup):
         return soup.find('meta', {'name': 'citation_pmid'})['content']
 
-    def extract_text(self, soup):
-        # If div has class "main-content-wrapper" or "article" or "fulltext-view"
-        # extract all text from it
-
-        # Assuming you have a BeautifulSoup object called soup
-        div = soup.find_all("div", class_="article")
-        if div:
-            div = div[0]
-            div_classes = ["ref-list", "abstract", "copyright-statement", "fn-group", "history-list", "license"]
-            for class_ in div_classes:
-                for tag in div.find_all(class_=class_):
-                    tag.extract()
-            soup = div
-
-        return super(HighWireSource, self).extract_text(soup)
 
 
 class OUPSource(Source):
@@ -451,21 +502,6 @@ class OUPSource(Source):
         else:
             return None
 
-    def extract_text(self, soup):
-        # If div has class "main-content-wrapper" or "article" or "fulltext-view"
-        # extract all text from it
-
-        # Assuming you have a BeautifulSoup object called soup
-        div = soup.find_all("div", class_="article-body")
-        if div:
-            div = div[0]
-            div_classes = ["ref-list", "abstract", "copyright-statement", "fn-group", "history-list", "license"]
-            for class_ in div_classes:
-                for tag in div.find_all(class_=class_):
-                    tag.extract()
-            soup = div
-
-        return super(OUPSource, self).extract_text(soup)
 
 
 class ScienceDirectSource(Source):
