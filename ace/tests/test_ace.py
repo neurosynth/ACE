@@ -285,3 +285,27 @@ def test_stroke_table(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 2
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_taylor_and_francis_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'tandfonline.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    assert source is not None
+    assert source.__class__.__name__ == 'TaylorAndFrancisSource'
+    article = source.parse_article(html, pmid='12345678')
+    tables = article.tables
+    assert len(tables) == 2
+    # Check first table
+    t1 = tables[0]
+    assert t1.number == '1'
+    assert t1.label == 'Table 1'
+    assert 'Talairach coordinates' in t1.caption
+    assert t1.n_activations >= 2
+    # Check second table
+    t2 = tables[1]
+    assert t2.number == '2'
+    assert t2.label == 'Table 2'
+    assert 'Talairach coordinates' in t2.caption
+    assert t2.n_activations >= 2
