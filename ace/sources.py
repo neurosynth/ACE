@@ -387,8 +387,410 @@ class DefaultSource(Source):
         if not soup:
             return False
 
-        self.article.missing_source = True
+        # Extract tables using multi-strategy detection system
+        tables = []
+        
+        # Strategy 1: Publisher-agnostic container detection
+        table_containers = self._detect_table_containers_strategy_1(soup)
+        
+        # Strategy 2: Semantic HTML analysis
+        if not table_containers:
+            table_containers = self._detect_table_containers_strategy_2(soup)
+            
+        # Strategy 3: Content-based detection
+        if not table_containers:
+            table_containers = self._detect_table_containers_strategy_3(soup)
+            
+        # Strategy 4: Generic fallback
+        if not table_containers:
+            table_containers = self._detect_table_containers_strategy_4(soup)
+
+        logger.info(f"Found {len(table_containers)} potential table containers.")
+        
+        for (i, tc) in enumerate(table_containers):
+            table_html = self._extract_table_from_container(tc)
+            if not table_html:
+                continue
+                
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+                
+                # Extract metadata using multiple fallback approaches
+                metadata = self._extract_table_metadata(tc, table_html, i + 1)
+                t.number = metadata.get('number')
+                t.label = metadata.get('label')
+                t.caption = metadata.get('caption')
+                t.notes = metadata.get('notes')
+                
+                # Validate table quality
+                if self._validate_table(t, tc):
+                    tables.append(t)
+
+        self.article.tables = tables
+        if not tables:
+            self.article.missing_source = True
         return self.article
+    
+    def _detect_table_containers_strategy_1(self, soup):
+        """Strategy 1: Publisher-agnostic container detection"""
+        containers = []
+        
+        # Common table container patterns observed across publishers
+        selectors = [
+            # Oxford Academic style
+            'div.table-full-width-wrap:not(.table-modal)',
+            'div[class*="table-wrap"]',
+            'div[class*="table-container"]',
+            
+            # Science Direct style
+            'div.tables',
+            'dl.table',
+            'div[class*="table"][class*="content"]',
+            
+            # XML-style tags (PLoS, Frontiers)
+            'table-wrap',
+            
+            # PMC style
+            'div.table-wrap',
+            
+            # Figure-based table containers
+            'figure[id*="table"]',
+            'figure[id*="tbl"]',
+            'figure[class*="table"]',
+            
+            # Generic table containers with IDs
+            'div[id*="table"]',
+            'div[id*="tbl"]',
+            'section[id*="table"]',
+            'section[id*="tbl"]',
+        ]
+        
+        for selector in selectors:
+            try:
+                found = soup.select(selector)
+                if found:
+                    # Prioritize containers that actually contain table elements
+                    valid_containers = [tc for tc in found if tc.find('table')]
+                    if valid_containers:
+                        logger.debug(f"Strategy 1: Found {len(valid_containers)} containers with selector: {selector}")
+                        return valid_containers
+                    containers.extend(found)
+            except Exception as e:
+                logger.debug(f"Strategy 1: Selector '{selector}' failed: {e}")
+                continue
+                
+        return containers
+
+    def _detect_table_containers_strategy_2(self, soup):
+        """Strategy 2: Semantic HTML analysis"""
+        containers = []
+        
+        # Look for tables with semantic context
+        tables_with_context = []
+        
+        # Find tables with captions
+        tables = soup.find_all('table')
+        for table in tables:
+            # Check for caption element
+            if table.find('caption'):
+                containers.append(table.parent if table.parent else table)
+                continue
+                
+            # Check for preceding headings with "Table" or "Tab"
+            prev_elements = table.find_all_previous(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'], limit=3)
+            for elem in prev_elements:
+                if elem and re.search(r'\btable?\s*\d+', elem.get_text(), re.IGNORECASE):
+                    containers.append(table.parent if table.parent else table)
+                    break
+                    
+            # Check for role="table" attribute
+            if table.get('role') == 'table':
+                containers.append(table.parent if table.parent else table)
+                
+        return containers
+
+    def _detect_table_containers_strategy_3(self, soup):
+        """Strategy 3: Content-based detection using heuristics"""
+        containers = []
+        
+        # Find tables containing coordinate-like data
+        tables = soup.find_all('table')
+        for table in tables:
+            text_content = table.get_text()
+            
+            # Look for coordinate patterns (numbers that could be x,y,z coordinates)
+            coord_patterns = [
+                r'-?\d+\.?\d*\s*,\s*-?\d+\.?\d*\s*,\s*-?\d+\.?\d*',  # x,y,z format
+                r'-?\d+\s+-?\d+\s+-?\d+',  # space-separated coordinates
+                r'MNI|Talairach|coordinates',  # neuroimaging coordinate systems
+            ]
+            
+            has_coords = any(re.search(pattern, text_content, re.IGNORECASE) for pattern in coord_patterns)
+            
+            # Look for neuroimaging keywords in headers
+            header_text = ' '.join([th.get_text() for th in table.find_all(['th', 'thead'])])
+            neuro_keywords = ['region', 'area', 'activation', 'volume', 'voxel', 'brain', 'cortex',
+                            'significance', 'p-value', 'z-score', 't-value']
+            has_neuro_keywords = any(keyword in header_text.lower() for keyword in neuro_keywords)
+            
+            # Look for statistical data patterns
+            has_stats = bool(re.search(r'p\s*[<>=]\s*0\.\d+|[zpt]\s*=\s*\d+\.\d+', text_content, re.IGNORECASE))
+            
+            if has_coords or (has_neuro_keywords and has_stats):
+                containers.append(table.parent if table.parent else table)
+                
+        return containers
+
+    def _detect_table_containers_strategy_4(self, soup):
+        """Strategy 4: Generic fallback - extract all tables with filtering"""
+        containers = []
+        
+        # Get all table elements
+        tables = soup.find_all('table')
+        
+        for table in tables:
+            # Filter out navigation/layout tables
+            if self._is_navigation_table(table):
+                continue
+                
+            # Must have reasonable content
+            rows = table.find_all('tr')
+            if len(rows) < 2:  # Need at least header + 1 data row
+                continue
+                
+            containers.append(table.parent if table.parent else table)
+            
+        return containers
+
+    def _is_navigation_table(self, table):
+        """Check if table is likely for navigation/layout rather than data"""
+        # Check for navigation indicators
+        table_text = table.get_text().lower()
+        nav_indicators = ['menu', 'navigation', 'nav', 'login', 'search', 'footer', 'header']
+        
+        if any(indicator in table_text for indicator in nav_indicators):
+            return True
+            
+        # Check table structure - navigation tables often have many links
+        links = table.find_all('a')
+        cells = table.find_all(['td', 'th'])
+        if cells and len(links) / len(cells) > 0.5:  # More than 50% of cells have links
+            return True
+            
+        # Check for CSS classes that suggest navigation
+        table_classes = ' '.join(table.get('class', []))
+        nav_classes = ['nav', 'menu', 'footer', 'header', 'sidebar']
+        if any(cls in table_classes.lower() for cls in nav_classes):
+            return True
+            
+        return False
+
+    def _extract_table_from_container(self, container):
+        """Extract the actual table element from a container"""
+        # If container is already a table, return it
+        if container.name == 'table':
+            return container
+            
+        # Look for table within container
+        table = container.find('table')
+        return table
+
+    def _extract_table_metadata(self, container, table_html, position):
+        """Extract table metadata using multiple fallback approaches"""
+        metadata = {
+            'number': None,
+            'label': None,
+            'caption': None,
+            'notes': None
+        }
+        
+        # Strategy 1: XML-style metadata (PLoS, Frontiers style)
+        if container.name in ['table-wrap', 'fig']:
+            metadata.update(self._extract_xml_style_metadata(container, position))
+            
+        # Strategy 2: HTML container metadata (OUP, ScienceDirect style)
+        if not metadata['label']:
+            metadata.update(self._extract_html_container_metadata(container, position))
+            
+        # Strategy 3: Table-level metadata (caption, etc.)
+        if not metadata['caption'] and table_html:
+            metadata.update(self._extract_table_level_metadata(table_html, position))
+            
+        # Strategy 4: Context-based metadata (look around the table)
+        if not metadata['label']:
+            metadata.update(self._extract_context_metadata(container, position))
+            
+        return metadata
+
+    def _extract_xml_style_metadata(self, container, position):
+        """Extract metadata from XML-style containers (PLoS/Frontiers pattern)"""
+        metadata = {}
+        
+        try:
+            # Label from XML tags
+            label_elem = container.find('label')
+            if label_elem:
+                metadata['label'] = label_elem.get_text().strip()
+                # Extract number from label
+                number_match = re.search(r'(\d+)', metadata['label'])
+                if number_match:
+                    metadata['number'] = number_match.group(1)
+                    
+            # Caption from title or caption tags
+            caption_elem = container.find(['title', 'caption'])
+            if caption_elem:
+                metadata['caption'] = caption_elem.get_text().strip()
+                
+            # Notes from footer
+            footer_elem = container.find(['table-wrap-foot', 'fig-foot'])
+            if footer_elem:
+                metadata['notes'] = footer_elem.get_text().strip()
+                
+        except Exception as e:
+            logger.debug(f"XML metadata extraction failed: {e}")
+            
+        return metadata
+
+    def _extract_html_container_metadata(self, container, position):
+        """Extract metadata from HTML containers (OUP/ScienceDirect pattern)"""
+        metadata = {}
+        
+        try:
+            # Look for label spans (OUP style)
+            label_elem = container.find('span', class_='label')
+            if not label_elem:
+                label_elem = container.find(['span', 'div'], string=re.compile(r'Table\s*\d+', re.IGNORECASE))
+            if label_elem:
+                metadata['label'] = label_elem.get_text().strip()
+                number_match = re.search(r'(\d+)', metadata['label'])
+                if number_match:
+                    metadata['number'] = number_match.group(1)
+                    
+            # Look for captions (multiple possible locations)
+            caption_elem = container.find(['span', 'div', 'p'], class_='caption')
+            if not caption_elem:
+                caption_elem = container.find(['span', 'div', 'p'], class_=re.compile(r'caption|title'))
+            if caption_elem:
+                metadata['caption'] = caption_elem.get_text().strip()
+                
+            # Look for footnotes/notes
+            notes_elem = container.find(['span', 'div'], class_=re.compile(r'fn|footnote|note'))
+            if notes_elem:
+                metadata['notes'] = notes_elem.get_text().strip()
+                
+        except Exception as e:
+            logger.debug(f"HTML container metadata extraction failed: {e}")
+            
+        return metadata
+
+    def _extract_table_level_metadata(self, table, position):
+        """Extract metadata from table element itself"""
+        metadata = {}
+        
+        try:
+            # Look for caption element
+            caption_elem = table.find('caption')
+            if caption_elem:
+                caption_text = caption_elem.get_text().strip()
+                metadata['caption'] = caption_text
+                
+                # Try to extract label/number from caption
+                label_match = re.search(r'(Table\s*\d+)', caption_text, re.IGNORECASE)
+                if label_match:
+                    metadata['label'] = label_match.group(1)
+                    number_match = re.search(r'(\d+)', metadata['label'])
+                    if number_match:
+                        metadata['number'] = number_match.group(1)
+                        
+            # Look for footer notes
+            footer_elem = table.find('tfoot')
+            if footer_elem:
+                metadata['notes'] = footer_elem.get_text().strip()
+                
+        except Exception as e:
+            logger.debug(f"Table-level metadata extraction failed: {e}")
+            
+        return metadata
+
+    def _extract_context_metadata(self, container, position):
+        """Extract metadata by looking at context around the table"""
+        metadata = {}
+        
+        try:
+            # Look for headings before the table
+            current = container
+            for _ in range(5):  # Look up to 5 elements back
+                prev = current.find_previous_sibling()
+                if not prev:
+                    break
+                current = prev
+                
+                if prev.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                    heading_text = prev.get_text().strip()
+                    if re.search(r'\btable?\s*\d+', heading_text, re.IGNORECASE):
+                        metadata['label'] = heading_text
+                        number_match = re.search(r'(\d+)', heading_text)
+                        if number_match:
+                            metadata['number'] = number_match.group(1)
+                        break
+                        
+            # If no number found, use position
+            if not metadata['number']:
+                metadata['number'] = str(position)
+                
+            # Default label if none found
+            if not metadata['label']:
+                metadata['label'] = f"Table {position}"
+                
+        except Exception as e:
+            logger.debug(f"Context metadata extraction failed: {e}")
+            # Fallback defaults
+            metadata['number'] = str(position)
+            metadata['label'] = f"Table {position}"
+            
+        return metadata
+
+    def _validate_table(self, table, container):
+        """Validate table quality to ensure it meets standards"""
+        try:
+            # Basic structure validation
+            if not table or not hasattr(table, 'activations'):
+                return False
+                
+            # Must have some activations
+            if not table.activations or len(table.activations) == 0:
+                return False
+                
+            # Content validation - check for meaningful data
+            has_meaningful_content = False
+            for activation in table.activations:
+                # Look for coordinate data or meaningful regions
+                if (hasattr(activation, 'x') and activation.x is not None) or \
+                   (hasattr(activation, 'region') and activation.region and
+                    not activation.region.lower() in ['', 'empty', 'n/a', 'none']):
+                    has_meaningful_content = True
+                    break
+                    
+            if not has_meaningful_content:
+                logger.debug("Table validation failed: no meaningful content found")
+                return False
+                
+            # Context validation - ensure it's within article content
+            if container:
+                container_text = container.get_text().lower()
+                # Reject if likely to be navigation/advertisement
+                reject_indicators = ['advertisement', 'sponsored', 'related articles',
+                                   'journal menu', 'issue contents', 'navigation']
+                if any(indicator in container_text for indicator in reject_indicators):
+                    logger.debug("Table validation failed: appears to be navigation/ads")
+                    return False
+                    
+            return True
+            
+        except Exception as e:
+            logger.debug(f"Table validation failed with exception: {e}")
+            return False
 
 
 class HighWireSource(Source):
