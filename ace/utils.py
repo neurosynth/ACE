@@ -47,7 +47,7 @@ class PubMedAPI:
             
         response = self.get("esearch", params=params, **kwargs)
         if extract_ids:
-            soup = BeautifulSoup(response)
+            soup = BeautifulSoup(response, "lxml")
             response = [t.string for t in soup.find_all('id')]
         return response
     

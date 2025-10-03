@@ -1,0 +1,21 @@
+{
+    "name": "Taylor and Francis",
+    "identifiers": [
+        "tandfonline\\.com",
+        "<meta\\s+name=\"dc\\.Publisher\"\\s+content=\"Taylor\\s*&\\s*Francis\\s*Group\"",
+        "<meta\\s+property=\"og:site_name\"\\s+content=\"Taylor\\s*&\\s*Francis\"",
+        "tandf\\.tfviewerdata"
+    ],
+    "entities": {
+        "&minus;": "-",
+        "\u2212": "-",
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2015": "-",
+        "&thinsp;": "",
+        "\u2009": "",
+        "&nbsp;": " ",
+        "\u00A0": " "
+    },
+    "delay": 2
+}
