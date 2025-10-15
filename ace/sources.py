@@ -34,10 +34,9 @@ class SourceManager:
     associated directory of JSON config files and uses them to determine which parser
     to call when a new HTML file is passed. '''
 
-    def __init__(self, database, table_dir=None):
+    def __init__(self, table_dir=None):
         ''' SourceManager constructor.
         Args:
-            database: A Database instance to use with all Sources.
             table_dir: An optional directory name to save any downloaded tables to.
                 When table_dir is None, nothing will be saved (requiring new scraping
                 each time the article is processed).
@@ -47,7 +46,7 @@ class SourceManager:
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
         for config_file in glob('%s/*json' % source_dir):
             class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(database, config=config_file, table_dir=table_dir)
+            cls = getattr(module, class_name + 'Source')(config=config_file, table_dir=table_dir)
             self.sources[class_name] = cls
 
     def identify_source(self, html):
@@ -161,8 +160,7 @@ class Source(metaclass=abc.ABCMeta):
                 text_parts.append(text.strip())
         return '\n\n'.join(text_parts) if text_parts else soup.get_text()
 
-    def __init__(self, database, config=None, table_dir=None):
-        self.database = database
+    def __init__(self, config=None, table_dir=None):
         self.table_dir = table_dir
         self.entities = {}
 
@@ -181,16 +179,11 @@ class Source(metaclass=abc.ABCMeta):
             else:
                 self.entities.update(Source.ENTITIES)
 
-    @abc.abstractmethod
     def parse_article(self, html, pmid=None, metadata_dir=None):
-        ''' Takes HTML article as input and returns an Article. PMID Can also be 
-        passed, which prevents having to scrape it from the article and/or look it 
+        ''' Takes HTML article as input and returns an Article. PMID Can also be
+        passed, which prevents having to scrape it from the article and/or look it
         up in PubMed. '''
-
-        # Skip rest of processing if this record already exists
-        if pmid is not None and self.database.article_exists(pmid) and not config.OVERWRITE_EXISTING_ROWS:
-            return False
-
+        
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html, "lxml")
         if pmid is None:
@@ -208,11 +201,6 @@ class Source(metaclass=abc.ABCMeta):
         
         # Get text using readability
         text = self._clean_html_with_readability(str(soup))
-        if self.database.article_exists(pmid):
-            if config.OVERWRITE_EXISTING_ROWS:
-                self.database.delete_article(pmid)
-            else:
-                return False
 
         self.article = database.Article(text, pmid=pmid, metadata=metadata)
         self.extract_neurovault(soup)
@@ -401,6 +389,9 @@ class DefaultSource(Source):
     3. JavaScript expansion detection: Identifies elements that might trigger
        table expansion via JavaScript (logging only, not implemented)
     """
+    def __init__(self, config=None, table_dir=None):
+        super().__init__(config=config, table_dir=table_dir)
+        
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(DefaultSource, self).parse_article(html, pmid, **kwargs)
         if not soup:

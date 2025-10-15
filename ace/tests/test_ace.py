@@ -28,7 +28,7 @@ def db():
 
 @pytest.fixture(scope="module")
 def source_manager(db):
-    return sources.SourceManager(db)
+    return sources.SourceManager()
 
 
 @pytest.mark.vcr(record_mode="once")
