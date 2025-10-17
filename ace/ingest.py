@@ -5,29 +5,13 @@ from . import sources, config
 from .scrape import _validate_scrape
 import multiprocessing as mp
 from functools import partial
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
-
-def _process_file(f):
-    """Helper function to read and validate a single file."""
-    logger.info("Processing article %s..." % f)
-    try:
-        html = open(f).read()
-    except Exception as e:
-        logger.warning("Failed to read file %s: %s" % (f, str(e)))
-        return f, None
-
-    if not _validate_scrape(html):
-        logger.warning("Invalid HTML for %s" % f)
-        return f, None
-
-    return f, html
-
 
 def _process_file_with_source(args):
     """Helper function to read, validate, and identify source for a single file."""
     f, source_configs = args
-    logger.info("Processing article %s..." % f)
     try:
         html = open(f).read()
     except Exception as e:
@@ -76,7 +60,7 @@ def _parse_article(args):
 
 
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
-    pmid_filenames=False, metadata_dir=None, force_ingest=True, num_workers=None, **kwargs):
+    pmid_filenames=False, metadata_dir=None, force_ingest=True, num_workers=None, use_readability=None, **kwargs):
     ''' Process articles and add their data to the DB.
     Args:
         files: The path to the article(s) to process. Can be a single
@@ -100,10 +84,13 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
         force_ingest: Ingest even if no source is identified.
         num_workers: Number of worker processes to use when processing in parallel.
             If None (default), uses the number of CPUs available on the system.
+        use_readability: When True, use readability.py for HTML cleaning if available.
+            When False, use fallback HTML processing by default. If None (default),
+            uses the value from config.USE_READABILITY.
         kwargs: Additional keyword arguments to pass to parse_article.
     '''
 
-    manager = sources.SourceManager(table_dir)
+    manager = sources.SourceManager(table_dir, use_readability=use_readability if use_readability is not None else config.USE_READABILITY)
     
     # Prepare source configurations for parallel processing
     source_configs = {name: source.identifiers for name, source in manager.sources.items()}
@@ -123,11 +110,11 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
         # Process files in parallel to extract HTML content and identify sources
         process_args = [(f, source_configs) for f in files]
         with mp.Pool(processes=num_workers) as pool:
-            file_html_source_tuples = pool.map(_process_file_with_source, process_args)
+            file_html_source_tuples = list(tqdm(pool.imap_unordered(_process_file_with_source, process_args), total=len(process_args), desc="Processing files"))
     else:
         # Process files sequentially
         file_html_source_tuples = []
-        for f in files:
+        for f in tqdm(files, desc="Processing files"):
             result = _process_file_with_source((f, source_configs))
             file_html_source_tuples.append(result)
 
@@ -142,7 +129,7 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
     # Filter out articles that already exist in the database
     files_to_process = []
     missing_sources = []
-    
+
     for f, html, source_name in valid_files:
         pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
         
@@ -160,11 +147,11 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
     if num_workers is not None and num_workers != 1 and parse_args:
         # Parse articles in parallel
         with mp.Pool(processes=num_workers) as pool:
-            parsed_articles = pool.map(_parse_article, parse_args)
+            parsed_articles = list(tqdm(pool.imap_unordered(_parse_article, parse_args), total=len(parse_args), desc="Parsing articles"))
     else:
         # Parse articles sequentially
         parsed_articles = []
-        for args in parse_args:
+        for args in tqdm(parse_args, desc="Parsing articles"):
             parsed_articles.append(_parse_article(args))
 
     # Add successfully parsed articles to database

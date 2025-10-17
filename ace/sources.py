@@ -34,19 +34,21 @@ class SourceManager:
     associated directory of JSON config files and uses them to determine which parser
     to call when a new HTML file is passed. '''
 
-    def __init__(self, table_dir=None):
+    def __init__(self, table_dir=None, use_readability=True):
         ''' SourceManager constructor.
         Args:
             table_dir: An optional directory name to save any downloaded tables to.
                 When table_dir is None, nothing will be saved (requiring new scraping
                 each time the article is processed).
+            use_readability: When True, use readability.py for HTML cleaning if available.
+                When False, use fallback HTML processing by default.
         '''
         module = importlib.import_module('ace.sources')
         self.sources = {}
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
         for config_file in glob('%s/*json' % source_dir):
             class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(config=config_file, table_dir=table_dir)
+            cls = getattr(module, class_name + 'Source')(config=config_file, table_dir=table_dir, use_readability=use_readability)
             self.sources[class_name] = cls
 
     def identify_source(self, html):
@@ -98,9 +100,12 @@ class Source(metaclass=abc.ABCMeta):
         """
         global READABILITY_AVAILABLE
         
-        # If readabilipy is not available, fall back to basic BeautifulSoup cleaning
-        if not READABILITY_AVAILABLE:
-            logger.warning("Falling back to basic HTML cleaning as readabilipy is not available")
+        # If use_readability is False or readabilipy is not available, fall back to basic BeautifulSoup cleaning
+        if not self.use_readability or not READABILITY_AVAILABLE:
+            if not self.use_readability:
+                logger.info("Using fallback HTML cleaning as readability is disabled")
+            else:
+                logger.warning("Falling back to basic HTML cleaning as readabilipy is not available")
             return self._safe_clean_html(html)
         
         try:
@@ -160,8 +165,9 @@ class Source(metaclass=abc.ABCMeta):
                 text_parts.append(text.strip())
         return '\n\n'.join(text_parts) if text_parts else soup.get_text()
 
-    def __init__(self, config=None, table_dir=None):
+    def __init__(self, config=None, table_dir=None, use_readability=True):
         self.table_dir = table_dir
+        self.use_readability = use_readability
         self.entities = {}
 
         if config is not None:
@@ -315,15 +321,30 @@ class Source(metaclass=abc.ABCMeta):
                     # it.
                     if i + 1 == n_cells and cols_found_in_row < n_cols and (len(data.data) == j+1) and data[j].count(None) > c_num:
                         c_num += n_cols - cols_found_in_row
-                    data.add_val(c.get_text(), r_num, c_num)
+                    # Use strip=True to clean up whitespace
+                    data.add_val(c.get_text(strip=True), r_num, c_num)
             except Exception as err:
                 if not config.SILENT_ERRORS:
                     logger.error(str(err))
                 if not config.IGNORE_BAD_ROWS:
                     raise
 
-        if data.data[data.n_rows- 1].count(None) == data.n_cols:
+        # Clean up last row if it's completely empty
+        if data.data and data.data[-1].count(None) == data.n_cols:
             data.data.pop()
+
+        # Fill down implicit merges in the first column (index 0)
+        if data.data and len(data.data) > 1:  # at least 2 rows
+            logger.debug("\t\tApplying fill-down logic for implicit merges...")
+            for row_idx in range(1, len(data.data)):
+                current_val = data.data[row_idx][0]
+                # Check if the cell is effectively empty
+                if current_val is None or (isinstance(current_val, str) and current_val.strip() == ''):
+                    # Copy value from the cell above
+                    value_above = data.data[row_idx - 1][0]
+                    if value_above is not None:  # Avoid propagating None
+                        data.data[row_idx][0] = value_above
+
         logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data)
 
@@ -1577,38 +1598,63 @@ class SpringerSource(Source):
         # To download tables, we need the content URL and the number of tables
         content_url = soup.find('meta', {'name': 'citation_fulltext_html_url'})['content']
 
-        n_tables = len(soup.find_all('span', string='Full size table'))
-        logger.info(f"Found {n_tables} tables.")
-        # Now download each table and parse it
+        # Find all links that match the Nature table URL pattern.
+        table_links = soup.find_all('a', href=re.compile(r'/articles/.*/tables/\d+'))
+        
+        logger.info(f"Found {len(table_links)} potential table links.")
         tables = []
-        for i in range(n_tables):
-            t_num = i + 1
-            url = '%s/tables/%d' % (content_url, t_num)
-            table_soup = self._download_table(url)
+
+        # Loop through the found links.
+        for i, link in enumerate(table_links):
+            
+            relative_url = link.get('href')
+            if not relative_url:
+                continue
+                
+            # Construct the full URL robustly.
+            full_url = urljoin(content_url, relative_url)
+            
+            table_soup = self._download_table(full_url)
             if not table_soup:
                 continue
-            tc = table_soup.find(class_='data last-table')
-            t = self.parse_table(tc)
+
+            # Find the main container first.
+            tc = table_soup.find('div', class_='c-article-table-container')
+            if not tc:
+                # Fallback to finding the first table on the page if container not found
+                tc = table_soup.find('table')
+                if not tc:
+                    continue
+
+            table_html = tc.find('table') if tc.name != 'table' else tc
+            t = self.parse_table(table_html)
+            
             if t:
-                t.position = t_num
+                t.position = i + 1
 
-                # id_name is the id HTML element that cotains the title, label and table number that needs to be parse
-                # temp_title sets it up to where the title can be parsed and then categorized
-                id_name = f"table-{t_num}-title"
-                temp_title = table_soup.find('h1', attrs={'id': id_name}).get_text().split()
-
-                # grabbing the first two elements for the label and then making them a string object
-                t.label = " ".join(temp_title[:2])
-                t.number = str(temp_title[1])
+                # Parse metadata from the downloaded page's structure
                 try:
-                    # grabbing the rest of the element for the caption/title of the table and then making them a string object
-                    t.caption =  " ".join(temp_title[2:])
+                    # Title, label, and number from H1
+                    title_elem = table_soup.find('h1', class_='c-article-title')
+                    if title_elem:
+                        full_title_text = title_elem.get_text().strip()
+                        # Example parsing: "Table 1: Caption of the table"
+                        label_match = re.match(r'(Table\s*\d+)', full_title_text, re.IGNORECASE)
+                        if label_match:
+                            t.label = label_match.group(1)
+                            t.caption = full_title_text[len(t.label):].lstrip(': ').strip()
+                            num_match = re.search(r'(\d+)', t.label)
+                            if num_match:
+                                t.number = num_match.group(1)
+                except Exception as e:
+                    logger.debug(f"Could not parse table caption/label: {e}")
+
+                try:
+                    # Notes from the footer
+                    t.notes = table_soup.find('footer', class_='c-article-table-footer').get_text()
                 except:
                     pass
-                try:
-                    t.notes = table_soup.find(class_='c-article-table-footer').get_text()
-                except:
-                    pass
+                    
                 tables.append(t)
 
         self.article.tables = tables
@@ -1893,3 +1939,90 @@ class PMCSource(Source):
 
     def extract_doi(self, soup):
         return soup.find('meta', {'name': 'citation_doi'})['content']
+
+
+class NationalAcademyOfSciencesSource(Source):
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(NationalAcademyOfSciencesSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+        # PNAS uses figure elements with class 'table' for tables
+        table_containers = soup.find_all('figure', {'class': 'table'})
+        
+        # Also check for div elements that might contain tables
+        if not table_containers:
+            table_containers = soup.find_all('div', {'class': 'table'})
+            
+        # Also check for generic table elements in the article body
+        if not table_containers:
+            table_containers = soup.find_all('table')
+            
+        logger.info(f"Found {len(table_containers)} tables.")
+        for (i, tc) in enumerate(table_containers):
+            # If tc is already a table element, use it directly
+            if tc.name == 'table':
+                table_html = tc
+            else:
+                # Otherwise look for a table within the container
+                table_html = tc.find('table')
+                
+            if not table_html:
+                continue
+                
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+                # Try to extract table label/number
+                try:
+                    label_elem = tc.find('div', {'class': 'caption'}) or tc.find('h3') or tc.find('h4')
+                    if label_elem:
+                        t.label = label_elem.get_text().strip()
+                        # Extract number from label if possible
+                        number_match = re.search(r'[Tt]able\s+(\d+)', t.label, re.IGNORECASE)
+                        if number_match:
+                            t.number = number_match.group(1)
+                except:
+                    pass
+                    
+                # Try to extract caption
+                try:
+                    caption_elem = tc.find('div', {'class': 'section'}) or tc.find('p')
+                    if caption_elem:
+                        t.caption = caption_elem.get_text().strip()
+                except:
+                    pass
+                    
+                # Try to extract notes
+                try:
+                    notes_elem = tc.find('div', {'class': 'fn'}) or tc.find('div', {'class': 'footnotes'})
+                    if notes_elem:
+                        t.notes = notes_elem.get_text().strip()
+                except:
+                    pass
+                    
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def parse_table(self, table):
+        return super(NationalAcademyOfSciencesSource, self).parse_table(table)
+
+    def extract_doi(self, soup):
+        try:
+            return soup.find('meta', {'name': 'citation_doi'})['content']
+        except:
+            return ''
+
+    def extract_pmid(self, soup):
+        try:
+            return soup.find('meta', {'name': 'citation_pmid'})['content']
+        except:
+            # If PMID not found, try to get it from DOI
+            doi = self.extract_doi(soup)
+            if doi:
+                return scrape.get_pmid_from_doi(doi)
+        return None

@@ -1,0 +1,11 @@
+{
+  "name": "National Academy of Sciences",
+  "identifiers": [
+    "pnas.org",
+    "Proceedings of the National Academy of Sciences",
+    "National Academy of Sciences"
+  ],
+  "entities": {
+  },
+  "delay": 5
+}

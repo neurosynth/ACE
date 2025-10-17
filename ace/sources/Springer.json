@@ -1,8 +1,14 @@
 {
-  "name": "Springer",
+  "name": "SpringerNature", // Renamed for clarity
   "identifiers": [
     "<meta content=\"Springer\" name=\"dc.publisher\"/>",
-    "meta property=\"og:site_name\" content=\"SpringerLink\""
+    "<meta property=\"og:site_name\" content=\"SpringerLink\"",
+    "<meta property=\"og:site_name\" content=\"Nature\"/>",
+    "<meta content=\"Nature Publishing Group\" name=\"dc.publisher\"/>",
+    "nature\\.com/articles/", 
+    "<meta content=\"BioMed Central\" name=\"dc.publisher\"/>",
+    "<meta property=\"og:site_name\" content=\"BioMed Central\">",
+    "biomedcentral\\.com/articles/"
   ],
   "entities": {
 
