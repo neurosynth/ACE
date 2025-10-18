@@ -1,0 +1,9 @@
+{
+  "name": "MDPI",
+  "identifiers": [
+    "meta\\s*name=\"citation_publisher\"\\s*content=\"Multidisciplinary Digital Publishing Institute\"",
+    "www\\.mdpi\\.com"
+  ],
+  "entities": null,
+  "delay": 0
+}

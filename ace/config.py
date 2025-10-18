@@ -54,6 +54,10 @@ IGNORE_BAD_ROWS = True
 # anyway, so this should be left off unless problems arise.
 EXCLUDE_TABLES_WITH_MISSING_LABELS = False
 
+# Whether to use readability.py for HTML cleaning when available.
+# When False, will use fallback HTML processing by default.
+USE_READABILITY = True
+
 
 
 

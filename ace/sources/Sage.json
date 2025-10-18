@@ -1,9 +1,10 @@
 {
-  "name": "Sage",
+  "name": "SAGE",
   "identifiers": [
-    "<meta content=\"SAGE Publications\" name=\"DC.Publisher\" />"
+    "journals\\.sagepub\\.com",
+    "meta\\s*name=\"dc.Publisher\"\\s*content=\"SAGE Publications",
+    "class=\"header__logo\".*sagepub"
   ],
-  "entities": {
-  	
-  }
+  "entities": null,
+  "delay": 1
 }
