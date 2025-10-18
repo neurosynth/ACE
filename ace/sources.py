@@ -46,10 +46,16 @@ class SourceManager:
         module = importlib.import_module('ace.sources')
         self.sources = {}
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
-        for config_file in glob('%s/*json' % source_dir):
-            class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(config=config_file, table_dir=table_dir, use_readability=use_readability)
-            self.sources[class_name] = cls
+        config_files = glob(os.path.join(source_dir, '*.json'))
+        for config_file in config_files:
+            # Extract class name key from filename (e.g., 'MDPI' from 'MDPI.json')
+            class_key = os.path.splitext(os.path.basename(config_file))[0]
+            cls = getattr(module, class_key + 'Source', None)
+            if cls:
+                self.sources[class_key] = cls(config=config_file, table_dir=table_dir, use_readability=use_readability)
+                logger.debug(f"Loaded source: {class_key} using {config_file}")
+            else:
+                logger.warning(f"Config file found ({config_file}) but no corresponding Source class '{class_key}Source' found.")
 
     def identify_source(self, html):
         ''' Identify the source of the article and return the corresponding Source object. '''
@@ -952,6 +958,161 @@ class DefaultSource(Source):
                 return base_url
         return None
 
+class MDPISource(Source):
+    def __init__(self, config=None, table_dir=None, use_readability=True):
+        super().__init__(config=config, table_dir=table_dir, use_readability=use_readability)
+
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(MDPISource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            logger.warning("MDPISource: Initial article parsing failed.")
+            return False
+
+        tables = []
+        # MDPI tables seem contained within divs with specific IDs like 'table_body_display_...'
+        # Let's target the wrapper first: div.html-table-wrap
+        table_wrappers = soup.find_all('div', class_='html-table-wrap', id=re.compile(r'-\w\d+$')) # Match IDs like brainsci-13-00845-t001
+
+        if not table_wrappers:
+             # Fallback: target the display divs directly if wrappers not found
+              table_wrappers = soup.find_all('div', class_='html-table_show', id=re.compile(r'^table_body_display_'))
+
+        logger.info(f"MDPISource: Found {len(table_wrappers)} potential table wrappers/containers.")
+
+        for (i, tc) in enumerate(table_wrappers):
+             table_html = None
+             metadata_container = None
+
+             # Find the actual table content, prioritizing the 'html-table_show' div
+             display_div = tc.find('div', class_='html-table_show', id=re.compile(r'^table_body_display_'))
+             if display_div:
+                  table_html = display_div.find('table')
+                  metadata_container = display_div # Use this div for metadata extraction
+             elif tc.name == 'div' and tc.has_attr('id') and tc['id'].startswith('table_body_display_'):
+                 # Case where tc is the display div itself (fallback)
+                  table_html = tc.find('table')
+                  metadata_container = tc
+             else:
+                 # Last resort: find any table within the wrapper
+                 table_html = tc.find('table')
+                 metadata_container = tc # Use the wrapper for metadata
+
+             if not table_html:
+                 logger.debug(f"\tSkipping container {i+1}: No <table> element found.")
+                 continue
+
+             t = self.parse_table(table_html)
+             if t:
+                 t.position = i + 1
+
+                 # Extract metadata from the container or display div
+                 metadata = self._extract_mdpi_metadata(metadata_container, t.position)
+                 t.number = metadata.get('number')
+                 t.label = metadata.get('label')
+                 t.caption = metadata.get('caption')
+                 t.notes = metadata.get('notes')
+
+                 if self._validate_table(t, metadata_container): # Validate
+                     tables.append(t)
+                     logger.debug(f"\tSuccessfully parsed MDPI table (assigned position {t.position}).")
+                 else:
+                    logger.debug(f"\tMDPI table (position {i+1}) failed validation.")
+
+
+        self.article.tables = tables
+        if not tables:
+             logger.warning("MDPISource: No valid tables found in the article.")
+        else:
+            logger.info(f"MDPISource: Successfully extracted {len(tables)} tables.")
+
+        return self.article
+
+    def _extract_mdpi_metadata(self, container, position):
+        """Extract metadata specifically for MDPI table structure."""
+        metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
+        if not container:
+             metadata['number'] = str(position)
+             metadata['label'] = f"Table {position}"
+             return metadata
+
+        try:
+            # Caption is in div.html-caption inside the container
+            caption_elem = container.find('div', class_='html-caption')
+            if caption_elem:
+                caption_text = caption_elem.get_text(strip=True)
+                # Caption often starts with "Table X."
+                label_match = re.match(r'(Table\s*\d+)\b\.?', caption_text, re.IGNORECASE)
+                if label_match:
+                    metadata['label'] = label_match.group(1)
+                    metadata['caption'] = caption_text[label_match.end():].lstrip('. ').strip()
+                    number_match = re.search(r'(\d+)', metadata['label'])
+                    if number_match:
+                        metadata['number'] = number_match.group(1)
+                else:
+                    # If no "Table X" prefix, use the whole text as caption
+                    metadata['caption'] = caption_text
+                    # Try to get number from container ID as fallback
+                    id_match = re.search(r'-t(\d+)$', container.get('id', ''))
+                    if id_match:
+                         metadata['number'] = id_match.group(1)
+
+
+            # Notes are in div.html-table_foot
+            notes_elem = container.find('div', class_='html-table_foot')
+            if notes_elem:
+                # Extract text, handling potential internal tags like <span>
+                metadata['notes'] = notes_elem.get_text(separator='\n', strip=True)
+
+        except Exception as e:
+            logger.warning(f"Error extracting MDPI metadata: {e}")
+
+        # Fallbacks if still missing
+        if not metadata.get('number'):
+             metadata['number'] = str(position)
+        if not metadata.get('label'):
+             metadata['label'] = f"Table {metadata['number']}"
+
+        return metadata
+
+
+    def parse_table(self, table):
+        # MDPI tables look standard, parent method should work
+        return super(MDPISource, self).parse_table(table)
+
+    def extract_doi(self, soup):
+        try:
+            # MDPI uses citation_doi meta tag
+            doi_meta = soup.find('meta', {'name': 'citation_doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+            # Fallback: dc.identifier
+            doi_meta = soup.find('meta', {'name': 'dc.identifier'})
+            if doi_meta and doi_meta.get('content') and doi_meta.get('content').startswith('10.'):
+                 return doi_meta['content'].strip()
+        except Exception as e:
+            logger.warning(f"Error extracting MDPI DOI: {e}")
+        return None
+
+    def extract_pmid(self, soup):
+        try:
+            # MDPI includes a link to PubMed with the PMID
+            pubmed_link = soup.find('a', href=re.compile(r'ncbi\.nlm\.nih\.gov/sites/entrez/(\d+)'))
+            if pubmed_link:
+                match = re.search(r'/(\d+)', pubmed_link['href'])
+                if match:
+                    pmid = match.group(1)
+                    if pmid.isdigit():
+                        logger.debug(f"PMID found via PubMed link: {pmid}")
+                        return pmid
+        except Exception as e:
+            logger.warning(f"Error extracting MDPI PMID from link: {e}")
+
+        # Fallback to DOI lookup
+        doi = self.extract_doi(soup)
+        if doi:
+            return scrape.get_pmid_from_doi(doi)
+        return None
+
     def _detect_text_based_table_links(self, soup, html):
         """
         Find links with text indicating table content.
@@ -1483,65 +1644,163 @@ class WileySource(Source):
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
-# Note: the SageSource is largely useless and untested because Sage renders tables
-# as images.
-
-
 class SageSource(Source):
+    def __init__(self, config=None, table_dir=None, use_readability=True):
+        super().__init__(config=config, table_dir=table_dir, use_readability=use_readability)
 
     def parse_article(self, html, pmid=None, **kwargs):
-
         soup = super(SageSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
+            logger.warning("SageSource: Initial article parsing failed.")
             return False
 
-        # To download tables, we need the content URL and the number of tables
-        content_url = soup.find('meta', {
-                                'name': 'citation_public_url'})['content']
-
-        n_tables = len(soup.find_all('span', class_='table-label'))
-        logger.info(f"Found {n_tables} tables.")
-        # Now download each table and parse it
         tables = []
-        for i in range(n_tables):
-            t_num = i + 1
-            url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_soup = self._download_table(url)
-            if not table_soup:
-                continue
-            tc = table_soup.find(class_='table-expansion')
-            if tc:
-                t = tc.find('table', {'id': 'table-%d' % (t_num)})
-                t = self.parse_table(t)
-                if t:
-                    t.position = t_num
-                    t.label = tc.find(class_='table-label').text
-                    t.number = t.label.split(' ')[-1].strip()
-                    try:
-                        t.caption = tc.find(class_='table-caption').get_text()
-                    except:
-                        pass
-                    try:
-                        t.notes = tc.find(class_='table-footnotes').get_text()
-                    except:
-                        pass
-                    tables.append(t)
+        # SAGE uses <figure id="jad-..." class="table"> as the main container
+        # It also uses <div class="table-wrap"> inside that figure
+        table_containers = soup.find_all('figure', class_='table', id=re.compile(r'^jad-\d+-jad\d+-t\d+$')) # Specific ID pattern
+
+        if not table_containers:
+             # Fallback to less specific figure or div containing a table
+             table_containers = soup.find_all('figure', class_='table')
+             if not table_containers:
+                  table_containers = soup.find_all('div', class_='table-wrap')
+
+        logger.info(f"SageSource: Found {len(table_containers)} potential table containers.")
+
+        for (i, tc) in enumerate(table_containers):
+             table_html = tc.find('table') # Table is usually directly inside figure or inside table-wrap div
+             metadata_container = tc # Use the figure/div for metadata
+
+             if not table_html:
+                 logger.debug(f"\tSkipping container {i+1}: No <table> element found.")
+                 continue
+
+             t = self.parse_table(table_html)
+             if t:
+                 t.position = i + 1
+
+                 # Extract metadata from the container (<figure>)
+                 metadata = self._extract_sage_metadata(metadata_container, t.position)
+                 t.number = metadata.get('number')
+                 t.label = metadata.get('label')
+                 t.caption = metadata.get('caption')
+                 t.notes = metadata.get('notes')
+
+                 if self._validate_table(t, metadata_container): # Validate
+                     tables.append(t)
+                     logger.debug(f"\tSuccessfully parsed SAGE table (assigned position {t.position}).")
+                 else:
+                    logger.debug(f"\tSAGE table (position {i+1}) failed validation.")
+
 
         self.article.tables = tables
+        if not tables:
+             logger.warning("SageSource: No valid tables found in the article.")
+        else:
+            logger.info(f"SageSource: Successfully extracted {len(tables)} tables.")
+
         return self.article
 
+    def _extract_sage_metadata(self, container, position):
+        """Extract metadata specifically for SAGE table structure."""
+        metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
+        if not container:
+             metadata['number'] = str(position)
+             metadata['label'] = f"Table {position}"
+             return metadata
+
+        try:
+            # Label and Caption are often combined in <figcaption> -> span.heading
+            caption_elem = container.find('figcaption')
+            if caption_elem:
+                heading_elem = caption_elem.find('span', class_='heading')
+                if heading_elem:
+                     full_caption_text = heading_elem.get_text(strip=True)
+                     # Match "Table X" at the beginning
+                     label_match = re.match(r'(Table\s*\d+)\b\.?', full_caption_text, re.IGNORECASE)
+                     if label_match:
+                         metadata['label'] = label_match.group(1)
+                         metadata['caption'] = full_caption_text[label_match.end():].lstrip('. ').strip()
+                         number_match = re.search(r'(\d+)', metadata['label'])
+                         if number_match:
+                             metadata['number'] = number_match.group(1)
+                     else:
+                         # Use full text as caption if no label found at start
+                         metadata['caption'] = full_caption_text
+                         # Try getting number from container ID as fallback
+                         id_match = re.search(r'-t(\d+)$', container.get('id', ''))
+                         if id_match:
+                              metadata['number'] = id_match.group(1)
+
+
+            # Notes are in a div.notes -> p inside the figcaption or sometimes a separate div
+            notes_elem = None
+            if caption_elem: # Look within figcaption first
+                 notes_elem = caption_elem.find('div', class_='notes')
+            if not notes_elem: # Fallback: look for notes div near the container
+                 notes_elem = container.find_next_sibling('div', class_='notes') or \
+                              container.find('div', class_='table-wrap-foot') # Check common footer classes too
+
+            if notes_elem:
+                # Get text from paragraph inside notes div
+                notes_p = notes_elem.find('p')
+                metadata['notes'] = notes_p.get_text(separator='\n', strip=True) if notes_p else notes_elem.get_text(separator='\n', strip=True)
+
+
+        except Exception as e:
+            logger.warning(f"Error extracting SAGE metadata: {e}")
+
+        # Fallbacks if still missing
+        if not metadata.get('number'):
+             metadata['number'] = str(position)
+        if not metadata.get('label'):
+             metadata['label'] = f"Table {metadata['number']}"
+
+        return metadata
+
+
     def parse_table(self, table):
+        # SAGE tables look standard, parent method should work
         return super(SageSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
-            return soup.find('meta', {'name': 'citation_doi'})['content']
-        except: 
-            return ''
-        
-    def extract_pmid(self, soup):
-        return soup.find('meta', {'name': 'citation_pmid'})['content']
+            # SAGE uses meta name="publication_doi"
+            doi_meta = soup.find('meta', {'name': 'publication_doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+            # Fallback: dc.Identifier
+            doi_meta = soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'publisher-id'}) # Check this specific one
+            if doi_meta and doi_meta.get('content') and doi_meta.get('content').startswith('10.'):
+                 return doi_meta['content'].strip()
+             # Fallback: citation_doi
+            doi_meta = soup.find('meta', {'name': 'citation_doi'})
+            if doi_meta and doi_meta.get('content'):
+                 return doi_meta['content'].strip()
 
+        except Exception as e:
+            logger.warning(f"Error extracting SAGE DOI: {e}")
+        return None
+
+    def extract_pmid(self, soup):
+        try:
+            # SAGE includes a link to PubMed in the collateral section
+            pubmed_link = soup.select_one('div.core-pmid a[href*="pubmed"]')
+            if pubmed_link:
+                match = re.search(r'/(\d+)/?$', pubmed_link['href']) # Match digits at the end
+                if match:
+                    pmid = match.group(1)
+                    if pmid.isdigit():
+                        logger.debug(f"PMID found via PubMed link: {pmid}")
+                        return pmid
+        except Exception as e:
+            logger.warning(f"Error extracting SAGE PMID from link: {e}")
+
+        # Fallback to DOI lookup
+        doi = self.extract_doi(soup)
+        if doi:
+            return scrape.get_pmid_from_doi(doi)
+        return None
 
 class OldSpringerSource(Source):
 
@@ -1599,7 +1858,7 @@ class SpringerSource(Source):
         content_url = soup.find('meta', {'name': 'citation_fulltext_html_url'})['content']
 
         # Find all links that match the Nature table URL pattern.
-        table_links = soup.find_all('a', href=re.compile(r'/articles/.*/tables/\d+'))
+        table_links = soup.find_all('a', href=re.compile(r'/article(s?)/.*/tables/\d+'))
         
         logger.info(f"Found {len(table_links)} potential table links.")
         tables = []
@@ -1635,17 +1894,24 @@ class SpringerSource(Source):
                 # Parse metadata from the downloaded page's structure
                 try:
                     # Title, label, and number from H1
-                    title_elem = table_soup.find('h1', class_='c-article-title')
+                    title_elem = table_soup.find('h1', class_='c-article-title') or \
+                    table_soup.find('h1', class_='c-article-satellite-title')
                     if title_elem:
                         full_title_text = title_elem.get_text().strip()
                         # Example parsing: "Table 1: Caption of the table"
-                        label_match = re.match(r'(Table\s*\d+)', full_title_text, re.IGNORECASE)
+                        label_match = re.match(r'(Table\s+\d+)', full_title_text, re.IGNORECASE)
                         if label_match:
-                            t.label = label_match.group(1)
-                            t.caption = full_title_text[len(t.label):].lstrip(': ').strip()
-                            num_match = re.search(r'(\d+)', t.label)
-                            if num_match:
-                                t.number = num_match.group(1)
+                             t.label = label_match.group(1).strip()
+                             # (Modification: More robust stripping)
+                             t.caption = full_title_text[len(t.label):].lstrip(': .').strip() 
+                             
+                             num_match = re.search(r'(\d+)', t.label)
+                             if num_match:
+                                 t.number = num_match.group(1)
+                        else:
+                             t.caption = full_title_text
+                             t.number = str(t.position) # Use position as fallback number
+                             t.label = f"Table {t.number}"
                 except Exception as e:
                     logger.debug(f"Could not parse table caption/label: {e}")
 
@@ -2025,4 +2291,140 @@ class NationalAcademyOfSciencesSource(Source):
             doi = self.extract_doi(soup)
             if doi:
                 return scrape.get_pmid_from_doi(doi)
+        return None
+
+class AmPsychSource(Source):
+
+    def __init__(self, config=None, table_dir=None, use_readability=True):
+        super().__init__(config=config, table_dir=table_dir, use_readability=use_readability)
+
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(AmPsychSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            logger.warning("AmPsychSource: Initial article parsing failed.")
+            return False
+
+        tables = []
+        # Tables are in <figure id="T1" class="table">
+        table_containers = soup.find_all('figure', class_='table', id=re.compile(r'^T\d+$'))
+
+        logger.info(f"AmPsychSource: Found {len(table_containers)} potential table containers.")
+
+        for (i, tc) in enumerate(table_containers):
+            table_html = tc.find('table')
+            if not table_html:
+                logger.debug(f"\tSkipping container {i+1}: No <table> element found.")
+                continue
+
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+
+                # Extract metadata from the container (<figure>)
+                metadata = self._extract_ampsych_metadata(tc, t.position)
+                t.number = metadata.get('number')
+                t.label = metadata.get('label')
+                t.caption = metadata.get('caption')
+                t.notes = metadata.get('notes')
+
+                if self._validate_table(t, tc): # Validate
+                    tables.append(t)
+                    logger.debug(f"\tSuccessfully parsed AmPsych table (assigned position {t.position}).")
+                else:
+                   logger.debug(f"\tAmPsych table (position {i+1}) failed validation.")
+
+
+        self.article.tables = tables
+        if not tables:
+             logger.warning("AmPsychSource: No valid tables found in the article.")
+        else:
+            logger.info(f"AmPsychSource: Successfully extracted {len(tables)} tables.")
+
+        return self.article
+
+    def _extract_ampsych_metadata(self, container, position):
+        """Extract metadata specifically for AmPsych table structure."""
+        metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
+        
+        try:
+            # Number from ID
+            metadata['number'] = container.get('id', f"T{position}")[1:] # Strips the 'T'
+        except Exception:
+             metadata['number'] = str(position)
+
+        try:
+            # Label and Caption are in <figcaption> -> span.heading
+            caption_elem = container.find('figcaption')
+            if caption_elem:
+                heading_elem = caption_elem.find('span', class_='heading')
+                if heading_elem:
+                    full_caption_text = heading_elem.get_text(strip=True)
+                    # Match "TABLE X." at the beginning
+                    label_match = re.match(r'(TABLE\s*\d+)\b\.?', full_caption_text, re.IGNORECASE)
+                    if label_match:
+                        metadata['label'] = label_match.group(1).strip() # "TABLE 1"
+                        metadata['caption'] = full_caption_text[label_match.end():].lstrip('. ').strip()
+                        # Re-confirm number from label
+                        num_match = re.search(r'(\d+)', metadata['label'])
+                        if num_match:
+                            metadata['number'] = num_match.group(1)
+                    else:
+                        # Use full text as caption if no label found at start
+                        metadata['caption'] = full_caption_text
+                        metadata['label'] = f"Table {metadata['number']}" # Construct label from ID
+
+            # Notes are in a div.notes (usually after figcaption, but let's check within container)
+            notes_elem = container.find('div', class_='notes')
+            if notes_elem:
+                metadata['notes'] = notes_elem.get_text(separator='\n', strip=True)
+
+        except Exception as e:
+            logger.warning(f"Error extracting AmPsych metadata: {e}")
+
+        # Fallbacks if still missing
+        if not metadata.get('label'):
+             metadata['label'] = f"Table {metadata['number']}"
+
+        return metadata
+
+
+    def parse_table(self, table):
+        # AmPsych tables look standard, parent method should work
+        return super(AmPsychSource, self).parse_table(table)
+
+    def extract_doi(self, soup):
+        try:
+            # AmPsych uses meta name="dc.Identifier" scheme="doi"
+            doi_meta = soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+            
+            # Fallback
+            doi_meta = soup.find('meta', {'name': 'citation_doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+
+        except Exception as e:
+            logger.warning(f"Error extracting AmPsych DOI: {e}")
+        return None
+
+    def extract_pmid(self, soup):
+        try:
+            # AmPsych has a specific div for this
+            pmid_elem = soup.select_one('div.core-pmid a.content')
+            if pmid_elem:
+                pmid = pmid_elem.get_text(strip=True)
+                if pmid.isdigit():
+                    logger.debug(f"PMID found via div.core-pmid: {pmid}")
+                    return pmid
+        except Exception as e:
+            logger.warning(f"Error extracting AmPsych PMID from div.core-pmid: {e}")
+
+        # Fallback to DOI lookup
+        doi = self.extract_doi(soup)
+        if doi:
+            logger.debug("AmPsych PMID not found directly, trying DOI lookup.")
+            return scrape.get_pmid_from_doi(doi)
+        
+        logger.warning("AmPsychSource could not extract PMID.")
         return None

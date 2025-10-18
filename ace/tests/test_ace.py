@@ -309,3 +309,56 @@ def test_taylor_and_francis_source(test_data_path, source_manager):
     assert t2.label == 'Table 2'
     assert 'Talairach coordinates' in t2.caption
     assert t2.n_activations >= 2
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_ampsych_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'ampsych.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '2'
+    assert "Brain Regions Demonstrating Differential BOLD" in t.caption
+    assert t.n_activations > 20
+
+@pytest.mark.vcr(record_mode="once")
+def test_mdpi_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'mdpi.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '1'
+    assert "Brain activation regions when gripping each stress ball" in t.caption
+    assert t.n_activations > 20
+
+@pytest.mark.vcr(record_mode="once")
+def test_sage2_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'sage2.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '2'
+    assert " showing hypometabolism correlated with ADL" in t.Caption
+    assert t.n_activations == 6
+
+@pytest.mark.vcr(record_mode="once")
+def test_springer_nature_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'springer-nature.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '2'
+    assert "fMRI results across all participants" in t.caption
+    assert t.n_activations  == 9
