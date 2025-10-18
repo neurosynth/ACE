@@ -331,7 +331,7 @@ def test_mdpi_source(test_data_path, source_manager):
     source = source_manager.identify_source(html)
     article = source.parse_article(html)
     tables = article.tables
-    assert len(tables) == 1
+    assert len(tables) == 2
     t = tables[0]
     assert t.number == '1'
     assert "Brain activation regions when gripping each stress ball" in t.caption
