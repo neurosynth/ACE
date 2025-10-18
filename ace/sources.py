@@ -327,30 +327,15 @@ class Source(metaclass=abc.ABCMeta):
                     # it.
                     if i + 1 == n_cells and cols_found_in_row < n_cols and (len(data.data) == j+1) and data[j].count(None) > c_num:
                         c_num += n_cols - cols_found_in_row
-                    # Use strip=True to clean up whitespace
-                    data.add_val(c.get_text(strip=True), r_num, c_num)
+                    data.add_val(c.get_text(), r_num, c_num)
             except Exception as err:
                 if not config.SILENT_ERRORS:
                     logger.error(str(err))
                 if not config.IGNORE_BAD_ROWS:
                     raise
 
-        # Clean up last row if it's completely empty
-        if data.data and data.data[-1].count(None) == data.n_cols:
+        if data.data[data.n_rows- 1].count(None) == data.n_cols:
             data.data.pop()
-
-        # Fill down implicit merges in the first column (index 0)
-        if data.data and len(data.data) > 1:  # at least 2 rows
-            logger.debug("\t\tApplying fill-down logic for implicit merges...")
-            for row_idx in range(1, len(data.data)):
-                current_val = data.data[row_idx][0]
-                # Check if the cell is effectively empty
-                if current_val is None or (isinstance(current_val, str) and current_val.strip() == ''):
-                    # Copy value from the cell above
-                    value_above = data.data[row_idx - 1][0]
-                    if value_above is not None:  # Avoid propagating None
-                        data.data[row_idx][0] = value_above
-
         logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data)
 
@@ -879,11 +864,7 @@ class DefaultSource(Source):
                             t.caption = metadata.get('caption')
                             t.notes = metadata.get('notes')
                             
-                            if self._validate_table(t, table_soup):
-                                tables.append(t)
-                                logger.debug(f"Successfully extracted table from link: {link}")
-                            else:
-                                logger.debug(f"Table from link {link} failed validation")
+                            tables.append(t)
                 else:
                     logger.debug(f"Failed to download table content from link: {link}")
             except Exception as e:
@@ -911,11 +892,8 @@ class DefaultSource(Source):
                                 t.caption = metadata.get('caption')
                                 t.notes = metadata.get('notes')
                                 
-                                if self._validate_table(t, table_soup):
-                                    tables.append(t)
-                                    logger.debug(f"Successfully extracted table from pattern link: {link}")
-                                else:
-                                    logger.debug(f"Table from pattern link {link} failed validation")
+                                tables.append(t)
+
                     else:
                         logger.debug(f"Failed to download table content from pattern link: {link}")
                 except Exception as e:
@@ -969,54 +947,45 @@ class MDPISource(Source):
             return False
 
         tables = []
-        # MDPI tables seem contained within divs with specific IDs like 'table_body_display_...'
-        # Let's target the wrapper first: div.html-table-wrap
-        table_wrappers = soup.find_all('div', class_='html-table-wrap', id=re.compile(r'-\w\d+$')) # Match IDs like brainsci-13-00845-t001
-
-        if not table_wrappers:
-             # Fallback: target the display divs directly if wrappers not found
-              table_wrappers = soup.find_all('div', class_='html-table_show', id=re.compile(r'^table_body_display_'))
+        
+        # FIX: The 'html-table-wrap' div is just a placeholder/link.
+        # The actual table content is in a hidden div with class 'html-table_show'.
+        # We select this directly using soup.select for a robust match
+        # that handles other classes (like 'mfp-hide') being present.
+        table_wrappers = soup.select('div[id^="table_body_display_"][class*="html-table_show"]')
 
         logger.info(f"MDPISource: Found {len(table_wrappers)} potential table wrappers/containers.")
 
         for (i, tc) in enumerate(table_wrappers):
              table_html = None
-             metadata_container = None
+             metadata_container = tc # The 'html-table_show' div contains the metadata
 
-             # Find the actual table content, prioritizing the 'html-table_show' div
-             display_div = tc.find('div', class_='html-table_show', id=re.compile(r'^table_body_display_'))
-             if display_div:
-                  table_html = display_div.find('table')
-                  metadata_container = display_div # Use this div for metadata extraction
-             elif tc.name == 'div' and tc.has_attr('id') and tc['id'].startswith('table_body_display_'):
-                 # Case where tc is the display div itself (fallback)
-                  table_html = tc.find('table')
-                  metadata_container = tc
-             else:
-                 # Last resort: find any table within the wrapper
-                 table_html = tc.find('table')
-                 metadata_container = tc # Use the wrapper for metadata
+             # Since tc is now the correct container, the table is a direct child/descendant
+             table_html = tc.find('table')
 
              if not table_html:
-                 logger.debug(f"\tSkipping container {i+1}: No <table> element found.")
+                 logger.debug(f"\tSkipping container {i+1} (ID: {tc.get('id')}): No <table> element found inside.")
                  continue
 
              t = self.parse_table(table_html)
-             if t:
+             if t and isinstance(t, Table): # Check if parsing was successful
                  t.position = i + 1
 
-                 # Extract metadata from the container or display div
+                 # Extract metadata from the container
                  metadata = self._extract_mdpi_metadata(metadata_container, t.position)
                  t.number = metadata.get('number')
                  t.label = metadata.get('label')
                  t.caption = metadata.get('caption')
                  t.notes = metadata.get('notes')
-
-                 if self._validate_table(t, metadata_container): # Validate
+                 
+                 # Validate the table before adding it
+                 if self._validate_table(t, metadata_container):
                      tables.append(t)
-                     logger.debug(f"\tSuccessfully parsed MDPI table (assigned position {t.position}).")
+                     logger.debug(f"\tSuccessfully parsed and validated MDPI table (ID: {tc.get('id')}, assigned position {t.position}).")
                  else:
-                    logger.debug(f"\tMDPI table (position {i+1}) failed validation.")
+                    logger.debug(f"\tMDPI table (ID: {tc.get('id')}) failed validation.")
+             else:
+                logger.warning(f"\tParsing failed for table in container (ID: {tc.get('id')}).")
 
 
         self.article.tables = tables
@@ -1113,169 +1082,27 @@ class MDPISource(Source):
             return scrape.get_pmid_from_doi(doi)
         return None
 
-    def _detect_text_based_table_links(self, soup, html):
-        """
-        Find links with text indicating table content.
-        
-        Looks for anchor tags with text that suggests they link to table content,
-        such as "Full size table", "View table", "Expand table", etc.
-        
-        Args:
-            soup (BeautifulSoup): Parsed HTML of the article
-            html (str): Raw HTML of the article
-            
-        Returns:
-            list: List of resolved URLs that likely point to table content
-        """
-        links = []
-        text_indicators = [
-            r'full\s*size\s*table',
-            r'view\s*table',
-            r'expand\s*table',
-            r'show\s*table',
-            r'table\s*details',
-            r'download\s*table',
-            r'see\s*table',
-            r'complete\s*table',
-            r'table\s*\d+'
-        ]
-        
+    # Note: These methods are part of the 'DefaultSource' in your provided code,
+    # but MDPISource (as a child of Source) might not have them.
+    # If MDPISource inherits from DefaultSource, this is fine.
+    # If it only inherits from Source, you might need to copy these 
+    # helper methods (like _get_base_url, _validate_table) into MDPISource
+    # or (better) move them to the base 'Source' class if they are truly generic.
+    
+    # Assuming _validate_table is available (e.g., in the 'Source' parent class):
+    def _validate_table(self, table, container):
+        # Placeholder: Implement or copy your existing _validate_table logic here
+        # For example, inheriting from DefaultSource would provide this.
+        # If inheriting from Source, you'll need to add the method:
         try:
-            # Get base URL for resolving relative links
-            base_url = self._get_base_url(soup)
-            
-            # Look for links with text indicators
-            for link in soup.find_all('a', href=True):
-                try:
-                    link_text = link.get_text().lower().strip()
-                    if any(re.search(indicator, link_text) for indicator in text_indicators):
-                        href = link.get('href')
-                        if href:
-                            # Resolve relative URLs
-                            if base_url:
-                                try:
-                                    resolved_url = urljoin(base_url, href)
-                                    links.append(resolved_url)
-                                except Exception as e:
-                                    logger.debug(f"Failed to resolve URL {href}: {e}")
-                                    # Fallback to original href
-                                    links.append(href)
-                            else:
-                                links.append(href)
-                except Exception as e:
-                    logger.debug(f"Error processing link {link}: {e}")
-                    continue
-        except Exception as e:
-            logger.debug(f"Error in _detect_text_based_table_links: {e}")
-        
-        # Deduplicate links
-        return list(set(links))
-
-    def _detect_url_pattern_table_links(self, soup, html):
-        """
-        Detect links following common table URL patterns.
-        
-        Identifies URLs that match common patterns used by publishers to link
-        to table content, such as /T{num}.expansion.html, /tables/{num}, etc.
-        
-        Args:
-            soup (BeautifulSoup): Parsed HTML of the article
-            html (str): Raw HTML of the article
-            
-        Returns:
-            list: List of resolved URLs that likely point to table content
-        """
-        links = []
-        
-        try:
-            # Get base URL for resolving relative links
-            base_url = self._get_base_url(soup)
-            
-            if base_url:
-                # Common patterns for table links
-                patterns = [
-                    r'/T\d+\.expansion\.html',  # HighWire/Sage pattern
-                    r'/tables/\d+',             # Springer pattern
-                    r'\?table=\d+',             # Query parameter pattern
-                    r'#table\d+',               # Fragment pattern
-                    r'/table\d+\.html',         # Direct file pattern
-                    r'/tbl\d+\.htm',            # Alternative pattern
-                    r'/table/\d+',              # Another common pattern
-                ]
-                
-                # Look for links matching patterns in the HTML
-                for pattern in patterns:
-                    try:
-                        matches = re.findall(pattern, html, re.IGNORECASE)
-                        for match in matches:
-                            # Resolve relative URLs
-                            if base_url:
-                                try:
-                                    resolved_url = urljoin(base_url, match)
-                                    links.append(resolved_url)
-                                except Exception as e:
-                                    logger.debug(f"Failed to resolve URL {match}: {e}")
-                                    # Fallback to original match
-                                    if match.startswith('http'):
-                                        links.append(match)
-                                    else:
-                                        # Try to construct with base URL
-                                        if match.startswith('/'):
-                                            links.append(base_url + match)
-                                        else:
-                                            links.append(base_url + '/' + match)
-                    except Exception as e:
-                        logger.debug(f"Error processing pattern {pattern}: {e}")
-                        continue
-            else:
-                logger.debug("No base URL found for resolving table links")
-        except Exception as e:
-            logger.debug(f"Error in _detect_url_pattern_table_links: {e}")
-        
-        # Deduplicate links
-        return list(set(links))
-
-    def _detect_javascript_table_expansion(self, soup):
-        """
-        Detect and handle JavaScript-based table expansion.
-        
-        Identifies elements that might trigger table expansion via JavaScript.
-        This method currently only logs detection but does not implement actual
-        expansion, which would require browser-based scraping.
-        
-        Args:
-            soup (BeautifulSoup): Parsed HTML of the article
-            
-        Returns:
-            bool: True if JavaScript expansion indicators are found, False otherwise
-        """
-        # Look for common classes/attributes that indicate expandable tables
-        js_indicators = [
-            'table-expand',
-            'table-expand-inline',
-            'expand-table',
-            'table-toggle',
-            'js-table-expand',
-            'data-table-url',
-        ]
-        
-        # Check if any elements have these indicators
-        for indicator in js_indicators:
-            elements = soup.find_all(class_=indicator)
-            if elements:
-                logger.info(f"Found JavaScript table expansion indicators: {indicator}")
-                # For now, we'll log the detection but not implement the actual expansion
-                # This would require integration with the browser-based scraping
-                return True
-        
-        # Check for data attributes that indicate table URLs
-        data_elements = soup.find_all(attrs={'data-table-url': True})
-        if data_elements:
-            logger.info("Found data-table-url attributes for table expansion")
+            if not table or not hasattr(table, 'activations') or not table.activations:
+                logger.debug("\t\tTable validation failed: No activations.")
+                return False
+            # Add more validation logic as needed (e.g., check for meaningful content)
             return True
-            
-        return False
-
+        except Exception as e:
+            logger.warning(f"\t\tTable validation failed with exception: {e}")
+            return False
 
 class HighWireSource(Source):
 
@@ -1686,11 +1513,7 @@ class SageSource(Source):
                  t.caption = metadata.get('caption')
                  t.notes = metadata.get('notes')
 
-                 if self._validate_table(t, metadata_container): # Validate
-                     tables.append(t)
-                     logger.debug(f"\tSuccessfully parsed SAGE table (assigned position {t.position}).")
-                 else:
-                    logger.debug(f"\tSAGE table (position {i+1}) failed validation.")
+                 tables.append(t)
 
 
         self.article.tables = tables
@@ -1702,61 +1525,75 @@ class SageSource(Source):
         return self.article
 
     def _extract_sage_metadata(self, container, position):
-        """Extract metadata specifically for SAGE table structure."""
-        metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
-        if not container:
-             metadata['number'] = str(position)
-             metadata['label'] = f"Table {position}"
-             return metadata
+            """Extract metadata specifically for SAGE table structure."""
+            metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
+            if not container:
+                metadata['number'] = str(position)
+                metadata['label'] = f"Table {position}"
+                return metadata
 
-        try:
-            # Label and Caption are often combined in <figcaption> -> span.heading
-            caption_elem = container.find('figcaption')
-            if caption_elem:
-                heading_elem = caption_elem.find('span', class_='heading')
-                if heading_elem:
-                     full_caption_text = heading_elem.get_text(strip=True)
-                     # Match "Table X" at the beginning
-                     label_match = re.match(r'(Table\s*\d+)\b\.?', full_caption_text, re.IGNORECASE)
-                     if label_match:
-                         metadata['label'] = label_match.group(1)
-                         metadata['caption'] = full_caption_text[label_match.end():].lstrip('. ').strip()
-                         number_match = re.search(r'(\d+)', metadata['label'])
-                         if number_match:
-                             metadata['number'] = number_match.group(1)
-                     else:
-                         # Use full text as caption if no label found at start
-                         metadata['caption'] = full_caption_text
-                         # Try getting number from container ID as fallback
-                         id_match = re.search(r'-t(\d+)$', container.get('id', ''))
-                         if id_match:
-                              metadata['number'] = id_match.group(1)
+            try:
+                # Try getting number from container ID first (handles leading zeros)
+                id_match = re.search(r'-t0*(\d+)$', container.get('id', ''))
+                if id_match:
+                    metadata['number'] = id_match.group(1)
 
+                # Label and Caption are often combined in <figcaption>
+                caption_elem = container.find('figcaption')
+                if caption_elem:
+                    heading_elem = caption_elem.find('span', class_='heading')
+                    
+                    if heading_elem:
+                        # Label is in the heading span
+                        label_text = heading_elem.get_text(strip=True)
+                        label_match = re.match(r'(Table\s*\d+)\b', label_text, re.IGNORECASE)
+                        
+                        if label_match:
+                            metadata['label'] = label_match.group(1)
+                            if not metadata.get('number'): # If ID parsing failed, get number from label
+                                num_match = re.search(r'(\d+)', metadata['label'])
+                                if num_match:
+                                    metadata['number'] = num_match.group(1)
 
-            # Notes are in a div.notes -> p inside the figcaption or sometimes a separate div
-            notes_elem = None
-            if caption_elem: # Look within figcaption first
-                 notes_elem = caption_elem.find('div', class_='notes')
-            if not notes_elem: # Fallback: look for notes div near the container
-                 notes_elem = container.find_next_sibling('div', class_='notes') or \
-                              container.find('div', class_='table-wrap-foot') # Check common footer classes too
+                            # Caption is the full text of figcaption *minus* the heading text
+                            full_caption_text = caption_elem.get_text(strip=True)
+                            metadata['caption'] = full_caption_text[len(metadata['label']):].lstrip('. ').strip()
+                        
+                        else:
+                            # No "Table X" in heading, use full figcaption text as caption
+                            metadata['caption'] = caption_elem.get_text(strip=True)
+                    
+                    else:
+                        # No heading span, use full figcaption text as caption
+                        metadata['caption'] = caption_elem.get_text(strip=True)
+                        # Check if caption starts with "Table X"
+                        label_match = re.match(r'(Table\s*\d+)\b\.?', metadata['caption'], re.IGNORECASE)
+                        if label_match:
+                            metadata['label'] = label_match.group(1)
+                            metadata['caption'] = metadata['caption'][len(metadata['label']):].lstrip('. ').strip()
+                            if not metadata.get('number'):
+                                num_match = re.search(r'(\d+)', metadata['label'])
+                                if num_match:
+                                    metadata['number'] = num_match.group(1)
 
-            if notes_elem:
-                # Get text from paragraph inside notes div
-                notes_p = notes_elem.find('p')
-                metadata['notes'] = notes_p.get_text(separator='\n', strip=True) if notes_p else notes_elem.get_text(separator='\n', strip=True)
+                # Notes are in a div.notes (as a child of container, not figcaption or sibling)
+                notes_elem = container.find('div', class_='notes')
+                
+                if notes_elem:
+                    # Get text from paragraph inside notes div
+                    notes_p = notes_elem.find('p')
+                    metadata['notes'] = notes_p.get_text(separator='\n', strip=True) if notes_p else notes_elem.get_text(separator='\n', strip=True)
 
+            except Exception as e:
+                logger.warning(f"Error extracting SAGE metadata: {e}")
 
-        except Exception as e:
-            logger.warning(f"Error extracting SAGE metadata: {e}")
-
-        # Fallbacks if still missing
-        if not metadata.get('number'):
-             metadata['number'] = str(position)
-        if not metadata.get('label'):
-             metadata['label'] = f"Table {metadata['number']}"
-
-        return metadata
+            # Fallbacks if still missing
+            if not metadata.get('number'):
+                metadata['number'] = str(position)
+            if not metadata.get('label'):
+                metadata['label'] = f"Table {metadata['number']}"
+            
+            return metadata
 
 
     def parse_table(self, table):
@@ -1801,6 +1638,7 @@ class SageSource(Source):
         if doi:
             return scrape.get_pmid_from_doi(doi)
         return None
+
 
 class OldSpringerSource(Source):
 
@@ -2326,12 +2164,9 @@ class AmPsychSource(Source):
                 t.label = metadata.get('label')
                 t.caption = metadata.get('caption')
                 t.notes = metadata.get('notes')
+                
+                tables.append(t)
 
-                if self._validate_table(t, tc): # Validate
-                    tables.append(t)
-                    logger.debug(f"\tSuccessfully parsed AmPsych table (assigned position {t.position}).")
-                else:
-                   logger.debug(f"\tAmPsych table (position {i+1}) failed validation.")
 
 
         self.article.tables = tables
@@ -2353,13 +2188,36 @@ class AmPsychSource(Source):
              metadata['number'] = str(position)
 
         try:
-            # Label and Caption are in <figcaption> -> span.heading
+            # Label and Caption are in <figcaption>
             caption_elem = container.find('figcaption')
             if caption_elem:
                 heading_elem = caption_elem.find('span', class_='heading')
+                
+                # Get the full text of the entire <figcaption>
+                full_caption_text = caption_elem.get_text(strip=True)
+
                 if heading_elem:
-                    full_caption_text = heading_elem.get_text(strip=True)
-                    # Match "TABLE X." at the beginning
+                    # Case 1: <span class="heading"> exists
+                    # Get label text *only* from the span
+                    label_text = heading_elem.get_text(strip=True)
+                    metadata['label'] = label_text  # e.g., "TABLE 2"
+                    
+                    # The caption is the full text, with the label text removed 
+                    # from the beginning.
+                    
+                    # Find the start position of the rest of the caption
+                    label_end_pos = full_caption_text.find(label_text) + len(label_text)
+                    
+                    # Extract caption and clean it (remove leading dots/spaces)
+                    metadata['caption'] = full_caption_text[label_end_pos:].lstrip('. ').strip()
+
+                    # Re-confirm number from label
+                    num_match = re.search(r'(\d+)', metadata['label'])
+                    if num_match:
+                        metadata['number'] = num_match.group(1)
+                
+                else:
+                    # Case 2: No <span class="heading">. Use regex on the full text.
                     label_match = re.match(r'(TABLE\s*\d+)\b\.?', full_caption_text, re.IGNORECASE)
                     if label_match:
                         metadata['label'] = label_match.group(1).strip() # "TABLE 1"
@@ -2371,7 +2229,7 @@ class AmPsychSource(Source):
                     else:
                         # Use full text as caption if no label found at start
                         metadata['caption'] = full_caption_text
-                        metadata['label'] = f"Table {metadata['number']}" # Construct label from ID
+                        # metadata['label'] will be set by fallback
 
             # Notes are in a div.notes (usually after figcaption, but let's check within container)
             notes_elem = container.find('div', class_='notes')

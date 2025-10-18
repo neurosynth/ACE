@@ -32,9 +32,17 @@ class DataTable:
     def add_val(self, val, rows=1, cols=1):
         ''' Find next open position and add values to grid '''
 
-        # Flatten list and find next open position
-        flat = [item for l in self.data for item in l]
-        flat_set = set(flat)
+        flat = []
+        for row in self.data:
+            # If row is not a list for some reason, treat as single-item row
+            if isinstance(row, list):
+                for item in row:
+                    flat.append(item)
+            else:
+                flat.append(row)
+
+        # Only include hashable items in the set (skip unhashable like lists)
+        flat_set = set(x for x in flat if not isinstance(x, list))
 
         if not None in flat_set:
             open_pos = self.n_rows * self.n_cols

@@ -338,16 +338,16 @@ def test_mdpi_source(test_data_path, source_manager):
     assert t.n_activations > 20
 
 @pytest.mark.vcr(record_mode="once")
-def test_sage2_source(test_data_path, source_manager):
-    filename = join(test_data_path, 'sage2.html')
+def test_sage_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'sage.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
     article = source.parse_article(html)
     tables = article.tables
-    assert len(tables) == 1
+    assert len(tables) == 2
     t = tables[0]
     assert t.number == '2'
-    assert " showing hypometabolism correlated with ADL" in t.Caption
+    assert "Brain regions showing hypometabolism correlated with ADL at the whole-brain level in patients with PCA" == t.caption
     assert t.n_activations == 6
 
 @pytest.mark.vcr(record_mode="once")
