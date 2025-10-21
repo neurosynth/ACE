@@ -336,7 +336,8 @@ def parse_table(data):
         # If we don't have to worry about groups, the entire row is a single activation
         if not len(group_cols):
             activation = create_activation(r, labels, standard_cols, group_row)
-            if activation.validate():
+            activation.validate()  # Now sets is_valid attribute
+            if activation.is_valid:
                 table.activations.append(activation)
 
         # ...otherwise we need to iterate over groups and select appropriate columns for each.
@@ -365,7 +366,8 @@ def parse_table(data):
           
                 # Create activation and add to table if it passes validation
                 activation = create_activation(activation_columns, activation_labels, activation_scs, groups)
-                if activation.validate():
+                activation.validate()  # Now sets is_valid attribute
+                if activation.is_valid:
                     table.activations.append(activation)
 
     table.finalize()

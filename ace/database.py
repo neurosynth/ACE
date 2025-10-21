@@ -238,16 +238,19 @@ class Activation(Base):
     # Depending on config, either excludes peak, or allows it through
     # but flags potential problems for later inspection.
     def validate(self):
-
+        self.is_valid = True
+        
         for c in [self.x, self.y, self.z]:
             if c == '' or c is None:
                 logger.debug('Missing x, y, or z coordinate information: [%s, %s, %s]' % tuple(
                     [str(e) for e in [self.x, self.y, self.z]]))
+                self.is_valid = False
                 return False
             try:
                 if abs(c) >= 100:
                     logger.debug(
                         'Invalid coordinates: at least one dimension (x,y,z) >= 100.')
+                    self.is_valid = False
                     return False
             except:
                 print(c)
@@ -258,6 +261,7 @@ class Activation(Base):
         if sorted_xyz[0] == 0 and sorted_xyz[1] == 0:
             logger.debug(
                 "At least two dimensions have value == 0; coordinate is probably not real.")
+            self.is_valid = False
             return False
 
         return True
