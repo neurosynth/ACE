@@ -1,8 +1,7 @@
 {
   "name": "AmPsych",
   "identifiers": [
-    "psychiatryonline\\.org",
-    "American Psychiatric Publishing"
+    "<meta name=\"dc.Publisher\" content=\" American Psychiatric Publishing"
   ],
   "entities": null,
   "delay": 0

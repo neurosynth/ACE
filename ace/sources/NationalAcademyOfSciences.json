@@ -1,9 +1,7 @@
 {
   "name": "National Academy of Sciences",
   "identifiers": [
-    "pnas.org",
-    "Proceedings of the National Academy of Sciences",
-    "National Academy of Sciences"
+    "<meta name=\"citation_journal_title\" content=\"Proceedings of the National Academy of Sciences\">"  
   ],
   "entities": {
   },

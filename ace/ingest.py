@@ -156,7 +156,7 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
 
     # Add successfully parsed articles to database
     for i, (f, article) in enumerate(parsed_articles):
-        if article is None:
+        if article in [None, False]:
             missing_sources.append(f)
             continue
             
