@@ -222,10 +222,13 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
     return activation
 
 
-def parse_table(data):
+def parse_table(data, html=None):
     ''' Takes a DataTable as input and returns a Table instance. '''
     
     table = Table()
+    # Only store the original HTML if the global config allows it
+    if html is not None and config.SAVE_ORIGINAL_HTML:
+        table.input_html = html
     n_cols = data.n_cols
 
     # Identify column names: first occurrence of unique (i.e. colspan=1) label.

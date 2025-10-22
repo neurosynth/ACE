@@ -58,6 +58,9 @@ EXCLUDE_TABLES_WITH_MISSING_LABELS = False
 # When False, will use fallback HTML processing by default.
 USE_READABILITY = True
 
+# Whether to save the original HTML of the table in the Table object
+SAVE_ORIGINAL_HTML = False
+
 
 
 

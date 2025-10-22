@@ -337,7 +337,7 @@ class Source(metaclass=abc.ABCMeta):
         if data.data[data.n_rows- 1].count(None) == data.n_cols:
             data.data.pop()
         logger.debug("\t\tTrying to parse table...")
-        return tableparser.parse_table(data)
+        return tableparser.parse_table(data, html=str(table))
 
     def extract_doi(self, soup):
         ''' Every Source subclass must be able to extract its doi. '''
