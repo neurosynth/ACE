@@ -401,8 +401,6 @@ class DefaultSource(Source):
     3. JavaScript expansion detection: Identifies elements that might trigger
        table expansion via JavaScript (logging only, not implemented)
     """
-    def __init__(self, config=None, table_dir=None):
-        super().__init__(config=config, table_dir=table_dir)
         
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(DefaultSource, self).parse_article(html, pmid, **kwargs)
@@ -937,9 +935,6 @@ class DefaultSource(Source):
         return None
 
 class MDPISource(Source):
-    def __init__(self, config=None, table_dir=None, use_readability=True):
-        super().__init__(config=config, table_dir=table_dir, use_readability=use_readability)
-
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(MDPISource, self).parse_article(html, pmid, **kwargs)
         if not soup:
@@ -1447,8 +1442,6 @@ class WileySource(Source):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
 class SageSource(Source):
-    def __init__(self, config=None, table_dir=None, use_readability=True):
-        super().__init__(config=config, table_dir=table_dir, use_readability=use_readability)
 
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(SageSource, self).parse_article(html, pmid, **kwargs)
@@ -2091,9 +2084,6 @@ class NationalAcademyOfSciencesSource(Source):
         return None
 
 class AmPsychSource(Source):
-
-    def __init__(self, config=None, table_dir=None, use_readability=True):
-        super().__init__(config=config, table_dir=table_dir, use_readability=use_readability)
 
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(AmPsychSource, self).parse_article(html, pmid, **kwargs)
