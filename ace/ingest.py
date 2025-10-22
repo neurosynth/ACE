@@ -49,13 +49,13 @@ def _parse_article(args):
             # Fallback to original source identification
             source = manager.identify_source(html)
             if source is None:
-                logger.warning("Could not identify source for %s" % f)
+                logger.info("Could not identify source for %s" % f)
                 return f, None
 
         article = source.parse_article(html, pmid, metadata_dir=metadata_dir, **kwargs)
         return f, article
     except Exception as e:
-        logger.warning("Error parsing article %s: %s" % (f, str(e)))
+        logger.info("Error parsing article %s: %s" % (f, str(e)))
         return f, None
 
 

@@ -1801,18 +1801,18 @@ class TaylorAndFrancisSource(Source):
                             # Break after finding and successfully parsing tables
                             break
                         else:
-                            logger.warning("No tables found in JavaScript data after parsing")
+                            logger.info("No tables found in JavaScript data after parsing")
                     else:
                         logger.debug("Could not find tfviewerdata assignment")
                         
                 except Exception as e:
-                    logger.warning(f"Error extracting tables from JavaScript: {e}")
+                    logger.info(f"Error extracting tables from JavaScript: {e}")
                     import traceback
                     logger.debug(traceback.format_exc())
                     continue
                     
         if not tables:
-            logger.warning("No tables could be extracted from JavaScript data")
+            logger.info("No tables could be extracted from JavaScript data")
             
         return tables
 
