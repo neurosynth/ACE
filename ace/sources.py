@@ -1044,10 +1044,6 @@ class MDPISource(Source):
         return metadata
 
 
-    def parse_table(self, table):
-        # MDPI tables look standard, parent method should work
-        return super(MDPISource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             # MDPI uses citation_doi meta tag
@@ -1146,10 +1142,7 @@ class HighWireSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(HighWireSource, self).parse_table(table)
-
+    
     def extract_doi(self, soup):
         try:
             return soup.find('meta', {'name': 'citation_doi'})['content']
@@ -1198,9 +1191,6 @@ class OUPSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(OUPSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1255,9 +1245,6 @@ class ScienceDirectSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(ScienceDirectSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             return list(soup.find('div', {'id': 'article-identifier-links'}).children)[0]['href'].replace('https://doi.org/', '')
@@ -1298,9 +1285,6 @@ class PlosSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(PlosSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1345,9 +1329,6 @@ class FrontiersSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(FrontiersSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1398,9 +1379,6 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(JournalOfCognitiveNeuroscienceSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1458,9 +1436,6 @@ class WileySource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(WileySource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1596,10 +1571,6 @@ class SageSource(Source):
             return metadata
 
 
-    def parse_table(self, table):
-        # SAGE tables look standard, parent method should work
-        return super(SageSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             # SAGE uses meta name="publication_doi"
@@ -1672,9 +1643,6 @@ class OldSpringerSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(OldSpringerSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         content = soup.find('p', class_='ArticleDOI').get_text()
@@ -1763,9 +1731,6 @@ class SpringerSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(SpringerSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1971,9 +1936,6 @@ class TaylorAndFrancisSource(Source):
             logger.warning(f"Error creating placeholder table: {e}")
             return None
 
-    def parse_table(self, table):
-        return super(TaylorAndFrancisSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             # Try multiple DOI extraction methods
@@ -2112,9 +2074,6 @@ class NationalAcademyOfSciencesSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(NationalAcademyOfSciencesSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             return soup.find('meta', {'name': 'citation_doi'})['content']
@@ -2245,10 +2204,6 @@ class AmPsychSource(Source):
 
         return metadata
 
-
-    def parse_table(self, table):
-        # AmPsych tables look standard, parent method should work
-        return super(AmPsychSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
