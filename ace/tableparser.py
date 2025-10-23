@@ -227,6 +227,7 @@ def parse_table(data, html=None):
     
     table = Table()
     # Only store the original HTML if the global config allows it
+    from pdb import set_trace; set_trace()
     if html is not None and config.SAVE_ORIGINAL_HTML:
         table.input_html = html
     n_cols = data.n_cols
