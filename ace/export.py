@@ -107,10 +107,10 @@ def export_database(db, foldername, skip_empty=True, table_html=False):
         
         for art in articles:
             art_dir = tables_dir / str(art.id)
-            art_dir.mkdir(parents=True, exist_ok=True)
             
             for t in art.tables:
                 if t.input_html:
+                    art_dir.mkdir(parents=True, exist_ok=True)
                     table_file = art_dir / f"{t.id}.html"
                     with table_file.open('w', encoding='utf-8') as f:
                         f.write(t.input_html)

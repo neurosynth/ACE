@@ -4,7 +4,7 @@
 # import database
 import regex  # Note: we're using features in the new regex module, not re!
 import logging
-from . import config
+from .config import get_config
 from .database import Activation, Table
 from collections import Counter, defaultdict
 
@@ -227,8 +227,7 @@ def parse_table(data, html=None):
     
     table = Table()
     # Only store the original HTML if the global config allows it
-    from pdb import set_trace; set_trace()
-    if html is not None and config.SAVE_ORIGINAL_HTML:
+    if html is not None and get_config('SAVE_ORIGINAL_HTML'):
         table.input_html = html
     n_cols = data.n_cols
 
@@ -288,7 +287,7 @@ def parse_table(data, html=None):
     if None in labels:
         labels = [str(l) for l in labels]
         msg = 'Failed to identify at least one column label: [%s]. Skipping table!' % ', '.join(labels)
-        if config.EXCLUDE_TABLES_WITH_MISSING_LABELS:
+        if get_config('EXCLUDE_TABLES_WITH_MISSING_LABELS'):
             logger.error(msg)
             return None
         else:
