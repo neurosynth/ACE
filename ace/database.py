@@ -169,6 +169,7 @@ class Table(Base):
     notes = Column(Text)
     n_activations = Column(Integer)
     n_columns = Column(Integer)
+    input_html = Column(LongText)
 
     def finalize(self):
         ''' Any cleanup and updating operations we need to do before saving. '''

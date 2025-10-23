@@ -34,20 +34,28 @@ class SourceManager:
     associated directory of JSON config files and uses them to determine which parser
     to call when a new HTML file is passed. '''
 
-    def __init__(self, table_dir=None):
+    def __init__(self, table_dir=None, use_readability=True):
         ''' SourceManager constructor.
         Args:
             table_dir: An optional directory name to save any downloaded tables to.
                 When table_dir is None, nothing will be saved (requiring new scraping
                 each time the article is processed).
+            use_readability: When True, use readability.py for HTML cleaning if available.
+                When False, use fallback HTML processing by default.
         '''
         module = importlib.import_module('ace.sources')
         self.sources = {}
         source_dir = os.path.join(os.path.dirname(__file__), 'sources')
-        for config_file in glob('%s/*json' % source_dir):
-            class_name = config_file.split('/')[-1].split('.')[0]
-            cls = getattr(module, class_name + 'Source')(config=config_file, table_dir=table_dir)
-            self.sources[class_name] = cls
+        config_files = glob(os.path.join(source_dir, '*.json'))
+        for config_file in config_files:
+            # Extract class name key from filename (e.g., 'MDPI' from 'MDPI.json')
+            class_key = os.path.splitext(os.path.basename(config_file))[0]
+            cls = getattr(module, class_key + 'Source', None)
+            if cls:
+                self.sources[class_key] = cls(config=config_file, table_dir=table_dir, use_readability=use_readability)
+                logger.debug(f"Loaded source: {class_key} using {config_file}")
+            else:
+                logger.warning(f"Config file found ({config_file}) but no corresponding Source class '{class_key}Source' found.")
 
     def identify_source(self, html):
         ''' Identify the source of the article and return the corresponding Source object. '''
@@ -98,9 +106,12 @@ class Source(metaclass=abc.ABCMeta):
         """
         global READABILITY_AVAILABLE
         
-        # If readabilipy is not available, fall back to basic BeautifulSoup cleaning
-        if not READABILITY_AVAILABLE:
-            logger.warning("Falling back to basic HTML cleaning as readabilipy is not available")
+        # If use_readability is False or readabilipy is not available, fall back to basic BeautifulSoup cleaning
+        if not self.use_readability or not READABILITY_AVAILABLE:
+            if not self.use_readability:
+                logger.info("Using fallback HTML cleaning as readability is disabled")
+            else:
+                logger.warning("Falling back to basic HTML cleaning as readabilipy is not available")
             return self._safe_clean_html(html)
         
         try:
@@ -160,8 +171,9 @@ class Source(metaclass=abc.ABCMeta):
                 text_parts.append(text.strip())
         return '\n\n'.join(text_parts) if text_parts else soup.get_text()
 
-    def __init__(self, config=None, table_dir=None):
+    def __init__(self, config=None, table_dir=None, use_readability=True):
         self.table_dir = table_dir
+        self.use_readability = use_readability
         self.entities = {}
 
         if config is not None:
@@ -325,7 +337,7 @@ class Source(metaclass=abc.ABCMeta):
         if data.data[data.n_rows- 1].count(None) == data.n_cols:
             data.data.pop()
         logger.debug("\t\tTrying to parse table...")
-        return tableparser.parse_table(data)
+        return tableparser.parse_table(data, html=str(table))
 
     def extract_doi(self, soup):
         ''' Every Source subclass must be able to extract its doi. '''
@@ -389,8 +401,6 @@ class DefaultSource(Source):
     3. JavaScript expansion detection: Identifies elements that might trigger
        table expansion via JavaScript (logging only, not implemented)
     """
-    def __init__(self, config=None, table_dir=None):
-        super().__init__(config=config, table_dir=table_dir)
         
     def parse_article(self, html, pmid=None, **kwargs):
         soup = super(DefaultSource, self).parse_article(html, pmid, **kwargs)
@@ -852,11 +862,7 @@ class DefaultSource(Source):
                             t.caption = metadata.get('caption')
                             t.notes = metadata.get('notes')
                             
-                            if self._validate_table(t, table_soup):
-                                tables.append(t)
-                                logger.debug(f"Successfully extracted table from link: {link}")
-                            else:
-                                logger.debug(f"Table from link {link} failed validation")
+                            tables.append(t)
                 else:
                     logger.debug(f"Failed to download table content from link: {link}")
             except Exception as e:
@@ -884,11 +890,8 @@ class DefaultSource(Source):
                                 t.caption = metadata.get('caption')
                                 t.notes = metadata.get('notes')
                                 
-                                if self._validate_table(t, table_soup):
-                                    tables.append(t)
-                                    logger.debug(f"Successfully extracted table from pattern link: {link}")
-                                else:
-                                    logger.debug(f"Table from pattern link {link} failed validation")
+                                tables.append(t)
+
                     else:
                         logger.debug(f"Failed to download table content from pattern link: {link}")
                 except Exception as e:
@@ -931,169 +934,166 @@ class DefaultSource(Source):
                 return base_url
         return None
 
-    def _detect_text_based_table_links(self, soup, html):
-        """
-        Find links with text indicating table content.
-        
-        Looks for anchor tags with text that suggests they link to table content,
-        such as "Full size table", "View table", "Expand table", etc.
-        
-        Args:
-            soup (BeautifulSoup): Parsed HTML of the article
-            html (str): Raw HTML of the article
-            
-        Returns:
-            list: List of resolved URLs that likely point to table content
-        """
-        links = []
-        text_indicators = [
-            r'full\s*size\s*table',
-            r'view\s*table',
-            r'expand\s*table',
-            r'show\s*table',
-            r'table\s*details',
-            r'download\s*table',
-            r'see\s*table',
-            r'complete\s*table',
-            r'table\s*\d+'
-        ]
-        
-        try:
-            # Get base URL for resolving relative links
-            base_url = self._get_base_url(soup)
-            
-            # Look for links with text indicators
-            for link in soup.find_all('a', href=True):
-                try:
-                    link_text = link.get_text().lower().strip()
-                    if any(re.search(indicator, link_text) for indicator in text_indicators):
-                        href = link.get('href')
-                        if href:
-                            # Resolve relative URLs
-                            if base_url:
-                                try:
-                                    resolved_url = urljoin(base_url, href)
-                                    links.append(resolved_url)
-                                except Exception as e:
-                                    logger.debug(f"Failed to resolve URL {href}: {e}")
-                                    # Fallback to original href
-                                    links.append(href)
-                            else:
-                                links.append(href)
-                except Exception as e:
-                    logger.debug(f"Error processing link {link}: {e}")
-                    continue
-        except Exception as e:
-            logger.debug(f"Error in _detect_text_based_table_links: {e}")
-        
-        # Deduplicate links
-        return list(set(links))
+class MDPISource(Source):
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(MDPISource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            logger.warning("MDPISource: Initial article parsing failed.")
+            return False
 
-    def _detect_url_pattern_table_links(self, soup, html):
-        """
-        Detect links following common table URL patterns.
+        tables = []
         
-        Identifies URLs that match common patterns used by publishers to link
-        to table content, such as /T{num}.expansion.html, /tables/{num}, etc.
-        
-        Args:
-            soup (BeautifulSoup): Parsed HTML of the article
-            html (str): Raw HTML of the article
-            
-        Returns:
-            list: List of resolved URLs that likely point to table content
-        """
-        links = []
-        
-        try:
-            # Get base URL for resolving relative links
-            base_url = self._get_base_url(soup)
-            
-            if base_url:
-                # Common patterns for table links
-                patterns = [
-                    r'/T\d+\.expansion\.html',  # HighWire/Sage pattern
-                    r'/tables/\d+',             # Springer pattern
-                    r'\?table=\d+',             # Query parameter pattern
-                    r'#table\d+',               # Fragment pattern
-                    r'/table\d+\.html',         # Direct file pattern
-                    r'/tbl\d+\.htm',            # Alternative pattern
-                    r'/table/\d+',              # Another common pattern
-                ]
-                
-                # Look for links matching patterns in the HTML
-                for pattern in patterns:
-                    try:
-                        matches = re.findall(pattern, html, re.IGNORECASE)
-                        for match in matches:
-                            # Resolve relative URLs
-                            if base_url:
-                                try:
-                                    resolved_url = urljoin(base_url, match)
-                                    links.append(resolved_url)
-                                except Exception as e:
-                                    logger.debug(f"Failed to resolve URL {match}: {e}")
-                                    # Fallback to original match
-                                    if match.startswith('http'):
-                                        links.append(match)
-                                    else:
-                                        # Try to construct with base URL
-                                        if match.startswith('/'):
-                                            links.append(base_url + match)
-                                        else:
-                                            links.append(base_url + '/' + match)
-                    except Exception as e:
-                        logger.debug(f"Error processing pattern {pattern}: {e}")
-                        continue
-            else:
-                logger.debug("No base URL found for resolving table links")
-        except Exception as e:
-            logger.debug(f"Error in _detect_url_pattern_table_links: {e}")
-        
-        # Deduplicate links
-        return list(set(links))
+        # FIX: The 'html-table-wrap' div is just a placeholder/link.
+        # The actual table content is in a hidden div with class 'html-table_show'.
+        # We select this directly using soup.select for a robust match
+        # that handles other classes (like 'mfp-hide') being present.
+        table_wrappers = soup.select('div[id^="table_body_display_"][class*="html-table_show"]')
 
-    def _detect_javascript_table_expansion(self, soup):
-        """
-        Detect and handle JavaScript-based table expansion.
-        
-        Identifies elements that might trigger table expansion via JavaScript.
-        This method currently only logs detection but does not implement actual
-        expansion, which would require browser-based scraping.
-        
-        Args:
-            soup (BeautifulSoup): Parsed HTML of the article
-            
-        Returns:
-            bool: True if JavaScript expansion indicators are found, False otherwise
-        """
-        # Look for common classes/attributes that indicate expandable tables
-        js_indicators = [
-            'table-expand',
-            'table-expand-inline',
-            'expand-table',
-            'table-toggle',
-            'js-table-expand',
-            'data-table-url',
-        ]
-        
-        # Check if any elements have these indicators
-        for indicator in js_indicators:
-            elements = soup.find_all(class_=indicator)
-            if elements:
-                logger.info(f"Found JavaScript table expansion indicators: {indicator}")
-                # For now, we'll log the detection but not implement the actual expansion
-                # This would require integration with the browser-based scraping
-                return True
-        
-        # Check for data attributes that indicate table URLs
-        data_elements = soup.find_all(attrs={'data-table-url': True})
-        if data_elements:
-            logger.info("Found data-table-url attributes for table expansion")
+        logger.info(f"MDPISource: Found {len(table_wrappers)} potential table wrappers/containers.")
+
+        for (i, tc) in enumerate(table_wrappers):
+             table_html = None
+             metadata_container = tc # The 'html-table_show' div contains the metadata
+
+             # Since tc is now the correct container, the table is a direct child/descendant
+             table_html = tc.find('table')
+
+             if not table_html:
+                 logger.debug(f"\tSkipping container {i+1} (ID: {tc.get('id')}): No <table> element found inside.")
+                 continue
+
+             t = self.parse_table(table_html)
+             if t and isinstance(t, Table): # Check if parsing was successful
+                 t.position = i + 1
+
+                 # Extract metadata from the container
+                 metadata = self._extract_mdpi_metadata(metadata_container, t.position)
+                 t.number = metadata.get('number')
+                 t.label = metadata.get('label')
+                 t.caption = metadata.get('caption')
+                 t.notes = metadata.get('notes')
+                 
+                 # Validate the table before adding it
+                 if self._validate_table(t, metadata_container):
+                     tables.append(t)
+                     logger.debug(f"\tSuccessfully parsed and validated MDPI table (ID: {tc.get('id')}, assigned position {t.position}).")
+                 else:
+                    logger.debug(f"\tMDPI table (ID: {tc.get('id')}) failed validation.")
+             else:
+                logger.warning(f"\tParsing failed for table in container (ID: {tc.get('id')}).")
+
+
+        self.article.tables = tables
+        if not tables:
+             logger.warning("MDPISource: No valid tables found in the article.")
+        else:
+            logger.info(f"MDPISource: Successfully extracted {len(tables)} tables.")
+
+        return self.article
+
+    def _extract_mdpi_metadata(self, container, position):
+        """Extract metadata specifically for MDPI table structure."""
+        metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
+        if not container:
+             metadata['number'] = str(position)
+             metadata['label'] = f"Table {position}"
+             return metadata
+
+        try:
+            # Caption is in div.html-caption inside the container
+            caption_elem = container.find('div', class_='html-caption')
+            if caption_elem:
+                caption_text = caption_elem.get_text(strip=True)
+                # Caption often starts with "Table X."
+                label_match = re.match(r'(Table\s*\d+)\b\.?', caption_text, re.IGNORECASE)
+                if label_match:
+                    metadata['label'] = label_match.group(1)
+                    metadata['caption'] = caption_text[label_match.end():].lstrip('. ').strip()
+                    number_match = re.search(r'(\d+)', metadata['label'])
+                    if number_match:
+                        metadata['number'] = number_match.group(1)
+                else:
+                    # If no "Table X" prefix, use the whole text as caption
+                    metadata['caption'] = caption_text
+                    # Try to get number from container ID as fallback
+                    id_match = re.search(r'-t(\d+)$', container.get('id', ''))
+                    if id_match:
+                         metadata['number'] = id_match.group(1)
+
+
+            # Notes are in div.html-table_foot
+            notes_elem = container.find('div', class_='html-table_foot')
+            if notes_elem:
+                # Extract text, handling potential internal tags like <span>
+                metadata['notes'] = notes_elem.get_text(separator='\n', strip=True)
+
+        except Exception as e:
+            logger.warning(f"Error extracting MDPI metadata: {e}")
+
+        # Fallbacks if still missing
+        if not metadata.get('number'):
+             metadata['number'] = str(position)
+        if not metadata.get('label'):
+             metadata['label'] = f"Table {metadata['number']}"
+
+        return metadata
+
+
+    def extract_doi(self, soup):
+        try:
+            # MDPI uses citation_doi meta tag
+            doi_meta = soup.find('meta', {'name': 'citation_doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+            # Fallback: dc.identifier
+            doi_meta = soup.find('meta', {'name': 'dc.identifier'})
+            if doi_meta and doi_meta.get('content') and doi_meta.get('content').startswith('10.'):
+                 return doi_meta['content'].strip()
+        except Exception as e:
+            logger.warning(f"Error extracting MDPI DOI: {e}")
+        return None
+
+    def extract_pmid(self, soup):
+        try:
+            # MDPI includes a link to PubMed with the PMID
+            pubmed_link = soup.find('a', href=re.compile(r'ncbi\.nlm\.nih\.gov/sites/entrez/(\d+)'))
+            if pubmed_link:
+                match = re.search(r'/(\d+)', pubmed_link['href'])
+                if match:
+                    pmid = match.group(1)
+                    if pmid.isdigit():
+                        logger.debug(f"PMID found via PubMed link: {pmid}")
+                        return pmid
+        except Exception as e:
+            logger.warning(f"Error extracting MDPI PMID from link: {e}")
+
+        # Fallback to DOI lookup
+        doi = self.extract_doi(soup)
+        if doi:
+            return scrape.get_pmid_from_doi(doi)
+        return None
+
+    # Note: These methods are part of the 'DefaultSource' in your provided code,
+    # but MDPISource (as a child of Source) might not have them.
+    # If MDPISource inherits from DefaultSource, this is fine.
+    # If it only inherits from Source, you might need to copy these 
+    # helper methods (like _get_base_url, _validate_table) into MDPISource
+    # or (better) move them to the base 'Source' class if they are truly generic.
+    
+    # Assuming _validate_table is available (e.g., in the 'Source' parent class):
+    def _validate_table(self, table, container):
+        # Placeholder: Implement or copy your existing _validate_table logic here
+        # For example, inheriting from DefaultSource would provide this.
+        # If inheriting from Source, you'll need to add the method:
+        try:
+            if not table or not hasattr(table, 'activations') or not table.activations:
+                logger.debug("\t\tTable validation failed: No activations.")
+                return False
+            # Add more validation logic as needed (e.g., check for meaningful content)
             return True
-            
-        return False
-
+        except Exception as e:
+            logger.warning(f"\t\tTable validation failed with exception: {e}")
+            return False
 
 class HighWireSource(Source):
 
@@ -1137,10 +1137,7 @@ class HighWireSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(HighWireSource, self).parse_table(table)
-
+    
     def extract_doi(self, soup):
         try:
             return soup.find('meta', {'name': 'citation_doi'})['content']
@@ -1189,9 +1186,6 @@ class OUPSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(OUPSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1246,9 +1240,6 @@ class ScienceDirectSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(ScienceDirectSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             return list(soup.find('div', {'id': 'article-identifier-links'}).children)[0]['href'].replace('https://doi.org/', '')
@@ -1289,9 +1280,6 @@ class PlosSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(PlosSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1336,9 +1324,6 @@ class FrontiersSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(FrontiersSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1389,9 +1374,6 @@ class JournalOfCognitiveNeuroscienceSource(Source):
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(JournalOfCognitiveNeuroscienceSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1450,9 +1432,6 @@ class WileySource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(WileySource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             return soup.find('meta', {'name': 'citation_doi'})['content']
@@ -1462,64 +1441,167 @@ class WileySource(Source):
     def extract_pmid(self, soup):
         return scrape.get_pmid_from_doi(self.extract_doi(soup))
 
-# Note: the SageSource is largely useless and untested because Sage renders tables
-# as images.
-
-
 class SageSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):
-
         soup = super(SageSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
+            logger.warning("SageSource: Initial article parsing failed.")
             return False
 
-        # To download tables, we need the content URL and the number of tables
-        content_url = soup.find('meta', {
-                                'name': 'citation_public_url'})['content']
-
-        n_tables = len(soup.find_all('span', class_='table-label'))
-        logger.info(f"Found {n_tables} tables.")
-        # Now download each table and parse it
         tables = []
-        for i in range(n_tables):
-            t_num = i + 1
-            url = '%s/T%d.expansion.html' % (content_url, t_num)
-            table_soup = self._download_table(url)
-            if not table_soup:
-                continue
-            tc = table_soup.find(class_='table-expansion')
-            if tc:
-                t = tc.find('table', {'id': 'table-%d' % (t_num)})
-                t = self.parse_table(t)
-                if t:
-                    t.position = t_num
-                    t.label = tc.find(class_='table-label').text
-                    t.number = t.label.split(' ')[-1].strip()
-                    try:
-                        t.caption = tc.find(class_='table-caption').get_text()
-                    except:
-                        pass
-                    try:
-                        t.notes = tc.find(class_='table-footnotes').get_text()
-                    except:
-                        pass
-                    tables.append(t)
+        # SAGE uses <figure id="jad-..." class="table"> as the main container
+        # It also uses <div class="table-wrap"> inside that figure
+        table_containers = soup.find_all('figure', class_='table', id=re.compile(r'^jad-\d+-jad\d+-t\d+$')) # Specific ID pattern
+
+        if not table_containers:
+             # Fallback to less specific figure or div containing a table
+             table_containers = soup.find_all('figure', class_='table')
+             if not table_containers:
+                  table_containers = soup.find_all('div', class_='table-wrap')
+
+        logger.info(f"SageSource: Found {len(table_containers)} potential table containers.")
+
+        for (i, tc) in enumerate(table_containers):
+             table_html = tc.find('table') # Table is usually directly inside figure or inside table-wrap div
+             metadata_container = tc # Use the figure/div for metadata
+
+             if not table_html:
+                 logger.debug(f"\tSkipping container {i+1}: No <table> element found.")
+                 continue
+
+             t = self.parse_table(table_html)
+             if t:
+                 t.position = i + 1
+
+                 # Extract metadata from the container (<figure>)
+                 metadata = self._extract_sage_metadata(metadata_container, t.position)
+                 t.number = metadata.get('number')
+                 t.label = metadata.get('label')
+                 t.caption = metadata.get('caption')
+                 t.notes = metadata.get('notes')
+
+                 tables.append(t)
+
 
         self.article.tables = tables
+        if not tables:
+             logger.warning("SageSource: No valid tables found in the article.")
+        else:
+            logger.info(f"SageSource: Successfully extracted {len(tables)} tables.")
+
         return self.article
 
-    def parse_table(self, table):
-        return super(SageSource, self).parse_table(table)
+    def _extract_sage_metadata(self, container, position):
+            """Extract metadata specifically for SAGE table structure."""
+            metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
+            if not container:
+                metadata['number'] = str(position)
+                metadata['label'] = f"Table {position}"
+                return metadata
+
+            try:
+                # Try getting number from container ID first (handles leading zeros)
+                id_match = re.search(r'-t0*(\d+)$', container.get('id', ''))
+                if id_match:
+                    metadata['number'] = id_match.group(1)
+
+                # Label and Caption are often combined in <figcaption>
+                caption_elem = container.find('figcaption')
+                if caption_elem:
+                    heading_elem = caption_elem.find('span', class_='heading')
+                    
+                    if heading_elem:
+                        # Label is in the heading span
+                        label_text = heading_elem.get_text(strip=True)
+                        label_match = re.match(r'(Table\s*\d+)\b', label_text, re.IGNORECASE)
+                        
+                        if label_match:
+                            metadata['label'] = label_match.group(1)
+                            if not metadata.get('number'): # If ID parsing failed, get number from label
+                                num_match = re.search(r'(\d+)', metadata['label'])
+                                if num_match:
+                                    metadata['number'] = num_match.group(1)
+
+                            # Caption is the full text of figcaption *minus* the heading text
+                            full_caption_text = caption_elem.get_text(strip=True)
+                            metadata['caption'] = full_caption_text[len(metadata['label']):].lstrip('. ').strip()
+                        
+                        else:
+                            # No "Table X" in heading, use full figcaption text as caption
+                            metadata['caption'] = caption_elem.get_text(strip=True)
+                    
+                    else:
+                        # No heading span, use full figcaption text as caption
+                        metadata['caption'] = caption_elem.get_text(strip=True)
+                        # Check if caption starts with "Table X"
+                        label_match = re.match(r'(Table\s*\d+)\b\.?', metadata['caption'], re.IGNORECASE)
+                        if label_match:
+                            metadata['label'] = label_match.group(1)
+                            metadata['caption'] = metadata['caption'][len(metadata['label']):].lstrip('. ').strip()
+                            if not metadata.get('number'):
+                                num_match = re.search(r'(\d+)', metadata['label'])
+                                if num_match:
+                                    metadata['number'] = num_match.group(1)
+
+                # Notes are in a div.notes (as a child of container, not figcaption or sibling)
+                notes_elem = container.find('div', class_='notes')
+                
+                if notes_elem:
+                    # Get text from paragraph inside notes div
+                    notes_p = notes_elem.find('p')
+                    metadata['notes'] = notes_p.get_text(separator='\n', strip=True) if notes_p else notes_elem.get_text(separator='\n', strip=True)
+
+            except Exception as e:
+                logger.warning(f"Error extracting SAGE metadata: {e}")
+
+            # Fallbacks if still missing
+            if not metadata.get('number'):
+                metadata['number'] = str(position)
+            if not metadata.get('label'):
+                metadata['label'] = f"Table {metadata['number']}"
+            
+            return metadata
+
 
     def extract_doi(self, soup):
         try:
-            return soup.find('meta', {'name': 'citation_doi'})['content']
-        except: 
-            return ''
-        
+            # SAGE uses meta name="publication_doi"
+            doi_meta = soup.find('meta', {'name': 'publication_doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+            # Fallback: dc.Identifier
+            doi_meta = soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'publisher-id'}) # Check this specific one
+            if doi_meta and doi_meta.get('content') and doi_meta.get('content').startswith('10.'):
+                 return doi_meta['content'].strip()
+             # Fallback: citation_doi
+            doi_meta = soup.find('meta', {'name': 'citation_doi'})
+            if doi_meta and doi_meta.get('content'):
+                 return doi_meta['content'].strip()
+
+        except Exception as e:
+            logger.warning(f"Error extracting SAGE DOI: {e}")
+        return None
+
     def extract_pmid(self, soup):
-        return soup.find('meta', {'name': 'citation_pmid'})['content']
+        try:
+            # SAGE includes a link to PubMed in the collateral section
+            pubmed_link = soup.select_one('div.core-pmid a[href*="pubmed"]')
+            if pubmed_link:
+                match = re.search(r'/(\d+)/?$', pubmed_link['href']) # Match digits at the end
+                if match:
+                    pmid = match.group(1)
+                    if pmid.isdigit():
+                        logger.debug(f"PMID found via PubMed link: {pmid}")
+                        return pmid
+        except Exception as e:
+            logger.warning(f"Error extracting SAGE PMID from link: {e}")
+
+        # Fallback to DOI lookup
+        doi = self.extract_doi(soup)
+        if doi:
+            return scrape.get_pmid_from_doi(doi)
+        return None
 
 
 class OldSpringerSource(Source):
@@ -1555,9 +1637,6 @@ class OldSpringerSource(Source):
         self.article.tables = tables
         return self.article
 
-    def parse_table(self, table):
-        return super(OldSpringerSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         content = soup.find('p', class_='ArticleDOI').get_text()
         return content.split(' ')[1]
@@ -1577,45 +1656,74 @@ class SpringerSource(Source):
         # To download tables, we need the content URL and the number of tables
         content_url = soup.find('meta', {'name': 'citation_fulltext_html_url'})['content']
 
-        n_tables = len(soup.find_all('span', string='Full size table'))
-        logger.info(f"Found {n_tables} tables.")
-        # Now download each table and parse it
+        # Find all links that match the Nature table URL pattern.
+        table_links = soup.find_all('a', href=re.compile(r'/article(s?)/.*/tables/\d+'))
+        
+        logger.info(f"Found {len(table_links)} potential table links.")
         tables = []
-        for i in range(n_tables):
-            t_num = i + 1
-            url = '%s/tables/%d' % (content_url, t_num)
-            table_soup = self._download_table(url)
+
+        # Loop through the found links.
+        for i, link in enumerate(table_links):
+            
+            relative_url = link.get('href')
+            if not relative_url:
+                continue
+                
+            # Construct the full URL robustly.
+            full_url = urljoin(content_url, relative_url)
+            
+            table_soup = self._download_table(full_url)
             if not table_soup:
                 continue
-            tc = table_soup.find(class_='data last-table')
-            t = self.parse_table(tc)
+
+            # Find the main container first.
+            tc = table_soup.find('div', class_='c-article-table-container')
+            if not tc:
+                # Fallback to finding the first table on the page if container not found
+                tc = table_soup.find('table')
+                if not tc:
+                    continue
+
+            table_html = tc.find('table') if tc.name != 'table' else tc
+            t = self.parse_table(table_html)
+            
             if t:
-                t.position = t_num
+                t.position = i + 1
 
-                # id_name is the id HTML element that cotains the title, label and table number that needs to be parse
-                # temp_title sets it up to where the title can be parsed and then categorized
-                id_name = f"table-{t_num}-title"
-                temp_title = table_soup.find('h1', attrs={'id': id_name}).get_text().split()
-
-                # grabbing the first two elements for the label and then making them a string object
-                t.label = " ".join(temp_title[:2])
-                t.number = str(temp_title[1])
+                # Parse metadata from the downloaded page's structure
                 try:
-                    # grabbing the rest of the element for the caption/title of the table and then making them a string object
-                    t.caption =  " ".join(temp_title[2:])
+                    # Title, label, and number from H1
+                    title_elem = table_soup.find('h1', class_='c-article-title') or \
+                    table_soup.find('h1', class_='c-article-satellite-title')
+                    if title_elem:
+                        full_title_text = title_elem.get_text().strip()
+                        # Example parsing: "Table 1: Caption of the table"
+                        label_match = re.match(r'(Table\s+\d+)', full_title_text, re.IGNORECASE)
+                        if label_match:
+                             t.label = label_match.group(1).strip()
+                             # (Modification: More robust stripping)
+                             t.caption = full_title_text[len(t.label):].lstrip(': .').strip() 
+                             
+                             num_match = re.search(r'(\d+)', t.label)
+                             if num_match:
+                                 t.number = num_match.group(1)
+                        else:
+                             t.caption = full_title_text
+                             t.number = str(t.position) # Use position as fallback number
+                             t.label = f"Table {t.number}"
+                except Exception as e:
+                    logger.debug(f"Could not parse table caption/label: {e}")
+
+                try:
+                    # Notes from the footer
+                    t.notes = table_soup.find('footer', class_='c-article-table-footer').get_text()
                 except:
                     pass
-                try:
-                    t.notes = table_soup.find(class_='c-article-table-footer').get_text()
-                except:
-                    pass
+                    
                 tables.append(t)
 
         self.article.tables = tables
         return self.article
-
-    def parse_table(self, table):
-        return super(SpringerSource, self).parse_table(table)
 
     def extract_doi(self, soup):
         try:
@@ -1693,18 +1801,18 @@ class TaylorAndFrancisSource(Source):
                             # Break after finding and successfully parsing tables
                             break
                         else:
-                            logger.warning("No tables found in JavaScript data after parsing")
+                            logger.info("No tables found in JavaScript data after parsing")
                     else:
                         logger.debug("Could not find tfviewerdata assignment")
                         
                 except Exception as e:
-                    logger.warning(f"Error extracting tables from JavaScript: {e}")
+                    logger.info(f"Error extracting tables from JavaScript: {e}")
                     import traceback
                     logger.debug(traceback.format_exc())
                     continue
                     
         if not tables:
-            logger.warning("No tables could be extracted from JavaScript data")
+            logger.info("No tables could be extracted from JavaScript data")
             
         return tables
 
@@ -1821,9 +1929,6 @@ class TaylorAndFrancisSource(Source):
             logger.warning(f"Error creating placeholder table: {e}")
             return None
 
-    def parse_table(self, table):
-        return super(TaylorAndFrancisSource, self).parse_table(table)
-
     def extract_doi(self, soup):
         try:
             # Try multiple DOI extraction methods
@@ -1893,3 +1998,236 @@ class PMCSource(Source):
 
     def extract_doi(self, soup):
         return soup.find('meta', {'name': 'citation_doi'})['content']
+
+
+class NationalAcademyOfSciencesSource(Source):
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(NationalAcademyOfSciencesSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            return False
+
+        # Extract tables
+        tables = []
+        # PNAS uses figure elements with class 'table' for tables
+        table_containers = soup.find_all('figure', {'class': 'table'})
+        
+        # Also check for div elements that might contain tables
+        if not table_containers:
+            table_containers = soup.find_all('div', {'class': 'table'})
+            
+        # Also check for generic table elements in the article body
+        if not table_containers:
+            table_containers = soup.find_all('table')
+            
+        logger.info(f"Found {len(table_containers)} tables.")
+        for (i, tc) in enumerate(table_containers):
+            # If tc is already a table element, use it directly
+            if tc.name == 'table':
+                table_html = tc
+            else:
+                # Otherwise look for a table within the container
+                table_html = tc.find('table')
+                
+            if not table_html:
+                continue
+                
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+                # Try to extract table label/number
+                try:
+                    label_elem = tc.find('div', {'class': 'caption'}) or tc.find('h3') or tc.find('h4')
+                    if label_elem:
+                        t.label = label_elem.get_text().strip()
+                        # Extract number from label if possible
+                        number_match = re.search(r'[Tt]able\s+(\d+)', t.label, re.IGNORECASE)
+                        if number_match:
+                            t.number = number_match.group(1)
+                except:
+                    pass
+                    
+                # Try to extract caption
+                try:
+                    caption_elem = tc.find('div', {'class': 'section'}) or tc.find('p')
+                    if caption_elem:
+                        t.caption = caption_elem.get_text().strip()
+                except:
+                    pass
+                    
+                # Try to extract notes
+                try:
+                    notes_elem = tc.find('div', {'class': 'fn'}) or tc.find('div', {'class': 'footnotes'})
+                    if notes_elem:
+                        t.notes = notes_elem.get_text().strip()
+                except:
+                    pass
+                    
+                tables.append(t)
+
+        self.article.tables = tables
+        return self.article
+
+    def extract_doi(self, soup):
+        try:
+            return soup.find('meta', {'name': 'citation_doi'})['content']
+        except:
+            return ''
+
+    def extract_pmid(self, soup):
+        try:
+            return soup.find('meta', {'name': 'citation_pmid'})['content']
+        except:
+            # If PMID not found, try to get it from DOI
+            doi = self.extract_doi(soup)
+            if doi:
+                return scrape.get_pmid_from_doi(doi)
+        return None
+
+class AmPsychSource(Source):
+
+    def parse_article(self, html, pmid=None, **kwargs):
+        soup = super(AmPsychSource, self).parse_article(html, pmid, **kwargs)
+        if not soup:
+            logger.warning("AmPsychSource: Initial article parsing failed.")
+            return False
+
+        tables = []
+        # Tables are in <figure id="T1" class="table">
+        table_containers = soup.find_all('figure', class_='table', id=re.compile(r'^T\d+$'))
+
+        logger.info(f"AmPsychSource: Found {len(table_containers)} potential table containers.")
+
+        for (i, tc) in enumerate(table_containers):
+            table_html = tc.find('table')
+            if not table_html:
+                logger.debug(f"\tSkipping container {i+1}: No <table> element found.")
+                continue
+
+            t = self.parse_table(table_html)
+            if t:
+                t.position = i + 1
+
+                # Extract metadata from the container (<figure>)
+                metadata = self._extract_ampsych_metadata(tc, t.position)
+                t.number = metadata.get('number')
+                t.label = metadata.get('label')
+                t.caption = metadata.get('caption')
+                t.notes = metadata.get('notes')
+                
+                tables.append(t)
+
+
+
+        self.article.tables = tables
+        if not tables:
+             logger.warning("AmPsychSource: No valid tables found in the article.")
+        else:
+            logger.info(f"AmPsychSource: Successfully extracted {len(tables)} tables.")
+
+        return self.article
+
+    def _extract_ampsych_metadata(self, container, position):
+        """Extract metadata specifically for AmPsych table structure."""
+        metadata = {'number': None, 'label': None, 'caption': None, 'notes': None}
+        
+        try:
+            # Number from ID
+            metadata['number'] = container.get('id', f"T{position}")[1:] # Strips the 'T'
+        except Exception:
+             metadata['number'] = str(position)
+
+        try:
+            # Label and Caption are in <figcaption>
+            caption_elem = container.find('figcaption')
+            if caption_elem:
+                heading_elem = caption_elem.find('span', class_='heading')
+                
+                # Get the full text of the entire <figcaption>
+                full_caption_text = caption_elem.get_text(strip=True)
+
+                if heading_elem:
+                    # Case 1: <span class="heading"> exists
+                    # Get label text *only* from the span
+                    label_text = heading_elem.get_text(strip=True)
+                    metadata['label'] = label_text  # e.g., "TABLE 2"
+                    
+                    # The caption is the full text, with the label text removed 
+                    # from the beginning.
+                    
+                    # Find the start position of the rest of the caption
+                    label_end_pos = full_caption_text.find(label_text) + len(label_text)
+                    
+                    # Extract caption and clean it (remove leading dots/spaces)
+                    metadata['caption'] = full_caption_text[label_end_pos:].lstrip('. ').strip()
+
+                    # Re-confirm number from label
+                    num_match = re.search(r'(\d+)', metadata['label'])
+                    if num_match:
+                        metadata['number'] = num_match.group(1)
+                
+                else:
+                    # Case 2: No <span class="heading">. Use regex on the full text.
+                    label_match = re.match(r'(TABLE\s*\d+)\b\.?', full_caption_text, re.IGNORECASE)
+                    if label_match:
+                        metadata['label'] = label_match.group(1).strip() # "TABLE 1"
+                        metadata['caption'] = full_caption_text[label_match.end():].lstrip('. ').strip()
+                        # Re-confirm number from label
+                        num_match = re.search(r'(\d+)', metadata['label'])
+                        if num_match:
+                            metadata['number'] = num_match.group(1)
+                    else:
+                        # Use full text as caption if no label found at start
+                        metadata['caption'] = full_caption_text
+                        # metadata['label'] will be set by fallback
+
+            # Notes are in a div.notes (usually after figcaption, but let's check within container)
+            notes_elem = container.find('div', class_='notes')
+            if notes_elem:
+                metadata['notes'] = notes_elem.get_text(separator='\n', strip=True)
+
+        except Exception as e:
+            logger.warning(f"Error extracting AmPsych metadata: {e}")
+
+        # Fallbacks if still missing
+        if not metadata.get('label'):
+             metadata['label'] = f"Table {metadata['number']}"
+
+        return metadata
+
+
+    def extract_doi(self, soup):
+        try:
+            # AmPsych uses meta name="dc.Identifier" scheme="doi"
+            doi_meta = soup.find('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+            
+            # Fallback
+            doi_meta = soup.find('meta', {'name': 'citation_doi'})
+            if doi_meta and doi_meta.get('content'):
+                return doi_meta['content'].strip()
+
+        except Exception as e:
+            logger.warning(f"Error extracting AmPsych DOI: {e}")
+        return None
+
+    def extract_pmid(self, soup):
+        try:
+            # AmPsych has a specific div for this
+            pmid_elem = soup.select_one('div.core-pmid a.content')
+            if pmid_elem:
+                pmid = pmid_elem.get_text(strip=True)
+                if pmid.isdigit():
+                    logger.debug(f"PMID found via div.core-pmid: {pmid}")
+                    return pmid
+        except Exception as e:
+            logger.warning(f"Error extracting AmPsych PMID from div.core-pmid: {e}")
+
+        # Fallback to DOI lookup
+        doi = self.extract_doi(soup)
+        if doi:
+            logger.debug("AmPsych PMID not found directly, trying DOI lookup.")
+            return scrape.get_pmid_from_doi(doi)
+        
+        logger.warning("AmPsychSource could not extract PMID.")
+        return None
