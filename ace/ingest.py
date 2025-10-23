@@ -54,6 +54,8 @@ def _parse_article(args):
                 return f, None
 
         article = source.parse_article(html, pmid, metadata_dir=metadata_dir, **kwargs)
+        if not article:
+            return f, None
         return f, article
     except Exception as e:
         logger.info("Error parsing article %s: %s", f, str(e))
@@ -63,13 +65,41 @@ def _parse_article(args):
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
     pmid_filenames=False, metadata_dir=None, force_ingest=True, num_workers=None, 
     use_readability=None, **kwargs):
-    ''' Process articles and add their data to the DB. '''
+    ''' Process articles and add their data to the DB.
+    
+     Args:
+        files: The path to the article(s) to process. Can be a single
+            filename (string), a list of filenames, or a path to pass
+            to glob (e.g., "article_ls  dir/NIMG*html")
+        commit: Whether or not to save records to DB file after adding them.
+        table_dir: Directory to store downloaded tables in (if None, tables
+            will not be saved.)
+        limit: Optional integer indicating max number of articles to add
+            (selected randomly from all available). When None, will add all
+            available articles.
+        pmid_filenames: When True, assume that the file basename is a PMID.
+            This saves us from having to retrieve metadata from PubMed When
+            checking if a file is already in the DB, and greatly speeds up
+            batch processing when overwrite is off.
+        metadata_dir: Location to read/write PubMed metadata for articles.
+            When None (default), retrieves new metadata each time. If a
+            path is provided, will check there first before querying PubMed,
+            and will save the result of the query if it doesn't already
+            exist.
+        force_ingest: Ingest even if no source is identified.
+        num_workers: Number of worker processes to use when processing in parallel.
+            If None (default), uses the number of CPUs available on the system.
+        use_readability: When True, use readability.py for HTML cleaning if available.
+            When False, use fallback HTML processing by default. If None (default),
+            uses the value from config.USE_READABILITY.
+        kwargs: Additional keyword arguments to pass to parse_article.
+    '''
     manager = sources.SourceManager(
-        table_dir, 
+        table_dir,
         use_readability=use_readability if use_readability is not None 
             else get_config('USE_READABILITY')
     )
-    
+
     # Prepare source configurations for parallel processing
     source_configs = {name: source.identifiers for name, source in manager.sources.items()}
 

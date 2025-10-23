@@ -203,14 +203,14 @@ class Source(metaclass=abc.ABCMeta):
 
         # did our best to find PMID, but failed
         if not pmid:
-            return False
+            return None
 
         metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
         # Remove all scripts and styles
         for script in soup(["script", "style"]):
             script.extract()
-        
+
         # Get text using readability
         text = self._clean_html_with_readability(str(soup))
 
