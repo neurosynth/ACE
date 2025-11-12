@@ -1,10 +1,16 @@
 {
-  "name": "Springer",
+  "name": "Springer", 
   "identifiers": [
     "<meta content=\"Springer\" name=\"dc.publisher\"/>",
-    "meta property=\"og:site_name\" content=\"SpringerLink\""
+    "<meta property=\"og:site_name\" content=\"SpringerLink\"",
+    "<meta property=\"og:site_name\" content=\"Nature\"/>",
+    "<meta content=\"Nature Publishing Group\" name=\"dc.publisher\">",
+    "<meta name=\"citation_publisher\" content=\"Nature Publishing Group\">",
+    "<meta name=\"dc.publisher\" content=\"Nature Publishing Group\">",
+    "<meta content=\"BioMed Central\" name=\"dc.publisher\"/>",
+    "<meta property=\"og:site_name\" content=\"BioMed Central\">"
+    
   ],
   "entities": {
-
   }
 }

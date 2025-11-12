@@ -1,7 +1,8 @@
 {
   "name": "JournalOfCognitiveNeuroscience",
   "identifiers": [
-    "property=\"og:site_name\" content=\"MIT Press\""
+    "property=\"og:site_name\" content=\"MIT Press\"",
+    "<title>MIT Press Journals - Journal of Cognitive Neuroscience - Full Text</title>"
   ],
   "entities": {
   	"\u2002": " "

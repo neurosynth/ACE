@@ -4,7 +4,7 @@
 # import database
 import regex  # Note: we're using features in the new regex module, not re!
 import logging
-from . import config
+from .config import get_config
 from .database import Activation, Table
 from collections import Counter, defaultdict
 
@@ -29,21 +29,35 @@ def identify_standard_columns(labels):
             s = 'hemisphere'
         elif regex.search('(^k$)|(mm.*?3)|volume|voxels|size|extent', lab):
             s = 'size'
-        elif regex.match('\s*[xy]\s*$', lab):
+        
+        # --- START OF FIX ---
+        # OLD: elif regex.match('\s*[xy]\s*$', lab):
+        # NEW: Use regex.search with a word boundary (\b) to find labels
+        # that *start* with x or y, but ignore anything after (e.g., "[mm]").
+        elif regex.search(r'^\s*[xy]\b', lab):
             found_coords = True
-            s = lab
-        elif regex.match('\s*z\s*$', lab):
+            # Explicitly set s to 'x' or 'y'
+            if regex.search(r'^\s*y\b', lab):
+                s = 'y'
+            else:
+                s = 'x'
+        
+        # OLD: elif regex.match('\s*z\s*$', lab):
+        # NEW: Same logic for 'z'
+        elif regex.search(r'^\s*z\b', lab):
             # For z, we need to distinguish z plane from z-score.
             # Use simple heuristics:
             # * If no 'x' column exists, this must be a z-score
-            # * If the preceding label was anything but 'y', must be a z-score
+            # * If the preceding standardized label was anything but 'y', must be a z-score
             # * Otherwise it's a z coordinate
-            # Note: this could theoretically break if someone has non-contiguous
-            # x-y-z columns, but this seems unlikely. If it does happen,
-            # an alternative approach would be to check if the case of the 'z' column
-            # matches the case of the 'x' column and make determination that
-            # way.
-            s = 'statistic' if not found_coords or labels[i - 1] != 'y' else 'z'
+            
+            # OLD BUGGY LOGIC: labels[i - 1] != 'y'
+            # This checked the *original* label (e.g., "y [mm]"), which would fail.
+            # NEW ROBUST LOGIC: standardized[i - 1] != 'y'
+            # This checks the *already standardized* label from the previous loop.
+            s = 'statistic' if not found_coords or (i > 0 and standardized[i - 1] != 'y') else 'z'
+        # --- END OF FIX ---
+            
         elif regex.search('rdinate', lab):
             continue
         elif lab == 't' or regex.search('^(max.*(z|t).*|.*(z|t).*(score|value|max))$', lab):
@@ -196,10 +210,11 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
         # Also need to remove space between minus sign and numbers; some ScienceDirect
         # journals leave a gap.
         if not i in standard_cols:
-            cs = '([\-\.\s]*\d{1,3}\.*\d{0,2})'
-            m = regex.search('%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), str(col).strip())
+            cs = '([-]?\d{1,3}\.?\d{0,2})'
+            clean_col = regex.sub(r'(?<!\d)\.(?!\d)', '', str(col))  # Remove dots not part of numbers
+            m = regex.search('\n*%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), clean_col)
             if m:
-                x, y, z = [regex.sub('-\s+', '-', c) for c in [m.group(1), m.group(2), m.group(3)]]
+                x, y, z = [regex.sub('-\s+', '-', c.strip()) for c in [m.group(1), m.group(2), m.group(3)]]
                 logger.info("Found multi-coordinate column: %s\n...and extracted: %s, %s, %s" % (col, x, y, z))
                 activation.set_coords(x, y, z)
 
@@ -207,10 +222,13 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
     return activation
 
 
-def parse_table(data):
+def parse_table(data, html=None):
     ''' Takes a DataTable as input and returns a Table instance. '''
     
     table = Table()
+    # Only store the original HTML if the global config allows it
+    if html is not None and get_config('SAVE_ORIGINAL_HTML'):
+        table.input_html = html
     n_cols = data.n_cols
 
     # Identify column names: first occurrence of unique (i.e. colspan=1) label.
@@ -269,7 +287,7 @@ def parse_table(data):
     if None in labels:
         labels = [str(l) for l in labels]
         msg = 'Failed to identify at least one column label: [%s]. Skipping table!' % ', '.join(labels)
-        if config.EXCLUDE_TABLES_WITH_MISSING_LABELS:
+        if get_config('EXCLUDE_TABLES_WITH_MISSING_LABELS'):
             logger.error(msg)
             return None
         else:

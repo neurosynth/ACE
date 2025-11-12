@@ -28,7 +28,7 @@ def db():
 
 @pytest.fixture(scope="module")
 def source_manager(db):
-    return sources.SourceManager(db)
+    return sources.SourceManager()
 
 
 @pytest.mark.vcr(record_mode="once")
@@ -36,6 +36,7 @@ def test_pmc_source(test_data_path, source_manager):
     filename = join(test_data_path, 'pmc.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    source.__class__.__name__ == 'PmcSource'
     article = source.parse_article(html)
     tables = article.tables
     assert len(tables) == 1
@@ -50,6 +51,7 @@ def test_frontiers_source(test_data_path, source_manager):
     filename = join(test_data_path, 'frontiers.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    source.__class__.__name__ == 'FrontiersSource'
     article = source.parse_article(html)
     tables = article.tables
     assert len(tables) == 3
@@ -64,6 +66,7 @@ def test_science_direct_source(test_data_path, source_manager):
     filename = join(test_data_path, 'cognition.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'ScienceDirectSource'
     article = source.parse_article(html)
     tables = article.tables
     assert len(tables) == 1
@@ -78,6 +81,7 @@ def test_plos_source(test_data_path, source_manager):
     filename = join(test_data_path, 'plosone.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'PlosSource'
     article = source.parse_article(html)
     tables = article.tables
     assert len(tables) == 1
@@ -91,6 +95,7 @@ def test_springer_source(test_data_path, source_manager):
     filename = join(test_data_path, 'springer.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'SpringerSource'
     article = source.parse_article(html)
     tables = article.tables
     assert len(tables) == 1
@@ -103,7 +108,7 @@ def test_springer_source(test_data_path, source_manager):
 @pytest.mark.vcr(record_mode="once")
 def test_database_processing_stream(db, test_data_path):
     ingest.add_articles(db, test_data_path + '*.html')
-    assert len(db.articles) == 6  # cannot find pmid for some articles
+    assert len(db.articles) == 12  # cannot find pmid for some articles
     export.export_database(db, 'exported_db')
     assert exists('exported_db')
     shutil.rmtree('exported_db')
@@ -140,6 +145,7 @@ def test_cerebral_cortex_source(test_weird_data_path, source_manager):
     filename = join(test_weird_data_path, pmid + '.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'OUPSource'
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 5
@@ -153,6 +159,7 @@ def test_neuropsychologia_source(test_weird_data_path, source_manager):
     filename = join(test_weird_data_path, pmid + '.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'ScienceDirectSource'
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 1
@@ -166,6 +173,7 @@ def test_brain_research_source(test_weird_data_path, source_manager):
     filename = join(test_weird_data_path, pmid + '.html')
     html = open(filename).read()
     source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'ScienceDirectSource'
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 2
@@ -211,3 +219,158 @@ def test_multi_column_float_conversion(test_weird_data_path, source_manager):
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
     assert len(tables) == 2  # should be 0, but not removing innacurate tables yet.
+
+
+def test_frontier_table_identification(test_weird_data_path, source_manager):
+    pmid = '26696806'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 0
+
+
+def test_schizophrenia_research_source(test_weird_data_path, source_manager):
+    pmid = '18439804'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 0
+
+
+def test_find_tables_in_old_sciencedirect(test_weird_data_path, source_manager):
+    pmid = '22695256'
+    filename = join(test_weird_data_path, pmid + '.html')
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 3
+    extracted_coordinates = set([(a.x, a.y, a.z) for a in tables[-1].activations])
+    table_5_coordinates = set([(-18, -80, 20), (20, 16, 30)])
+    assert extracted_coordinates == table_5_coordinates
+
+
+def test_old_springer_source(test_weird_data_path, source_manager):
+    pmid = '23813017'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 0
+
+
+def test_old_table_parser(test_weird_data_path, source_manager):
+    pmid = '15716157'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 3
+
+
+def test_empty_columns(test_weird_data_path, source_manager):
+    pmid = '28432782'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 2
+
+@pytest.mark.vcr(record_mode="once")
+def test_stroke_table(test_weird_data_path, source_manager):
+    pmid = '38990127'
+    filename = join(test_weird_data_path, pmid + '.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    article = source.parse_article(html, pmid=pmid)
+    tables = article.tables
+    assert len(tables) == 2
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_taylor_and_francis_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'tandfonline.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    assert source is not None
+    assert source.__class__.__name__ == 'TaylorAndFrancisSource'
+    article = source.parse_article(html, pmid='12345678')
+    tables = article.tables
+    assert len(tables) == 2
+    # Check first table
+    t1 = tables[0]
+    assert t1.number == '1'
+    assert t1.label == 'Table 1'
+    assert 'Talairach coordinates' in t1.caption
+    assert t1.n_activations >= 2
+    # Check second table
+    t2 = tables[1]
+    assert t2.number == '2'
+    assert t2.label == 'Table 2'
+    assert 'Talairach coordinates' in t2.caption
+    assert t2.n_activations >= 2
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_ampsych_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'ampsych.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'AmPsychSource'
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '2'
+    assert "Brain Regions Demonstrating Differential BOLD" in t.caption
+    assert t.n_activations > 20
+
+@pytest.mark.vcr(record_mode="once")
+def test_mdpi_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'mdpi.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'MDPISource'
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 2
+    t = tables[0]
+    assert t.number == '1'
+    assert "Brain activation regions when gripping each stress ball" in t.caption
+    assert t.n_activations > 20
+
+@pytest.mark.vcr(record_mode="once")
+def test_sage_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'sage.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'SageSource'
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 2
+    t = tables[0]
+    assert t.number == '2'
+    assert "Brain regions showing hypometabolism correlated with ADL at the whole-brain level in patients with PCA" == t.caption
+    assert t.n_activations == 6
+
+@pytest.mark.vcr(record_mode="once")
+def test_springer_nature_source(test_data_path, source_manager):
+    filename = join(test_data_path, 'springer-nature.html')
+    html = open(filename).read()
+    source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'SpringerSource'
+    article = source.parse_article(html)
+    tables = article.tables
+    assert len(tables) == 1
+    t = tables[0]
+    assert t.number == '2'
+    assert "fMRI results across all participants" in t.caption
+    assert t.n_activations  == 9
