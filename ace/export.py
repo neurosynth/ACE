@@ -28,7 +28,7 @@ def export_database(db, foldername, skip_empty=True, table_html=False):
 
     # New table.csv columns
     table_columns = [
-        'pmcid', 'table_id', 'table_label', 'table_caption',
+        'pmid', 'table_id', 'table_label', 'table_caption',
         'table_foot', 'n_header_rows', 'table_raw_file'
     ]
     tables_data = []

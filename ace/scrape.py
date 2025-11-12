@@ -16,6 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from tqdm import tqdm
+from seleniumbase import SB
 
 from ace.utils import PubMedAPI
 from ace.config import USER_AGENTS
@@ -256,12 +257,13 @@ class Scraper:
         return doc
 
 
-    def get_html(self, url, journal, mode='browser'):
+    def get_html(self, url, journal, mode='browser', headless=True):
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
 
         if mode == 'browser':
+<<<<<<< Updated upstream
             driver = Driver(
                 uc=True,
                 headless2=True,
@@ -352,6 +354,26 @@ class Scraper:
                             By.CLASS_NAME, 'table-expand-inline')))    
                         driver.execute_script("arguments[0].scrollIntoView();", link)
                         link.click()
+=======
+            with SB(
+                    uc=True, headless2=headless,
+                    agent=random.choice(USER_AGENTS),
+                    incognito=True, disable_csp=True, block_images=True,
+                    ) as sb:
+                sb.activate_cdp_mode(url)
+                html = sb.get_page_source()
+                url = sb.get_current_url()
+                
+                new_url = self.check_for_substitute_url(url, html, journal)
+                
+                if url != new_url:
+                    sb.activate_cdp_mode(new_url)
+                    url = sb.get_current_url()
+                    
+                    if journal.lower() in ['human brain mapping',
+                                          'european journal of neuroscience',
+                                          'brain and behavior', 'epilepsia']:
+>>>>>>> Stashed changes
                         sleep(0.5 + random.random() * 1)
 
             # If title has ScienceDirect in in title
@@ -394,7 +416,7 @@ class Scraper:
             return r.text
 
 
-    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True):
+    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True, headless=True):
         base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
@@ -419,7 +441,7 @@ class Scraper:
         else:
             query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
             logger.info(query)
-            return self.get_html(query, journal, mode=mode)
+            return self.get_html(query, journal, mode=mode, headless=headless)
 
         if prefer_pmc_source == "only":
             logger.info("\tNo PMC source found!! Skipping...")
@@ -427,7 +449,7 @@ class Scraper:
 
         # Fallback if no PMC link found
         query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
-        return self.get_html(query, journal, mode=mode)
+        return self.get_html(query, journal, mode=mode, headless=headless)
 
 
     def check_for_substitute_url(self, url, html, journal):
@@ -465,7 +487,7 @@ class Scraper:
     
         return 'idIsNotOpenAccess' not in response
 
-    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, prefer_pmc_source=True):
+    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, prefer_pmc_source=True, headless=True):
 
         logger.info("Processing %s..." % id)
         journal_path = (self.store / 'html' / journal)
@@ -478,7 +500,7 @@ class Scraper:
             return None, None
 
         # Save the HTML 
-        doc = self.get_html_by_pmid(id, journal, mode=mode, prefer_pmc_source=prefer_pmc_source)
+        doc = self.get_html_by_pmid(id, journal, mode=mode, prefer_pmc_source=prefer_pmc_source, headless=headless)
         valid = None
         if doc:
             valid = _validate_scrape(doc)
@@ -497,7 +519,8 @@ class Scraper:
 
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
-                                index_pmids=False, skip_pubmed_central=True, metadata_store=None, invalid_article_log_file=None, prefer_pmc_source=True):
+                                index_pmids=False, skip_pubmed_central=True, metadata_store=None, invalid_article_log_file=None,
+                                prefer_pmc_source=True, headless=True):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -535,6 +558,7 @@ class Scraper:
                 (regardless of mode). This is useful for journals that have full-text articles available on PMC,
                 but are not open-access. If set to "only", will only retrieve articles from PMC, and
                 skip articles it cannot retrieve from PMC.
+            headless: When True, runs the browser in headless mode (only relevant if mode=='browser', and not PMC)
         '''
         articles_found = 0
         if journal is None and dois is None and pmids is None:
@@ -612,7 +636,7 @@ class Scraper:
                     f.write(f"{pmcid}\n")
                 continue
 
-            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite, prefer_pmc_source)
+            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite, prefer_pmc_source, headless)
 
             if not valid:
                 invalid_articles.append(filename)
