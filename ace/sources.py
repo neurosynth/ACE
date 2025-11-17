@@ -191,7 +191,7 @@ class Source(metaclass=abc.ABCMeta):
             else:
                 self.entities.update(Source.ENTITIES)
 
-    def parse_article(self, html, pmid=None, metadata_dir=None):
+    def parse_article(self, html, pmid=None, metadata_dir=None, skip_metadata=False):
         ''' Takes HTML article as input and returns an Article. PMID Can also be
         passed, which prevents having to scrape it from the article and/or look it
         up in PubMed. '''
@@ -205,7 +205,9 @@ class Source(metaclass=abc.ABCMeta):
         if not pmid:
             return None
 
-        metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
+        metadata = None
+        if not skip_metadata:
+            metadata = scrape.get_pubmed_metadata(pmid, store=metadata_dir, save=True)
 
         # Remove all scripts and styles
         for script in soup(["script", "style"]):

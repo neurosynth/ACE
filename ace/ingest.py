@@ -64,7 +64,7 @@ def _parse_article(args):
 
 def add_articles(db, files, commit=True, table_dir=None, limit=None,
     pmid_filenames=False, metadata_dir=None, force_ingest=True, num_workers=None, 
-    use_readability=None, **kwargs):
+    use_readability=None, skip_metadata=False, **kwargs):
     ''' Process articles and add their data to the DB.
     
      Args:
@@ -89,11 +89,17 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
         force_ingest: Ingest even if no source is identified.
         num_workers: Number of worker processes to use when processing in parallel.
             If None (default), uses the number of CPUs available on the system.
+        skip_metadata: When True, skip fetching PubMed metadata during parsing.
         use_readability: When True, use readability.py for HTML cleaning if available.
             When False, use fallback HTML processing by default. If None (default),
             uses the value from config.USE_READABILITY.
         kwargs: Additional keyword arguments to pass to parse_article.
     '''
+    # Prepare parse kwargs, allowing explicit overrides while honoring the function arg
+    kwargs = dict(kwargs)
+    if 'skip_metadata' not in kwargs:
+        kwargs['skip_metadata'] = skip_metadata
+
     manager = sources.SourceManager(
         table_dir,
         use_readability=use_readability if use_readability is not None 
