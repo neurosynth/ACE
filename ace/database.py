@@ -259,7 +259,6 @@ class Activation(Base):
     # * Any |coordinate| > 100
     # * Two or more columns are zeroes 
     def validate(self):
-<<<<<<< HEAD
         self.is_valid = True
         
         for c in [self.x, self.y, self.z]:
@@ -267,25 +266,12 @@ class Activation(Base):
                 logger.debug('Missing x, y, or z coordinate information: [%s, %s, %s]' % tuple(
                     [str(e) for e in [self.x, self.y, self.z]]))
                 self.is_valid = False
-=======
-        for c in [self.x, self.y, self.z]:
-            if c == '' or c is None:
-                logger.debug(
-                    'Missing x, y, or z coordinate: [%s, %s, %s]',
-                    self.x, self.y, self.z
-                )
->>>>>>> 58ae05ba68fa458ed5669a6a33508d9ad3a0e8c9
                 return False
             try:
                 if abs(c) >= 100:
                     logger.debug(
-<<<<<<< HEAD
                         'Invalid coordinates: at least one dimension (x,y,z) >= 100.')
                     self.is_valid = False
-=======
-                        'Invalid coordinates: dimension >= 100.'
-                    )
->>>>>>> 58ae05ba68fa458ed5669a6a33508d9ad3a0e8c9
                     return False
             except Exception:
                 logger.exception("Error validating coordinate")
@@ -294,13 +280,8 @@ class Activation(Base):
         sorted_xyz = sorted([abs(self.x), abs(self.y), abs(self.z)])
         if sorted_xyz[0] == 0 and sorted_xyz[1] == 0:
             logger.debug(
-<<<<<<< HEAD
                 "At least two dimensions have value == 0; coordinate is probably not real.")
             self.is_valid = False
-=======
-                "Two dimensions have value 0; probably not real."
-            )
->>>>>>> 58ae05ba68fa458ed5669a6a33508d9ad3a0e8c9
             return False
 
         return True

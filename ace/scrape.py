@@ -263,10 +263,9 @@ class Scraper:
         or just gets the URL directly. '''
 
         if mode == 'browser':
-<<<<<<< Updated upstream
             driver = Driver(
                 uc=True,
-                headless2=True,
+                headless2=headless,
                 agent=random.choice(USER_AGENTS),
             )
             for attempt in range(15):
@@ -292,7 +291,7 @@ class Scraper:
                     driver.quit()
                     driver = Driver(
                         uc=True,
-                        headless2=True,
+                        headless2=headless,
                         agent=random.choice(USER_AGENTS),
                     )
                     driver.get(url)
@@ -305,7 +304,7 @@ class Scraper:
             if url != new_url:
                 driver = Driver(
                     uc=True,
-                    headless2=True,
+                    headless2=headless,
                     agent=random.choice(USER_AGENTS),
                 )
                 driver.get(new_url)
@@ -336,7 +335,7 @@ class Scraper:
                     driver.quit()
                     driver = Driver(
                         uc=True,
-                        headless2=True,
+                        headless2=headless,
                         agent=random.choice(USER_AGENTS),
                     )
                     driver.get(url)
@@ -354,26 +353,6 @@ class Scraper:
                             By.CLASS_NAME, 'table-expand-inline')))    
                         driver.execute_script("arguments[0].scrollIntoView();", link)
                         link.click()
-=======
-            with SB(
-                    uc=True, headless2=headless,
-                    agent=random.choice(USER_AGENTS),
-                    incognito=True, disable_csp=True, block_images=True,
-                    ) as sb:
-                sb.activate_cdp_mode(url)
-                html = sb.get_page_source()
-                url = sb.get_current_url()
-                
-                new_url = self.check_for_substitute_url(url, html, journal)
-                
-                if url != new_url:
-                    sb.activate_cdp_mode(new_url)
-                    url = sb.get_current_url()
-                    
-                    if journal.lower() in ['human brain mapping',
-                                          'european journal of neuroscience',
-                                          'brain and behavior', 'epilepsia']:
->>>>>>> Stashed changes
                         sleep(0.5 + random.random() * 1)
 
             # If title has ScienceDirect in in title
