@@ -987,7 +987,7 @@ class MDPISource(Source):
 
         self.article.tables = tables
         if not tables:
-             logger.warning("MDPISource: No valid tables found in the article.")
+             logger.info("MDPISource: No valid tables found in the article.")
         else:
             logger.info(f"MDPISource: Successfully extracted {len(tables)} tables.")
 
@@ -1488,7 +1488,7 @@ class SageSource(Source):
 
         self.article.tables = tables
         if not tables:
-             logger.warning("SageSource: No valid tables found in the article.")
+             logger.info("SageSource: No valid tables found in the article.")
         else:
             logger.info(f"SageSource: Successfully extracted {len(tables)} tables.")
 
@@ -2122,7 +2122,7 @@ class AmPsychSource(Source):
 
         self.article.tables = tables
         if not tables:
-             logger.warning("AmPsychSource: No valid tables found in the article.")
+             logger.info("AmPsychSource: No valid tables found in the article.")
         else:
             logger.info(f"AmPsychSource: Successfully extracted {len(tables)} tables.")
 
