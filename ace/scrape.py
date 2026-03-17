@@ -470,7 +470,6 @@ class Scraper:
 
         logger.info("Processing %s..." % id)
         journal_path = (self.store / 'html' / journal)
-        journal_path.mkdir(parents=True, exist_ok=True)
         filename = journal_path / f"{id}.html"
 
         if not overwrite and os.path.isfile(filename): 
@@ -484,6 +483,7 @@ class Scraper:
         if doc:
             valid = _validate_scrape(doc)
             if valid:
+                journal_path.mkdir(parents=True, exist_ok=True)
                 with filename.open('w') as f:
                     f.write(doc)
             if not valid:
