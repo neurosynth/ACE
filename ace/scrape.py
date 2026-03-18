@@ -394,6 +394,46 @@ class Scraper:
                 r.encoding = 'utf-8'
             return r.text
 
+    def _get_pmcid_from_pmid(self, pmid):
+        """Resolve PMCID from PMID using NCBI E-utilities."""
+        try:
+            response = self._client.elink(
+                pmid,
+                retmode='json',
+                access_db='pmc',
+                return_content=False,
+            )
+            response.raise_for_status()
+            json_content = response.json()
+
+            linksets = json_content.get('linksets', [])
+            if not linksets:
+                return None
+
+            linksetdbs = linksets[0].get('linksetdbs', [])
+            if not linksetdbs:
+                return None
+
+            pmc_links = linksetdbs[0].get('links', [])
+            if not pmc_links:
+                return None
+
+            pmc_id = str(pmc_links[0]).strip()
+            if not pmc_id:
+                return None
+
+            if not pmc_id.upper().startswith('PMC'):
+                pmc_id = f"PMC{pmc_id}"
+
+            return pmc_id
+        except requests.RequestException as e:
+            logger.error(f"Failed to resolve PMCID for PMID {pmid}: {e}")
+        except (ValueError, KeyError, IndexError, TypeError) as e:
+            logger.error(f"Unexpected PMCID response for PMID {pmid}: {e}")
+        except Exception as e:
+            logger.error(f"PMCID lookup failed for PMID {pmid}: {e}")
+        return None
+
 
     def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True, headless=True):
         base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
@@ -405,18 +445,37 @@ class Scraper:
                 response.raise_for_status()  # Raise an HTTPError for bad responses
                 json_content = response.json()
 
-                providers = {obj['provider']['nameabbr']: obj["url"]["value"] for obj in json_content['linksets'][0]['idurllist'][0]['objurls']}
+                objurls = []
+                linksets = json_content.get('linksets', [])
+                if linksets:
+                    idurllist = linksets[0].get('idurllist', [])
+                    if idurllist:
+                        objurls = idurllist[0].get('objurls', [])
+
+                providers = {
+                    obj.get('provider', {}).get('nameabbr'): obj.get('url', {}).get('value')
+                    for obj in objurls
+                    if obj.get('provider', {}).get('nameabbr')
+                }
                 pmc_url = providers.get('PMC')
 
                 if pmc_url:
-                    return self.get_html(pmc_url, journal, mode='requests')
+                    pmc_id = self._get_pmcid_from_pmid(pmid)
+                    if pmc_id:
+                        pmc_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmc_id}"
+                        return self.get_html(pmc_url, journal, mode='requests')
+                    if prefer_pmc_source == "only":
+                        logger.info("\tPMC source detected, but PMCID lookup failed. Skipping...")
+                        return
                 elif prefer_pmc_source == "only":
                     logger.info("\tNo PMC source found! Skipping...")
                     return
             except requests.RequestException as e:
                 logger.error(f"Request failed: {e}")
-            except KeyError as e:
-                logger.error(f"Key error: {e} - JSON content: {json_content}")
+            except (ValueError, KeyError, IndexError, TypeError) as e:
+                logger.error(f"Unexpected E-utilities response for PMID {pmid}: {e}")
+            except Exception as e:
+                logger.error(f"E-utilities lookup failed for PMID {pmid}: {e}")
         else:
             query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
             logger.info(query)
@@ -487,6 +546,7 @@ class Scraper:
                 with filename.open('w') as f:
                     f.write(doc)
             if not valid:
+                from pdb import set_trace; set_trace()
                 logger.info("\tScrape failed! Skipping...")
 
             # Insert random delay until next request.
