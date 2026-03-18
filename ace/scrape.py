@@ -665,7 +665,7 @@ class Scraper:
         else:
             all_iter = [(pmcid, pmid, journal) for pmcid, pmid in all_ids]
 
-        for pmcid, pmid, journal in all_iter:
+        for pmcid, pmid, journal in tqdm(all_iter, desc="Retrieving articles", total=len(all_iter)):
 
             if limit is not None and articles_found >= limit: break
 
