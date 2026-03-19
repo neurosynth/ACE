@@ -463,7 +463,7 @@ class Scraper:
                     pmc_id = self._get_pmcid_from_pmid(pmid)
                     if pmc_id:
                         pmc_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmc_id}"
-                        return self.get_html(pmc_url, journal, mode='requests')
+                        return self.get_html(pmc_url, journal, mode=mode, headless=headless)
                     if prefer_pmc_source == "only":
                         logger.info("\tPMC source detected, but PMCID lookup failed. Skipping...")
                         return
