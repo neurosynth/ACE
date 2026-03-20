@@ -241,6 +241,38 @@ class Scraper:
         self.store = Path(store)
         self._client = PubMedAPI(api_key=api_key)
 
+    @staticmethod
+    def _normalize_skip_url_substrings(skip_url_substrings):
+        if skip_url_substrings is None:
+            return tuple()
+        if isinstance(skip_url_substrings, str):
+            values = [skip_url_substrings]
+        else:
+            values = skip_url_substrings
+        normalized = []
+        for value in values:
+            if value is None:
+                continue
+            text = str(value).strip().lower()
+            if text:
+                normalized.append(text)
+        return tuple(normalized)
+
+    def _should_skip_url(self, url, skip_url_substrings):
+        if not url:
+            return False
+        normalized = self._normalize_skip_url_substrings(skip_url_substrings)
+        if not normalized:
+            return False
+        url_lower = str(url).lower()
+        for substring in normalized:
+            if substring in url_lower:
+                self._skip_article_requested = True
+                self._skip_article_due_to_url = True
+                logger.info("Skipping URL because it contains %r: %s", substring, url)
+                return True
+        return False
+
 
     def search_pubmed(self, journal, search, retmax=10000, savelist=None,):
         journal = journal.replace(' ', '+')
@@ -257,10 +289,13 @@ class Scraper:
         return doc
 
 
-    def get_html(self, url, journal, mode='browser', headless=True):
+    def get_html(self, url, journal, mode='browser', headless=True, skip_url_substrings=None):
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
+
+        if self._should_skip_url(url, skip_url_substrings):
+            return None
 
         if mode == 'browser':
             driver = Driver(
@@ -273,6 +308,9 @@ class Scraper:
                     driver.set_page_load_timeout(10)
                     driver.get(url)
                     url = driver.current_url
+                    if self._should_skip_url(url, skip_url_substrings):
+                        driver.quit()
+                        return None
                 except:
                     driver.quit()
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
@@ -300,6 +338,9 @@ class Scraper:
                     break
     
             new_url = self.check_for_substitute_url(url, html, journal)
+            if self._should_skip_url(new_url, skip_url_substrings):
+                driver.quit()
+                return None
 
             if url != new_url:
                 driver = Driver(
@@ -383,11 +424,17 @@ class Scraper:
         elif mode == 'requests':
             headers = {'User-Agent': random.choice(USER_AGENTS)}
             r = requests.get(url, headers=headers)
+            if self._should_skip_url(r.url, skip_url_substrings):
+                return None
             # For some journals, we can do better than the returned HTML, so get the final URL and 
             # substitute a better one.
             url = self.check_for_substitute_url(r.url, r.text, journal)
             if url != r.url:
+                if self._should_skip_url(url, skip_url_substrings):
+                    return None
                 r = requests.get(url, headers=headers)
+                if self._should_skip_url(r.url, skip_url_substrings):
+                    return None
                 # XML content is usually misidentified as ISO-8859-1, so we need to manually set utf-8.
                 # Unfortunately this can break other documents. Need to eventually change this to inspect the 
                 # encoding attribute of the document header.
@@ -434,8 +481,25 @@ class Scraper:
             logger.error(f"PMCID lookup failed for PMID {pmid}: {e}")
         return None
 
+    @staticmethod
+    def _provider_urls_from_elink_json(json_content):
+        provider_urls = []
+        linksets = json_content.get('linksets', [])
+        if not linksets:
+            return provider_urls
+        idurllist = linksets[0].get('idurllist', [])
+        if not idurllist:
+            return provider_urls
+        objurls = idurllist[0].get('objurls', [])
+        for obj in objurls:
+            provider_url = obj.get('url', {}).get('value')
+            if provider_url:
+                provider_urls.append(provider_url)
+        return provider_urls
 
-    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True, headless=True):
+
+    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True, headless=True,
+                         skip_url_substrings=None):
         base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
@@ -451,6 +515,7 @@ class Scraper:
                     idurllist = linksets[0].get('idurllist', [])
                     if idurllist:
                         objurls = idurllist[0].get('objurls', [])
+                provider_urls = self._provider_urls_from_elink_json(json_content)
 
                 providers = {
                     obj.get('provider', {}).get('nameabbr'): obj.get('url', {}).get('value')
@@ -463,13 +528,28 @@ class Scraper:
                     pmc_id = self._get_pmcid_from_pmid(pmid)
                     if pmc_id:
                         pmc_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmc_id}"
-                        return self.get_html(pmc_url, journal, mode=mode, headless=headless)
+                        return self.get_html(
+                            pmc_url,
+                            journal,
+                            mode=mode,
+                            headless=headless,
+                            skip_url_substrings=skip_url_substrings,
+                        )
                     if prefer_pmc_source == "only":
                         logger.info("\tPMC source detected, but PMCID lookup failed. Skipping...")
                         return
                 elif prefer_pmc_source == "only":
                     logger.info("\tNo PMC source found! Skipping...")
                     return
+                else:
+                    for provider_url in provider_urls:
+                        if self._should_skip_url(provider_url, skip_url_substrings):
+                            logger.info(
+                                "\tSkipping PMID %s due to blocked provider URL: %s",
+                                pmid,
+                                provider_url,
+                            )
+                            return
             except requests.RequestException as e:
                 logger.error(f"Request failed: {e}")
             except (ValueError, KeyError, IndexError, TypeError) as e:
@@ -477,9 +557,33 @@ class Scraper:
             except Exception as e:
                 logger.error(f"E-utilities lookup failed for PMID {pmid}: {e}")
         else:
+            if skip_url_substrings:
+                try:
+                    response = self._client.elink(pmid, retmode='json', return_content=False)
+                    response.raise_for_status()
+                    for provider_url in self._provider_urls_from_elink_json(response.json()):
+                        if self._should_skip_url(provider_url, skip_url_substrings):
+                            logger.info(
+                                "\tSkipping PMID %s due to blocked provider URL: %s",
+                                pmid,
+                                provider_url,
+                            )
+                            return
+                except requests.RequestException as e:
+                    logger.error(f"Provider URL pre-check failed for PMID {pmid}: {e}")
+                except (ValueError, KeyError, IndexError, TypeError) as e:
+                    logger.error(f"Unexpected provider pre-check response for PMID {pmid}: {e}")
+                except Exception as e:
+                    logger.error(f"Provider URL pre-check lookup failed for PMID {pmid}: {e}")
             query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
             logger.info(query)
-            return self.get_html(query, journal, mode=mode, headless=headless)
+            return self.get_html(
+                query,
+                journal,
+                mode=mode,
+                headless=headless,
+                skip_url_substrings=skip_url_substrings,
+            )
 
         if prefer_pmc_source == "only":
             logger.info("\tNo PMC source found!! Skipping...")
@@ -487,7 +591,13 @@ class Scraper:
 
         # Fallback if no PMC link found
         query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
-        return self.get_html(query, journal, mode=mode, headless=headless)
+        return self.get_html(
+            query,
+            journal,
+            mode=mode,
+            headless=headless,
+            skip_url_substrings=skip_url_substrings,
+        )
 
 
     def check_for_substitute_url(self, url, html, journal):
@@ -525,9 +635,12 @@ class Scraper:
     
         return 'idIsNotOpenAccess' not in response
 
-    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, prefer_pmc_source=True, headless=True):
+    def process_article(self, id, journal, delay=None, mode='browser', overwrite=False, prefer_pmc_source=True,
+                        headless=True, skip_url_substrings=None):
 
         logger.info("Processing %s..." % id)
+        self._skip_article_requested = False
+        self._skip_article_due_to_url = False
         journal_path = (self.store / 'html' / journal)
         filename = journal_path / f"{id}.html"
 
@@ -537,7 +650,21 @@ class Scraper:
             return None, None
 
         # Save the HTML 
-        doc = self.get_html_by_pmid(id, journal, mode=mode, prefer_pmc_source=prefer_pmc_source, headless=headless)
+        doc = self.get_html_by_pmid(
+            id,
+            journal,
+            mode=mode,
+            prefer_pmc_source=prefer_pmc_source,
+            headless=headless,
+            skip_url_substrings=skip_url_substrings,
+        )
+        if not doc and (
+            getattr(self, "_skip_article_requested", False)
+            or getattr(self, "_skip_article_due_to_url", False)
+            or getattr(self, "_skip_article_due_to_challenge", False)
+        ):
+            logger.info("\tSkipped by configured skip rules.")
+            return None, None
         valid = None
         if doc:
             valid = _validate_scrape(doc)
@@ -546,7 +673,6 @@ class Scraper:
                 with filename.open('w') as f:
                     f.write(doc)
             if not valid:
-                from pdb import set_trace; set_trace()
                 logger.info("\tScrape failed! Skipping...")
 
             # Insert random delay until next request.
@@ -559,7 +685,7 @@ class Scraper:
     def retrieve_articles(self, journal=None, pmids=None, dois=None, delay=None, mode='browser', search=None,
                                 limit=None, overwrite=False, min_pmid=None, max_pmid=None, shuffle=False,
                                 index_pmids=False, skip_pubmed_central=True, metadata_store=None, invalid_article_log_file=None,
-                                prefer_pmc_source=True, headless=True):
+                                prefer_pmc_source=True, headless=True, skip_url_substrings=None):
 
         ''' Try to retrieve all PubMed articles for a single journal that don't 
         already exist in the storage directory.
@@ -598,6 +724,8 @@ class Scraper:
                 but are not open-access. If set to "only", will only retrieve articles from PMC, and
                 skip articles it cannot retrieve from PMC.
             headless: When True, runs the browser in headless mode (only relevant if mode=='browser', and not PMC)
+            skip_url_substrings: Optional iterable of URL substrings. When any substring is present
+                in a candidate or redirected article URL, that article is skipped.
         '''
         articles_found = 0
         if journal is None and dois is None and pmids is None:
@@ -675,7 +803,18 @@ class Scraper:
                     f.write(f"{pmcid}\n")
                 continue
 
-            filename, valid = self.process_article(pmid, journal, delay, mode, overwrite, prefer_pmc_source, headless)
+            filename, valid = self.process_article(
+                pmid,
+                journal,
+                delay,
+                mode,
+                overwrite,
+                prefer_pmc_source,
+                headless,
+                skip_url_substrings=skip_url_substrings,
+            )
+            if filename is None and valid is None:
+                continue
 
             if not valid:
                 invalid_articles.append(filename)
