@@ -50,8 +50,12 @@ def _parse_article(args):
             # Fallback to original source identification
             source = manager.identify_source(html)
             if source is None:
-                logger.info("Could not identify source for %s", f)
-                return f, None
+                if force_ingest and getattr(manager, "default_source", None) is not None:
+                    logger.info("Could not identify source for %s; using DefaultSource fallback", f)
+                    source = manager.default_source
+                else:
+                    logger.info("Could not identify source for %s", f)
+                    return f, None
 
         article = source.parse_article(html, pmid, metadata_dir=metadata_dir, **kwargs)
         if not article:

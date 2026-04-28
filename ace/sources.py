@@ -18,6 +18,39 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+TABLE_LINK_TEXT_RE = re.compile(
+    r"\b("
+    r"table|"
+    r"full\s*size\s*table|"
+    r"view\s+(this\s+)?table|"
+    r"view\s+popup|"
+    r"view\s+inline|"
+    r"table\s*view|"
+    r"open\s+table"
+    r")\b",
+    re.IGNORECASE,
+)
+
+TABLE_LINK_HREF_RE = re.compile(
+    r"("
+    r"/highwire/markup/\d+/expansion\b|"
+    r"/article(s)?/.+/tables/\d+(?:$|[/?#])|"
+    r"(?:^|/)[Tt]\d+[A-Za-z0-9_-]*\.expansion\.html(?:$|[?#])|"
+    r"/tables?/\d+(?:$|[/?#])|"
+    r"table[-_/]?(view|popup|inline|expand|expansion)"
+    r")",
+    re.IGNORECASE,
+)
+
+COORD_HEADER_HINT_RE = re.compile(
+    r"\b(mni|talairach|coordinate|peak voxel coordinate|x\s*,\s*y\s*,\s*z)\b",
+    re.IGNORECASE,
+)
+
+COORD_TRIPLET_HINT_RE = re.compile(
+    r"(?<!\d)[+\-−–—]?\d{1,3}\s*[,;/|\t ]\s*[+\-−–—]?\d{1,3}\s*[,;/|\t ]\s*[+\-−–—]?\d{1,3}(?!\d)"
+)
+
 # Try to import readabilipy for enhanced HTML cleaning
 try:
     from readabilipy import simple_json_from_html_string
@@ -57,11 +90,21 @@ class SourceManager:
             else:
                 logger.warning(f"Config file found ({config_file}) but no corresponding Source class '{class_key}Source' found.")
 
+        default_cls = getattr(module, 'DefaultSource', None)
+        self.default_source = (
+            default_cls(table_dir=table_dir, use_readability=use_readability)
+            if default_cls is not None else None
+        )
+
     def identify_source(self, html):
         ''' Identify the source of the article and return the corresponding Source object. '''
         for source in list(self.sources.values()):
             for patt in source.identifiers:
-                if re.search(patt, html):
+                try:
+                    matched = re.search(patt, html)
+                except re.error:
+                    matched = patt in html
+                if matched:
                     logger.debug('Matched article to Source: %s' % source.__class__.__name__)
                     return source
 
@@ -411,11 +454,7 @@ class DefaultSource(Source):
 
         # Extract tables using multi-strategy detection system
         tables = []
-        
-        # First, check for table links that need to be downloaded
-        linked_tables = self._detect_and_download_table_links(soup, html)
-        if linked_tables:
-            tables.extend(linked_tables)
+        seen_signatures = set()
         
         # Check for JavaScript-based table expansion
         if self._detect_javascript_table_expansion(soup):
@@ -444,6 +483,9 @@ class DefaultSource(Source):
             table_html = self._extract_table_from_container(tc)
             if not table_html:
                 continue
+            signature = self._table_signature(table_html)
+            if signature and signature in seen_signatures:
+                continue
                 
             t = self.parse_table(table_html)
             if t:
@@ -459,6 +501,14 @@ class DefaultSource(Source):
                 # Validate table quality
                 if self._validate_table(t, tc):
                     tables.append(t)
+                    if signature:
+                        seen_signatures.add(signature)
+
+        # Try linked table extraction only if embedded parsing produced no usable tables.
+        if not tables:
+            linked_tables = self._detect_and_download_table_links(soup, html)
+            if linked_tables:
+                tables.extend(linked_tables)
 
         self.article.tables = tables
         if not tables:
@@ -628,6 +678,17 @@ class DefaultSource(Source):
         # Look for table within container
         table = container.find('table')
         return table
+
+    def _table_signature(self, table):
+        """Create a lightweight signature for table deduplication."""
+        try:
+            text = table.get_text(" ", strip=True)
+        except Exception:
+            return None
+        if not text:
+            return None
+        text = re.sub(r"\s+", " ", text).strip().lower()
+        return text[:5000]
 
     def _extract_table_metadata(self, container, table_html, position):
         """Extract table metadata using multiple fallback approaches"""
@@ -825,6 +886,82 @@ class DefaultSource(Source):
             logger.debug(f"Table validation failed with exception: {e}")
             return False
 
+    def _normalize_table_link(self, soup, href):
+        if not href:
+            return None
+        href = href.strip()
+        if not href or href.startswith("#"):
+            return None
+        lowered = href.lower()
+        if lowered.startswith(("javascript:", "mailto:", "tel:")):
+            return None
+        if lowered.startswith("http://") or lowered.startswith("https://"):
+            return href
+        base_url = self._get_base_url(soup)
+        return urljoin(base_url, href) if base_url else href
+
+    def _detect_text_based_table_links(self, soup, html):
+        links = []
+        seen = set()
+        for anchor in soup.find_all("a", href=True):
+            href = anchor.get("href")
+            link_text = " ".join(
+                [
+                    anchor.get_text(" ", strip=True),
+                    anchor.get("title", "") or "",
+                    anchor.get("aria-label", "") or "",
+                ]
+            ).strip()
+            if not TABLE_LINK_TEXT_RE.search(link_text):
+                continue
+            normalized = self._normalize_table_link(soup, href)
+            if not normalized:
+                continue
+            combined = f"{link_text} {href or ''}"
+            if not TABLE_LINK_HREF_RE.search(combined):
+                continue
+            if normalized not in seen:
+                seen.add(normalized)
+                links.append(normalized)
+        return links
+
+    def _detect_url_pattern_table_links(self, soup, html):
+        links = []
+        seen = set()
+        for anchor in soup.find_all("a", href=True):
+            href = (anchor.get("href") or "").strip()
+            if not href:
+                continue
+            if not TABLE_LINK_HREF_RE.search(href):
+                continue
+            normalized = self._normalize_table_link(soup, href)
+            if not normalized:
+                continue
+            if normalized not in seen:
+                seen.add(normalized)
+                links.append(normalized)
+        return links
+
+    def _detect_javascript_table_expansion(self, soup):
+        js_table_patterns = [
+            re.compile(r"\btable-expand-inline\b", re.IGNORECASE),
+            re.compile(r"\bview\s*popup\b", re.IGNORECASE),
+            re.compile(r"\bexpand(ed)?\s*table\b", re.IGNORECASE),
+            re.compile(r"\bdata-table-url\b", re.IGNORECASE),
+            re.compile(r"\bhighwire/markup/\d+/expansion\b", re.IGNORECASE),
+        ]
+
+        combined_text = soup.get_text(" ", strip=True)
+        for pattern in js_table_patterns:
+            if pattern.search(combined_text):
+                return True
+
+        for node in soup.find_all(attrs={"class": True}):
+            classes = " ".join(node.get("class", []))
+            if any(pattern.search(classes) for pattern in js_table_patterns):
+                return True
+        return False
+
     def _detect_and_download_table_links(self, soup, html):
         """
         Detect table links and download table content when tables are hidden behind links.
@@ -843,6 +980,7 @@ class DefaultSource(Source):
             list: List of Table objects extracted from linked content
         """
         tables = []
+        seen_signatures = set()
         
         # Strategy 1: Text-based link detection
         text_based_links = self._detect_text_based_table_links(soup, html)
@@ -854,6 +992,9 @@ class DefaultSource(Source):
                     # Extract table from downloaded content
                     table_html = self._extract_table_from_container(table_soup)
                     if table_html:
+                        signature = self._table_signature(table_html)
+                        if signature and signature in seen_signatures:
+                            continue
                         t = self.parse_table(table_html)
                         if t:
                             t.position = len(tables) + 1
@@ -865,6 +1006,8 @@ class DefaultSource(Source):
                             t.notes = metadata.get('notes')
                             
                             tables.append(t)
+                            if signature:
+                                seen_signatures.add(signature)
                 else:
                     logger.debug(f"Failed to download table content from link: {link}")
             except Exception as e:
@@ -882,6 +1025,9 @@ class DefaultSource(Source):
                         # Extract table from downloaded content
                         table_html = self._extract_table_from_container(table_soup)
                         if table_html:
+                            signature = self._table_signature(table_html)
+                            if signature and signature in seen_signatures:
+                                continue
                             t = self.parse_table(table_html)
                             if t:
                                 t.position = len(tables) + 1
@@ -893,6 +1039,8 @@ class DefaultSource(Source):
                                 t.notes = metadata.get('notes')
                                 
                                 tables.append(t)
+                                if signature:
+                                    seen_signatures.add(signature)
 
                     else:
                         logger.debug(f"Failed to download table content from pattern link: {link}")
@@ -1160,17 +1308,28 @@ class OUPSource(Source):
 
         # Extract tables
         tables = []
+        seen_signatures = set()
 
         # Exclude modal tables to prevent duplicates
         all_tables = set(soup.select('div.table-full-width-wrap'))
         modal_tables = set(soup.select('div.table-full-width-wrap.table-modal'))
         table_containers = all_tables - modal_tables
+        if not table_containers:
+            table_containers = set(soup.select('div.table-wrap'))
+        if not table_containers:
+            table_containers = set(soup.find_all('table'))
+
         logger.info(f"Found {len(table_containers)} tables.")
-        for (i, tc) in enumerate(table_containers):
-            table_html = tc.find('table')
+        for tc in table_containers:
+            table_html = tc if getattr(tc, "name", None) == "table" else tc.find('table')
+            if table_html is None:
+                continue
+            signature = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip().lower()
+            if not signature or signature in seen_signatures:
+                continue
             t = self.parse_table(table_html)
             if t:
-                t.position = i + 1
+                t.position = len(tables) + 1
                 try:
                     t.number =  tc.find('span', class_='label').text.split(' ')[-1].strip()
                     t.label = tc.find('span', class_='label').text.strip()
@@ -1185,6 +1344,7 @@ class OUPSource(Source):
                 except:
                     pass
                 tables.append(t)
+                seen_signatures.add(signature)
 
         self.article.tables = tables
         return self.article
@@ -1348,6 +1508,7 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         # To download tables, we need the DOI and the number of tables
         doi = self.article.doi or self.extract_doi(soup)
         tables = []
+        seen_signatures = set()
 
         # Now download each table and parse it
         table_containers = soup.find_all('div', {'class': 'table-wrap'})
@@ -1355,6 +1516,9 @@ class JournalOfCognitiveNeuroscienceSource(Source):
         for i, tc in enumerate(table_containers):
             table_html = tc.find('table', {'role': 'table'})
             if not table_html:
+                continue
+            signature = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip().lower()
+            if not signature or signature in seen_signatures:
                 continue
 
             t = self.parse_table(table_html)
@@ -1373,6 +1537,37 @@ class JournalOfCognitiveNeuroscienceSource(Source):
                 except:
                     pass
                 tables.append(t)
+                seen_signatures.add(signature)
+
+        # Fallback for legacy/JCN mirrors where wrappers are absent and tables are embedded.
+        if not tables:
+            for table_html in soup.find_all('table'):
+                if table_html.get('role') == 'presentation':
+                    continue
+                raw_text = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip()
+                if not raw_text:
+                    continue
+                signature = raw_text.lower()
+                if signature in seen_signatures:
+                    continue
+                header_text = " ".join(
+                    th.get_text(" ", strip=True) for th in table_html.find_all("th")
+                )
+                if not COORD_HEADER_HINT_RE.search(header_text) and not COORD_TRIPLET_HINT_RE.search(raw_text):
+                    continue
+
+                t = self.parse_table(table_html)
+                if not t:
+                    continue
+
+                t.position = len(tables) + 1
+                t.number = str(t.position)
+                t.label = f"Table {t.position}"
+                caption = table_html.find("caption")
+                if caption:
+                    t.caption = caption.get_text().strip()
+                tables.append(t)
+                seen_signatures.add(signature)
 
         self.article.tables = tables
         return self.article
@@ -1656,7 +1851,8 @@ class SpringerSource(Source):
 
         # Extract table; going to take the approach of opening and parsing the table via links
         # To download tables, we need the content URL and the number of tables
-        content_url = soup.find('meta', {'name': 'citation_fulltext_html_url'})['content']
+        content_meta = soup.find('meta', {'name': 'citation_fulltext_html_url'})
+        content_url = content_meta['content'] if content_meta else None
 
         # Find all links that match the Nature table URL pattern.
         table_links = soup.find_all('a', href=re.compile(r'/article(s?)/.*/tables/\d+'))
@@ -1672,7 +1868,7 @@ class SpringerSource(Source):
                 continue
                 
             # Construct the full URL robustly.
-            full_url = urljoin(content_url, relative_url)
+            full_url = urljoin(content_url, relative_url) if content_url else relative_url
             
             table_soup = self._download_table(full_url)
             if not table_soup:
@@ -1723,6 +1919,49 @@ class SpringerSource(Source):
                     pass
                     
                 tables.append(t)
+
+        # Fallback for Springer pages that already contain inline tables.
+        if not tables:
+            seen_signatures = set()
+            inline_containers = soup.find_all('div', class_=re.compile(r'\bTable\b|table-wrap', re.IGNORECASE))
+            if not inline_containers:
+                inline_containers = soup.find_all('table')
+
+            logger.info(f"SpringerSource fallback: Found {len(inline_containers)} inline table containers.")
+            for tc in inline_containers:
+                table_html = tc if getattr(tc, "name", None) == "table" else tc.find("table")
+                if not table_html:
+                    continue
+                signature = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip().lower()
+                if not signature or signature in seen_signatures:
+                    continue
+
+                t = self.parse_table(table_html)
+                if not t:
+                    continue
+                t.position = len(tables) + 1
+
+                label_source = tc.get("id") or ""
+                label_match = re.search(r'(tab|table)\s*0*([0-9]+)', label_source, re.IGNORECASE)
+                if label_match:
+                    t.number = label_match.group(2)
+                    t.label = f"Table {t.number}"
+                else:
+                    t.number = str(t.position)
+                    t.label = f"Table {t.number}"
+
+                caption_elem = tc.find('div', class_=re.compile(r'caption', re.IGNORECASE)) if getattr(tc, "find", None) else None
+                if not caption_elem:
+                    caption_elem = table_html.find('caption')
+                if caption_elem:
+                    t.caption = caption_elem.get_text().strip()
+
+                notes_elem = tc.find(['div', 'p'], class_=re.compile(r'foot|note', re.IGNORECASE)) if getattr(tc, "find", None) else None
+                if notes_elem:
+                    t.notes = notes_elem.get_text().strip()
+
+                tables.append(t)
+                seen_signatures.add(signature)
 
         self.article.tables = tables
         return self.article
@@ -1972,25 +2211,69 @@ class PMCSource(Source):
             return False
 
         tables = []
-        table_containers = soup.findAll('div', {'class': 'table-wrap'})
-        logger.info(f"Found {len(table_containers)} tables.")
-        for (i, tc) in enumerate(table_containers):
-            sub_tables = tc.findAll('div', {'class': 'xtable'})
+        seen_signatures = set()
+        table_containers = soup.find_all('div', {'class': 'table-wrap'})
+        logger.info(f"Found {len(table_containers)} legacy PMC table-wrap containers.")
+
+        # Legacy PMC path: div.table-wrap -> div.xtable
+        for tc in table_containers:
+            sub_tables = tc.find_all('div', {'class': 'xtable'})
+            if not sub_tables:
+                sub_tables = [tc.find('table')]
+
             for st in sub_tables:
-                t = self.parse_table(st)
+                table_html = st if getattr(st, "name", None) == "table" else (st.find("table") if st else None)
+                if table_html is None:
+                    continue
+                signature = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip().lower()
+                if not signature or signature in seen_signatures:
+                    continue
+
+                t = self.parse_table(table_html)
                 if t:
-                    t.position = i + 1
+                    t.position = len(tables) + 1
                     t.label = tc.find('h3').text if tc.find('h3') else None
                     t.number = t.label.split(' ')[-1].strip() if t.label else None
                     try:
-                        t.caption = tc.find({"div": {"class": "caption"}}).text
-                    except:
+                        t.caption = tc.find('div', class_='caption').get_text()
+                    except Exception:
                         pass
                     try:
-                        t.notes = tc.find('div', class_='tblwrap-foot').text
-                    except:
+                        t.notes = tc.find('div', class_='tblwrap-foot').get_text()
+                    except Exception:
                         pass
                     tables.append(t)
+                    seen_signatures.add(signature)
+
+        # Modern PMC-like path: section.tw / div.tbl-box wrappers with direct table content.
+        if not tables:
+            fallback_containers = soup.select('section.tw, section[class*=\"table\"], div.tbl-box, div[class*=\"tbl-box\"]')
+            logger.info(f"Found {len(fallback_containers)} fallback PMC containers.")
+            for tc in fallback_containers:
+                table_html = tc.find('table')
+                if table_html is None:
+                    continue
+                signature = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip().lower()
+                if not signature or signature in seen_signatures:
+                    continue
+
+                t = self.parse_table(table_html)
+                if t:
+                    t.position = len(tables) + 1
+                    label_node = tc.find(['h3', 'h4', 'label', 'span'], class_=re.compile(r'label', re.IGNORECASE))
+                    if label_node:
+                        t.label = label_node.get_text().strip()
+                        m = re.search(r'(\d+)', t.label)
+                        if m:
+                            t.number = m.group(1)
+                    caption_node = tc.find(['div', 'p'], class_=re.compile(r'caption', re.IGNORECASE))
+                    if caption_node:
+                        t.caption = caption_node.get_text().strip()
+                    notes_node = tc.find(['div', 'p'], class_=re.compile(r'foot|note', re.IGNORECASE))
+                    if notes_node:
+                        t.notes = notes_node.get_text().strip()
+                    tables.append(t)
+                    seen_signatures.add(signature)
 
         self.article.tables = tables
         return self.article
