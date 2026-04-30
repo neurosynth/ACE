@@ -225,6 +225,10 @@ def _validate_scrape(html):
     'This site can’t be reached',
     'used Cloudflare to restrict access',
     '502 Bad Gateway',
+    'Checking your browser before accessing',
+    'Checking your browser - reCAPTCHA',
+    '/recaptcha/challengepage/',
+    'g-recaptcha',
     ]
 
     for pattern in patterns:

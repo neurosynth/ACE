@@ -10,6 +10,29 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
+
+def _article_quality_score(article):
+    """Score article quality for same-PMID duplicate resolution.
+
+    Higher is better. Prioritizes records that actually contain extracted
+    activations and usable tables over placeholder/blocked pages.
+    """
+    if article is None:
+        return (-1, -1, -1, -1)
+
+    tables = getattr(article, "tables", []) or []
+    n_tables = len(tables)
+    n_activations = sum(len(getattr(t, "activations", []) or []) for t in tables)
+    missing_source = 1 if getattr(article, "missing_source", False) else 0
+
+    # Sort by:
+    # 1) Most activations
+    # 2) Most tables
+    # 3) Prefer non-missing-source parses
+    # 4) Presence of any table at all
+    return (n_activations, n_tables, -missing_source, int(n_tables > 0))
+
+
 def _process_file_with_source(args):
     """Helper function to read, validate, and identify source for a file."""
     f, source_configs = args
@@ -50,8 +73,12 @@ def _parse_article(args):
             # Fallback to original source identification
             source = manager.identify_source(html)
             if source is None:
-                logger.info("Could not identify source for %s", f)
-                return f, None
+                if force_ingest and getattr(manager, "default_source", None) is not None:
+                    logger.info("Could not identify source for %s; using DefaultSource fallback", f)
+                    source = manager.default_source
+                else:
+                    logger.info("Could not identify source for %s", f)
+                    return f, None
 
         article = source.parse_article(html, pmid, metadata_dir=metadata_dir, **kwargs)
         if not article:
@@ -163,13 +190,34 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
         for args in tqdm(parse_args, desc="Parsing articles"):
             parsed_articles.append(_parse_article(args))
 
-    # Add successfully parsed articles to database
+    # Add successfully parsed articles to database.
+    # When pmid_filenames=True we can see duplicate PMID files from different
+    # source folders (e.g., one blocked/challenge page + one valid page). Keep
+    # the best parsed candidate per PMID within this run.
     missing_sources = []
-    for i, (f, article) in enumerate(parsed_articles):
-        if article is None:
-            missing_sources.append(f)
-            continue
-            
+    if pmid_filenames:
+        best_by_pmid = {}
+        for f, article in parsed_articles:
+            pmid = path.splitext(path.basename(f))[0]
+            if article is None:
+                missing_sources.append(f)
+                continue
+
+            score = _article_quality_score(article)
+            existing = best_by_pmid.get(pmid)
+            if existing is None or score > existing[2]:
+                best_by_pmid[pmid] = (f, article, score)
+
+        selected_articles = [(f, article) for (f, article, _) in best_by_pmid.values()]
+    else:
+        selected_articles = []
+        for f, article in parsed_articles:
+            if article is None:
+                missing_sources.append(f)
+                continue
+            selected_articles.append((f, article))
+
+    for i, (f, article) in enumerate(selected_articles):
         if get_config('SAVE_ARTICLES_WITHOUT_ACTIVATIONS') or article.tables:
             pmid = path.splitext(path.basename(f))[0] if pmid_filenames else None
             if pmid and db.article_exists(pmid):
@@ -177,9 +225,9 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
                     db.delete_article(pmid)
                 else:
                     continue
-                    
+
             db.add(article)
-            if commit and (i % 100 == 0 or i == len(parsed_articles) - 1):
+            if commit and (i % 100 == 0 or i == len(selected_articles) - 1):
                 db.save()
                 
     db.save()

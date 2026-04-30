@@ -29,6 +29,14 @@ def identify_standard_columns(labels):
             s = 'hemisphere'
         elif regex.search('(^k$)|(mm.*?3)|volume|voxels|size|extent', lab):
             s = 'size'
+        elif (
+            regex.search(r'\bx\b.*\by\b.*\bz\b', lab)
+            or regex.search(r'(peak\s*voxel\s*coordinate|talairach\s*coordinates?|mni\s*coordinates?)', lab)
+            or (regex.search(r'coordinates?', lab) and not regex.search(r'cluster|score|value', lab))
+        ):
+            # Some tables store x/y/z in one combined coordinate column.
+            s = 'coord_triplet'
+            found_coords = True
         
         # --- START OF FIX ---
         # OLD: elif regex.match('\s*[xy]\s*$', lab):
@@ -59,7 +67,8 @@ def identify_standard_columns(labels):
         # --- END OF FIX ---
             
         elif regex.search('rdinate', lab):
-            continue
+            s = 'coord_triplet'
+            found_coords = True
         elif lab == 't' or regex.search('^(max.*(z|t).*|.*(z|t).*(score|value|max))$', lab):
             s = 'statistic'
         elif regex.search('p[\-\s]+.*val', lab):
@@ -158,6 +167,15 @@ def identify_repeating_groups(labels):
 def create_activation(data, labels, standard_cols, group_labels=[]):
 
     activation = Activation()
+    coords_from_triplet = False
+
+    def _extract_triplet(value):
+        clean_val = regex.sub(r'(?<!\d)\.(?!\d)', '', str(value))
+        cs = '([-]?\d{1,3}\.?\d{0,2})'
+        match = regex.search('\n*%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), clean_val)
+        if not match:
+            return None
+        return [regex.sub('-\s+', '-', c.strip()) for c in [match.group(1), match.group(2), match.group(3)]]
 
     for i, col in enumerate(data):
 
@@ -181,10 +199,26 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 
             sc = standard_cols[i]
 
+            if sc in ['coord_triplet', 'x', 'y', 'z']:
+                triplet = _extract_triplet(col)
+                if triplet is not None:
+                    x, y, z = triplet
+                    logger.info("Found coordinate triplet in %s column: %s -> %s, %s, %s" % (sc, col, x, y, z))
+                    activation.set_coords(x, y, z)
+                    coords_from_triplet = True
+                    activation.add_col(labels[i], col)
+                    continue
+                if sc == 'coord_triplet':
+                    activation.add_col(labels[i], col)
+                    continue
+
             # Validate XYZ columns: Should only be integers (and possible trailing decimals).
             # If they're not, keep only leading numbers. The exception is that ScienceDirect 
             # journals often follow the minus sign with a space (e.g., - 35), which we strip.
             if regex.match('[xyz]$', sc):
+                if coords_from_triplet and str(col).strip() == '':
+                    activation.add_col(labels[i], col)
+                    continue
                 m = regex.match('([-])\s?(\d+\.*\d*)$', col)
                 if m:
                     col = "%s%s" % (m.group(1), m.group(2))
@@ -210,11 +244,9 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
         # Also need to remove space between minus sign and numbers; some ScienceDirect
         # journals leave a gap.
         if not i in standard_cols:
-            cs = '([-]?\d{1,3}\.?\d{0,2})'
-            clean_col = regex.sub(r'(?<!\d)\.(?!\d)', '', str(col))  # Remove dots not part of numbers
-            m = regex.search('\n*%s[,;\s]+%s[,;\s]+%s' % (cs, cs, cs), clean_col)
-            if m:
-                x, y, z = [regex.sub('-\s+', '-', c.strip()) for c in [m.group(1), m.group(2), m.group(3)]]
+            triplet = _extract_triplet(col)
+            if triplet is not None:
+                x, y, z = triplet
                 logger.info("Found multi-coordinate column: %s\n...and extracted: %s, %s, %s" % (col, x, y, z))
                 activation.set_coords(x, y, z)
 
@@ -390,6 +422,3 @@ def parse_table(data, html=None):
 
     table.finalize()
     return table if len(table.activations) else None
-
-
-

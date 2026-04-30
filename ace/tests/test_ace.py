@@ -374,3 +374,174 @@ def test_springer_nature_source(test_data_path, source_manager):
     assert t.number == '2'
     assert "fMRI results across all participants" in t.caption
     assert t.n_activations  == 9
+
+
+def _count_valid_activations(tables):
+    return sum(
+        1 for t in tables for a in t.activations
+        if a.x is not None and a.y is not None and a.z is not None
+    )
+
+
+def test_pmc_modern_table_wrapper_source(test_weird_data_path, source_manager):
+    pmid = '16085533'
+    html = open(join(test_weird_data_path, pmid + '.html')).read()
+    source = source_manager.identify_source(html)
+    assert source is not None
+    assert source.__class__.__name__ == 'PMCSource'
+    article = source.parse_article(html, pmid=pmid, skip_metadata=True)
+    assert article is not None
+    assert len(article.tables) >= 1
+    assert _count_valid_activations(article.tables) >= 1
+
+
+def test_oup_table_wrap_fallback_source(test_weird_data_path, source_manager):
+    pmid = '24700584'
+    html = open(join(test_weird_data_path, pmid + '.html')).read()
+    source = source_manager.identify_source(html)
+    assert source is not None
+    assert source.__class__.__name__ == 'OUPSource'
+    article = source.parse_article(html, pmid=pmid, skip_metadata=True)
+    assert article is not None
+    assert len(article.tables) >= 1
+    assert _count_valid_activations(article.tables) >= 1
+
+
+def test_jcn_embedded_table_fallback_source(test_weird_data_path, source_manager):
+    pmid = '24666131'
+    html = open(join(test_weird_data_path, pmid + '.html')).read()
+    source = source_manager.identify_source(html)
+    assert source is not None
+    assert source.__class__.__name__ == 'JournalOfCognitiveNeuroscienceSource'
+    article = source.parse_article(html, pmid=pmid, skip_metadata=True)
+    assert article is not None
+    assert len(article.tables) >= 1
+    assert _count_valid_activations(article.tables) >= 1
+
+
+def test_sciencedirect_combined_coordinate_column_source(test_weird_data_path, source_manager):
+    pmid = '15327927'
+    html = open(join(test_weird_data_path, pmid + '.html')).read()
+    source = source_manager.identify_source(html)
+    assert source is not None
+    assert source.__class__.__name__ == 'ScienceDirectSource'
+    article = source.parse_article(html, pmid=pmid, skip_metadata=True)
+    assert article is not None
+    assert len(article.tables) >= 1
+    assert _count_valid_activations(article.tables) >= 1
+
+
+def test_springer_inline_table_fallback_source(test_weird_data_path, source_manager):
+    pmid = '27007121'
+    html = open(join(test_weird_data_path, pmid + '.html')).read()
+    source = source_manager.identify_source(html)
+    assert source is not None
+    assert source.__class__.__name__ == 'SpringerSource'
+    article = source.parse_article(html, pmid=pmid, skip_metadata=True)
+    assert article is not None
+    assert len(article.tables) >= 1
+    assert _count_valid_activations(article.tables) >= 1
+
+
+def test_unknown_source_coordinate_table_with_force_ingest(test_weird_data_path, tmp_path):
+    pmid = '11296095'
+    src_file = join(test_weird_data_path, pmid + '.html')
+    target_file = tmp_path / f"{pmid}.html"
+    shutil.copy(src_file, target_file)
+
+    db_path_no_force = f"sqlite:///{(tmp_path / 'ace_no_force.db').as_posix()}"
+    db_no_force = database.Database(adapter='sqlite', db_name=db_path_no_force)
+    missing_sources = ingest.add_articles(
+        db_no_force,
+        [str(target_file)],
+        pmid_filenames=True,
+        force_ingest=False,
+        num_workers=1,
+        skip_metadata=True,
+    )
+    assert str(target_file) in missing_sources
+    assert len(db_no_force.articles) == 0
+
+    db_path_force = f"sqlite:///{(tmp_path / 'ace_force.db').as_posix()}"
+    db_force = database.Database(adapter='sqlite', db_name=db_path_force)
+    missing_sources_force = ingest.add_articles(
+        db_force,
+        [str(target_file)],
+        pmid_filenames=True,
+        force_ingest=True,
+        num_workers=1,
+        skip_metadata=True,
+    )
+    assert str(target_file) not in missing_sources_force
+    assert len(db_force.articles) >= 1
+    assert len(db_force.articles[0].tables) >= 1
+    assert _count_valid_activations(db_force.articles[0].tables) >= 1
+
+
+def test_ingest_prefers_best_duplicate_pmid_file(test_weird_data_path, tmp_path):
+    pmid = "17913474"
+    bad_src = join(test_weird_data_path, "17913474_recaptcha.html")
+    good_src = join(test_weird_data_path, "17913474_pond.html")
+
+    bad_dir = tmp_path / "a_bad"
+    good_dir = tmp_path / "b_good"
+    bad_dir.mkdir()
+    good_dir.mkdir()
+
+    # Same PMID filename in two different source folders
+    bad_target = bad_dir / f"{pmid}.html"
+    good_target = good_dir / f"{pmid}.html"
+    shutil.copy(bad_src, bad_target)
+    shutil.copy(good_src, good_target)
+
+    db_path = f"sqlite:///{(tmp_path / 'ace_dupe_pick_best.db').as_posix()}"
+    db = database.Database(adapter='sqlite', db_name=db_path)
+
+    # Intentionally place blocked/challenge page first.
+    ingest.add_articles(
+        db,
+        [str(bad_target), str(good_target)],
+        pmid_filenames=True,
+        force_ingest=True,
+        num_workers=1,
+        skip_metadata=True,
+    )
+
+    assert len(db.articles) == 1
+    assert len(db.articles[0].tables) >= 1
+    assert _count_valid_activations(db.articles[0].tables) >= 1
+
+
+def test_validate_scrape_flags_recaptcha_challenge_page(test_weird_data_path):
+    html = open(join(test_weird_data_path, "17913474_recaptcha.html")).read()
+    assert scrape._validate_scrape(html) is False
+
+
+@pytest.mark.parametrize(
+    "pmid,expected_source",
+    [
+        ("17088334", "PMCSource"),
+        ("26342221", "OUPSource"),
+        ("27623361", "ScienceDirectSource"),
+        ("27319001", "SpringerSource"),
+        ("20350171", "JournalOfCognitiveNeuroscienceSource"),
+        ("12860777", None),  # Unknown source -> DefaultSource fallback
+    ],
+)
+def test_additional_missed_in_main_text_regressions(test_weird_data_path, source_manager, pmid, expected_source):
+    html = open(join(test_weird_data_path, pmid + ".html")).read()
+    source = source_manager.identify_source(html)
+
+    if expected_source is None:
+        assert source is None
+        parser = source_manager.default_source
+        assert parser is not None
+    else:
+        assert source is not None
+        assert source.__class__.__name__ == expected_source
+        parser = source
+
+    article = parser.parse_article(html, pmid=pmid, skip_metadata=True)
+    assert article is not None
+    assert len(article.tables) >= 1
+    assert _count_valid_activations(article.tables) >= 1
