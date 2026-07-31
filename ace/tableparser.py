@@ -6,10 +6,138 @@ import regex  # Note: we're using features in the new regex module, not re!
 import logging
 from .config import get_config
 from .database import Activation, Table
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 
 
 logger = logging.getLogger(__name__)
+
+GATING_VERSION = "2026-07-30.annotations-v2"
+CoordinateTableDecision = namedtuple(
+    "CoordinateTableDecision", ["candidate", "reasons"]
+)
+
+_MINUS_CHARS = "֊‐‑⁃﹣－‒–—﹘−"
+_NUMBER_RE = regex.compile(
+    r"(?<![\d.])[+\-%s]?\s*\d{1,3}(?:\.\d+)?(?![\d.])"
+    % _MINUS_CHARS
+)
+_TRIPLET_RE = regex.compile(
+    r"(?<!\d)[+\-%s]?\s*\d{1,3}(?:\.\d+)?"
+    r"\s*[,;/|\t ]+\s*[+\-%s]?\s*\d{1,3}(?:\.\d+)?"
+    r"\s*[,;/|\t ]+\s*[+\-%s]?\s*\d{1,3}(?:\.\d+)?(?!\d)"
+    % (_MINUS_CHARS, _MINUS_CHARS, _MINUS_CHARS),
+    regex.IGNORECASE,
+)
+_COORD_CONTEXT_RE = regex.compile(
+    r"\b(mni|talairach|stereotaxic|stereotactic|peak(?:\s+voxel)?"
+    r"\s+coordinates?|coordinates?\s*\(?(?:mm)?\)?)\b",
+    regex.IGNORECASE,
+)
+
+
+def _rows_from_html(html):
+    if not html:
+        return []
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(str(html), "lxml")
+        table = soup.find("table")
+        if table is None:
+            return []
+        return [
+            [cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"])]
+            for row in table.find_all("tr")
+        ]
+    except Exception:
+        return []
+
+
+def classify_coordinate_table(rows=None, html=None, caption=None, footnotes=None):
+    """Classify a table as a recall-oriented coordinate-table candidate.
+
+    This is intentionally independent from coordinate parsing. A positive
+    decision means that a downstream parser should inspect the table; it does
+    not mean ACE successfully extracted any activations from it.
+    """
+    if rows is None:
+        rows = _rows_from_html(html)
+    elif hasattr(rows, "data"):
+        rows = rows.data
+
+    normalized_rows = []
+    for row in rows or []:
+        normalized_rows.append([
+            regex.sub(r"\s+", " ", str(value or "")).strip()
+            for value in row
+        ])
+
+    if not normalized_rows:
+        return CoordinateTableDecision(False, ())
+
+    header_rows = normalized_rows[: min(6, len(normalized_rows))]
+    header_text = " ".join(" ".join(row) for row in header_rows)
+    context_text = " ".join(
+        value for value in (header_text, caption or "", footnotes or "")
+        if value
+    )
+    context_lower = context_text.lower()
+
+    axis_hits = {
+        axis for axis in ("x", "y", "z")
+        if regex.search(r"(?<![a-z])%s(?![a-z])" % axis, context_lower)
+    }
+    has_xyz_headers = axis_hits == {"x", "y", "z"}
+    has_coord_context = bool(_COORD_CONTEXT_RE.search(context_text))
+    has_combined_header = bool(
+        regex.search(r"\bx\b.{0,30}\by\b.{0,30}\bz\b", context_text,
+                     regex.IGNORECASE)
+    )
+
+    plausible_numeric_rows = 0
+    triplet_rows = 0
+    for row in normalized_rows:
+        row_text = " | ".join(row)
+        if _TRIPLET_RE.search(row_text):
+            triplet_rows += 1
+
+        numeric_cells = 0
+        for value in row:
+            matches = _NUMBER_RE.findall(value)
+            if len(matches) == 1:
+                try:
+                    number = float(
+                        regex.sub(r"\s+", "", matches[0]).translate(
+                            str.maketrans({char: "-" for char in _MINUS_CHARS})
+                        )
+                    )
+                except ValueError:
+                    continue
+                if abs(number) < 100:
+                    numeric_cells += 1
+        if numeric_cells >= 3:
+            plausible_numeric_rows += 1
+
+    reasons = []
+    if has_xyz_headers and plausible_numeric_rows:
+        reasons.append("xyz_headers")
+    if has_combined_header and triplet_rows:
+        reasons.append("combined_xyz_header")
+    if has_coord_context and (triplet_rows or plausible_numeric_rows):
+        reasons.append("coordinate_context")
+    if triplet_rows >= 2 and (has_coord_context or has_xyz_headers):
+        reasons.append("repeated_coordinate_triplets")
+
+    return CoordinateTableDecision(bool(reasons), tuple(reasons))
+
+
+def is_coordinate_table_candidate(rows=None, html=None, caption=None, footnotes=None):
+    """Return whether the table should pass ACE's coordinate-table gate."""
+    return classify_coordinate_table(
+        rows=rows,
+        html=html,
+        caption=caption,
+        footnotes=footnotes,
+    ).candidate
 
 
 def identify_standard_columns(labels):
@@ -257,6 +385,7 @@ def create_activation(data, labels, standard_cols, group_labels=[]):
 def parse_table(data, html=None):
     ''' Takes a DataTable as input and returns a Table instance. '''
     
+    gate_decision = classify_coordinate_table(rows=data, html=html)
     table = Table()
     # Only store the original HTML if the global config allows it
     if html is not None and get_config('SAVE_ORIGINAL_HTML'):
@@ -421,4 +550,4 @@ def parse_table(data, html=None):
                     table.activations.append(activation)
 
     table.finalize()
-    return table if len(table.activations) else None
+    return table if len(table.activations) or gate_decision.candidate else None

@@ -45,6 +45,33 @@ def get_url(url, n_retries=5, timeout=10.0, verbose=False):
     logger.error("Exceeded maximum number of retries.")
     return None
 
+
+def get_dynamic_html(url, reconnect_time=8, settle_time=3):
+    """Load a JavaScript-protected page with ACE's browser stack.
+
+    This is reserved for publisher pages whose saved HTML contains linked
+    table placeholders rather than the table payload.
+    """
+    try:
+        with SB(uc=True, xvfb=True) as browser:
+            browser.uc_open_with_reconnect(
+                url,
+                reconnect_time=reconnect_time,
+            )
+            html = browser.get_page_source()
+            if not _validate_scrape(html):
+                try:
+                    browser.uc_gui_click_captcha()
+                except Exception:
+                    pass
+                browser.sleep(settle_time)
+                html = browser.get_page_source()
+            return html if _validate_scrape(html) else None
+    except Exception as exc:
+        logger.warning("Dynamic retrieval failed for %s: %s", url, exc)
+        return None
+
+
 def _convert_pmid_to_pmc(pmids):
     url_template = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids="
     logger.info("Converting PMIDs to PMCIDs...")
