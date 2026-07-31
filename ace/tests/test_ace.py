@@ -5,6 +5,7 @@ from os.path import dirname, join, exists, sep as pathsep
 import pytest
 
 from ace import sources, database, export, scrape, ingest
+from ace import tableparser
 
 
 @pytest.fixture(scope="module")
@@ -44,6 +45,73 @@ def test_pmc_source(test_data_path, source_manager):
     assert t.number == '3'
     assert t.caption is not None
     assert t.n_activations == 11
+
+
+def test_candidate_gate_retains_table_without_ace_activations(source_manager):
+    html = """
+    <html><head><meta name="citation_pmid" content="999001"></head><body>
+      <div class="table-wrap">
+        <h3>Table 1</h3>
+        <table>
+          <tr><th>Region</th><th>x</th><th>y</th><th>z</th></tr>
+          <tr><td>Midline</td><td>0</td><td>0</td><td>10</td></tr>
+        </table>
+      </div>
+    </body></html>
+    """
+    article = source_manager.sources["PMC"].parse_article(
+        html, pmid="999001", skip_metadata=True
+    )
+    assert len(article.tables) == 1
+    assert article.tables[0].n_activations == 0
+
+
+def test_candidate_gate_handles_combined_coordinates_and_unicode_minus():
+    decision = tableparser.classify_coordinate_table(rows=[
+        ["Region", "MNI coordinates", "Peak Z"],
+        ["Amygdala", "−20, -4, -18", "4.2"],
+    ])
+    assert decision.candidate
+    assert "coordinate_context" in decision.reasons
+
+
+def test_leaf_table_fallback_ignores_layout_and_behavior_tables(source_manager):
+    html = """
+    <html><body>
+      <table class="layout"><tr><td>
+        <table><tr><th>Group</th><th>Age</th></tr>
+          <tr><td>Control</td><td>24</td></tr></table>
+        <table><tr><th>Region</th><th>x</th><th>y</th><th>z</th></tr>
+          <tr><td>Insula</td><td>-32</td><td>18</td><td>4</td></tr></table>
+      </td></tr></table>
+    </body></html>
+    """
+    article = source_manager.default_source.parse_article(
+        html, pmid="999002", skip_metadata=True
+    )
+    assert len(article.tables) == 1
+    assert article.tables[0].n_activations == 1
+
+
+def test_extract_and_export_public_api(tmp_path):
+    article_path = tmp_path / "999003.html"
+    article_path.write_text(
+        """
+        <html><body><table>
+          <tr><th>Region</th><th>x</th><th>y</th><th>z</th></tr>
+          <tr><td>Midline</td><td>0</td><td>0</td><td>10</td></tr>
+        </table></body></html>
+        """,
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "processed"
+    summary = ingest.extract_and_export([article_path], output_dir)
+    assert summary["articles"] == 1
+    assert summary["tables"] == 1
+    assert summary["coordinates"] == 0
+    assert (output_dir / "coordinates.csv").exists()
+    assert (output_dir / "tables.csv").exists()
+    assert len(list((output_dir / "tables" / "999003").glob("*.html"))) == 1
 
 
 @pytest.mark.vcr(record_mode="once")
@@ -208,7 +276,10 @@ def test_elsivier_table_parse(test_weird_data_path, source_manager):
     source = source_manager.identify_source(html)
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
-    assert len(tables) == 4 # should be 6, but the tables are ill formatted
+    # The candidate gate retains the two malformed coordinate tables even though
+    # deterministic parsing cannot recover activations from them.
+    assert len(tables) == 6
+    assert sum(table.n_activations == 0 for table in tables) == 2
 
 
 def test_multi_column_float_conversion(test_weird_data_path, source_manager):
@@ -238,7 +309,8 @@ def test_schizophrenia_research_source(test_weird_data_path, source_manager):
     source = source_manager.identify_source(html)
     article = source.parse_article(html, pmid=pmid)
     tables = article.tables
-    assert len(tables) == 0
+    assert len(tables) == 2
+    assert all(table.n_activations == 0 for table in tables)
 
 
 def test_find_tables_in_old_sciencedirect(test_weird_data_path, source_manager):
@@ -407,7 +479,7 @@ def test_oup_table_wrap_fallback_source(test_weird_data_path, source_manager):
     assert _count_valid_activations(article.tables) >= 1
 
 
-def test_jcn_embedded_table_fallback_source(test_weird_data_path, source_manager):
+def test_jcn_thumbnail_placeholder_is_not_exported_as_a_table(test_weird_data_path, source_manager):
     pmid = '24666131'
     html = open(join(test_weird_data_path, pmid + '.html')).read()
     source = source_manager.identify_source(html)
@@ -415,8 +487,39 @@ def test_jcn_embedded_table_fallback_source(test_weird_data_path, source_manager
     assert source.__class__.__name__ == 'JournalOfCognitiveNeuroscienceSource'
     article = source.parse_article(html, pmid=pmid, skip_metadata=True)
     assert article is not None
-    assert len(article.tables) >= 1
-    assert _count_valid_activations(article.tables) >= 1
+    # This legacy page has only a JavaScript thumbnail link. Treating the
+    # surrounding article layout as a table creates reference-list coordinates.
+    assert article.tables == []
+
+
+def test_jcn_thumbnail_placeholder_expands_linked_article_tables(
+    test_weird_data_path,
+    source_manager,
+    monkeypatch,
+):
+    pmid = '24666131'
+    html = open(join(test_weird_data_path, pmid + '.html')).read()
+    source = source_manager.identify_source(html)
+    linked_html = """
+    <html><body><figure class="table">
+      <figcaption>Table 1. Peak MNI coordinates</figcaption>
+      <table>
+        <tr><th>Region</th><th>x</th><th>y</th><th>z</th></tr>
+        <tr><td>Insula</td><td>-32</td><td>18</td><td>4</td></tr>
+      </table>
+    </figure></body></html>
+    """
+    monkeypatch.setattr(scrape, "get_dynamic_html", lambda url: linked_html)
+
+    article = source.parse_article(
+        html,
+        pmid=pmid,
+        skip_metadata=True,
+        expand_linked_tables=True,
+    )
+
+    assert len(article.tables) == 1
+    assert article.tables[0].n_activations == 1
 
 
 def test_sciencedirect_combined_coordinate_column_source(test_weird_data_path, source_manager):
@@ -524,7 +627,6 @@ def test_validate_scrape_flags_recaptcha_challenge_page(test_weird_data_path):
         ("26342221", "OUPSource"),
         ("27623361", "ScienceDirectSource"),
         ("27319001", "SpringerSource"),
-        ("20350171", "JournalOfCognitiveNeuroscienceSource"),
         ("12860777", None),  # Unknown source -> DefaultSource fallback
     ],
 )

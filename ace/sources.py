@@ -234,7 +234,14 @@ class Source(metaclass=abc.ABCMeta):
             else:
                 self.entities.update(Source.ENTITIES)
 
-    def parse_article(self, html, pmid=None, metadata_dir=None, skip_metadata=False):
+    def parse_article(
+        self,
+        html,
+        pmid=None,
+        metadata_dir=None,
+        skip_metadata=False,
+        **kwargs,
+    ):
         ''' Takes HTML article as input and returns an Article. PMID Can also be
         passed, which prevents having to scrape it from the article and/or look it
         up in PubMed. '''
@@ -384,6 +391,54 @@ class Source(metaclass=abc.ABCMeta):
         logger.debug("\t\tTrying to parse table...")
         return tableparser.parse_table(data, html=str(table))
 
+    @staticmethod
+    def _candidate_table_signature(table):
+        return re.sub(
+            r"\s+",
+            " ",
+            table.get_text(" ", strip=True),
+        ).strip().lower()
+
+    def _append_leaf_candidate_tables(
+        self,
+        soup,
+        tables,
+        seen_signatures=None,
+    ):
+        """Append coordinate-like leaf tables not found by a source adapter."""
+        seen_signatures = seen_signatures if seen_signatures is not None else set()
+        for table_html in soup.find_all("table"):
+            # Publisher pages sometimes use an outer layout table containing the
+            # real table. Only pass the innermost table to downstream parsers.
+            if table_html.find("table") is not None:
+                continue
+
+            signature = self._candidate_table_signature(table_html)
+            if not signature or signature in seen_signatures:
+                continue
+
+            caption_node = table_html.find("caption")
+            caption = caption_node.get_text(" ", strip=True) if caption_node else ""
+            decision = tableparser.classify_coordinate_table(
+                html=str(table_html),
+                caption=caption,
+            )
+            if not decision.candidate:
+                continue
+
+            parsed = self.parse_table(table_html)
+            if not parsed:
+                continue
+            parsed.position = len(tables) + 1
+            parsed.number = str(parsed.position)
+            parsed.label = f"Table {parsed.position}"
+            if caption:
+                parsed.caption = caption
+            tables.append(parsed)
+            seen_signatures.add(signature)
+
+        return seen_signatures
+
     def extract_doi(self, soup):
         ''' Every Source subclass must be able to extract its doi. '''
         return
@@ -504,11 +559,26 @@ class DefaultSource(Source):
                     if signature:
                         seen_signatures.add(signature)
 
-        # Try linked table extraction only if embedded parsing produced no usable tables.
-        if not tables:
-            linked_tables = self._detect_and_download_table_links(soup, html)
-            if linked_tables:
-                tables.extend(linked_tables)
+        # Source strategies can select an enclosing layout table. Scan all leaf
+        # candidates as a union so the real coordinate table is not hidden.
+        self._append_leaf_candidate_tables(soup, tables, seen_signatures)
+
+        # Linked tables are also a union with embedded tables.
+        linked_tables = self._detect_and_download_table_links(soup, html)
+        for linked_table in linked_tables or []:
+            linked_html = getattr(linked_table, "input_html", None)
+            signature = None
+            if linked_html:
+                linked_soup = BeautifulSoup(linked_html, "lxml")
+                linked_node = linked_soup.find("table")
+                if linked_node is not None:
+                    signature = self._candidate_table_signature(linked_node)
+            if signature and signature in seen_signatures:
+                continue
+            linked_table.position = len(tables) + 1
+            tables.append(linked_table)
+            if signature:
+                seen_signatures.add(signature)
 
         self.article.tables = tables
         if not tables:
@@ -1373,6 +1443,7 @@ class ScienceDirectSource(Source):
 
         # Extract tables
         tables = []
+        seen_signatures = set()
         table_containers = soup.find_all('div', {'class': 'tables'})
         if len(table_containers) == 0:
             # try old method
@@ -1381,6 +1452,11 @@ class ScienceDirectSource(Source):
         logger.info(f"Found {len(table_containers)} tables.")
         for (i, tc) in enumerate(table_containers):
             table_html = tc.find('table')
+            if table_html is None:
+                continue
+            signature = self._candidate_table_signature(table_html)
+            if not signature or signature in seen_signatures:
+                continue
             t = self.parse_table(table_html)
             if t:
                 t.position = i + 1
@@ -1398,6 +1474,9 @@ class ScienceDirectSource(Source):
                 except:
                     pass
                 tables.append(t)
+                seen_signatures.add(signature)
+
+        self._append_leaf_candidate_tables(soup, tables, seen_signatures)
 
         self.article.tables = tables
         return self.article
@@ -1500,6 +1579,7 @@ class FrontiersSource(Source):
 class JournalOfCognitiveNeuroscienceSource(Source):
 
     def parse_article(self, html, pmid=None, **kwargs):
+        expand_linked_tables = kwargs.pop("expand_linked_tables", False)
         soup = super(
             JournalOfCognitiveNeuroscienceSource, self).parse_article(html, pmid, **kwargs)
         if not soup:
@@ -1539,35 +1619,34 @@ class JournalOfCognitiveNeuroscienceSource(Source):
                 tables.append(t)
                 seen_signatures.add(signature)
 
-        # Fallback for legacy/JCN mirrors where wrappers are absent and tables are embedded.
-        if not tables:
-            for table_html in soup.find_all('table'):
-                if table_html.get('role') == 'presentation':
-                    continue
-                raw_text = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip()
-                if not raw_text:
-                    continue
-                signature = raw_text.lower()
-                if signature in seen_signatures:
-                    continue
-                header_text = " ".join(
-                    th.get_text(" ", strip=True) for th in table_html.find_all("th")
+        # Legacy/JCN mirrors often embed tables without modern wrappers.
+        self._append_leaf_candidate_tables(soup, tables, seen_signatures)
+
+        # Older Atypon pages expose only JavaScript thumbnail placeholders.
+        # Resolve the DOI to the current article when automatic extraction is
+        # explicitly allowed to expand linked table content.
+        has_table_placeholders = bool(
+            soup.find(
+                "a",
+                href=re.compile(r"javascript:popRef\(['\"]T\d+", re.IGNORECASE),
+            )
+        )
+        if (
+            not tables
+            and expand_linked_tables
+            and has_table_placeholders
+            and doi
+        ):
+            linked_html = scrape.get_dynamic_html(
+                f"https://doi.org/{doi}"
+            )
+            if linked_html:
+                linked_soup = BeautifulSoup(linked_html, "lxml")
+                self._append_leaf_candidate_tables(
+                    linked_soup,
+                    tables,
+                    seen_signatures,
                 )
-                if not COORD_HEADER_HINT_RE.search(header_text) and not COORD_TRIPLET_HINT_RE.search(raw_text):
-                    continue
-
-                t = self.parse_table(table_html)
-                if not t:
-                    continue
-
-                t.position = len(tables) + 1
-                t.number = str(t.position)
-                t.label = f"Table {t.position}"
-                caption = table_html.find("caption")
-                if caption:
-                    t.caption = caption.get_text().strip()
-                tables.append(t)
-                seen_signatures.add(signature)
 
         self.article.tables = tables
         return self.article
@@ -1859,6 +1938,7 @@ class SpringerSource(Source):
         
         logger.info(f"Found {len(table_links)} potential table links.")
         tables = []
+        seen_signatures = set()
 
         # Loop through the found links.
         for i, link in enumerate(table_links):
@@ -1874,19 +1954,24 @@ class SpringerSource(Source):
             if not table_soup:
                 continue
 
-            # Find the main container first.
-            tc = table_soup.find('div', class_='c-article-table-container')
-            if not tc:
-                # Fallback to finding the first table on the page if container not found
-                tc = table_soup.find('table')
-                if not tc:
+            linked_candidates = table_soup.find_all("table")
+            linked_candidates = [
+                candidate for candidate in linked_candidates
+                if candidate.find("table") is None
+            ]
+            for table_html in linked_candidates:
+                signature = self._candidate_table_signature(table_html)
+                if not signature or signature in seen_signatures:
                     continue
-
-            table_html = tc.find('table') if tc.name != 'table' else tc
-            t = self.parse_table(table_html)
-            
-            if t:
-                t.position = i + 1
+                decision = tableparser.classify_coordinate_table(
+                    html=str(table_html)
+                )
+                if not decision.candidate:
+                    continue
+                t = self.parse_table(table_html)
+                if not t:
+                    continue
+                t.position = len(tables) + 1
 
                 # Parse metadata from the downloaded page's structure
                 try:
@@ -1919,49 +2004,10 @@ class SpringerSource(Source):
                     pass
                     
                 tables.append(t)
-
-        # Fallback for Springer pages that already contain inline tables.
-        if not tables:
-            seen_signatures = set()
-            inline_containers = soup.find_all('div', class_=re.compile(r'\bTable\b|table-wrap', re.IGNORECASE))
-            if not inline_containers:
-                inline_containers = soup.find_all('table')
-
-            logger.info(f"SpringerSource fallback: Found {len(inline_containers)} inline table containers.")
-            for tc in inline_containers:
-                table_html = tc if getattr(tc, "name", None) == "table" else tc.find("table")
-                if not table_html:
-                    continue
-                signature = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip().lower()
-                if not signature or signature in seen_signatures:
-                    continue
-
-                t = self.parse_table(table_html)
-                if not t:
-                    continue
-                t.position = len(tables) + 1
-
-                label_source = tc.get("id") or ""
-                label_match = re.search(r'(tab|table)\s*0*([0-9]+)', label_source, re.IGNORECASE)
-                if label_match:
-                    t.number = label_match.group(2)
-                    t.label = f"Table {t.number}"
-                else:
-                    t.number = str(t.position)
-                    t.label = f"Table {t.number}"
-
-                caption_elem = tc.find('div', class_=re.compile(r'caption', re.IGNORECASE)) if getattr(tc, "find", None) else None
-                if not caption_elem:
-                    caption_elem = table_html.find('caption')
-                if caption_elem:
-                    t.caption = caption_elem.get_text().strip()
-
-                notes_elem = tc.find(['div', 'p'], class_=re.compile(r'foot|note', re.IGNORECASE)) if getattr(tc, "find", None) else None
-                if notes_elem:
-                    t.notes = notes_elem.get_text().strip()
-
-                tables.append(t)
                 seen_signatures.add(signature)
+
+        # Also retain inline candidates; linked and inline tables are a union.
+        self._append_leaf_candidate_tables(soup, tables, seen_signatures)
 
         self.article.tables = tables
         return self.article
@@ -2245,35 +2291,8 @@ class PMCSource(Source):
                     tables.append(t)
                     seen_signatures.add(signature)
 
-        # Modern PMC-like path: section.tw / div.tbl-box wrappers with direct table content.
-        if not tables:
-            fallback_containers = soup.select('section.tw, section[class*=\"table\"], div.tbl-box, div[class*=\"tbl-box\"]')
-            logger.info(f"Found {len(fallback_containers)} fallback PMC containers.")
-            for tc in fallback_containers:
-                table_html = tc.find('table')
-                if table_html is None:
-                    continue
-                signature = re.sub(r"\s+", " ", table_html.get_text(" ", strip=True)).strip().lower()
-                if not signature or signature in seen_signatures:
-                    continue
-
-                t = self.parse_table(table_html)
-                if t:
-                    t.position = len(tables) + 1
-                    label_node = tc.find(['h3', 'h4', 'label', 'span'], class_=re.compile(r'label', re.IGNORECASE))
-                    if label_node:
-                        t.label = label_node.get_text().strip()
-                        m = re.search(r'(\d+)', t.label)
-                        if m:
-                            t.number = m.group(1)
-                    caption_node = tc.find(['div', 'p'], class_=re.compile(r'caption', re.IGNORECASE))
-                    if caption_node:
-                        t.caption = caption_node.get_text().strip()
-                    notes_node = tc.find(['div', 'p'], class_=re.compile(r'foot|note', re.IGNORECASE))
-                    if notes_node:
-                        t.notes = notes_node.get_text().strip()
-                    tables.append(t)
-                    seen_signatures.add(signature)
+        # Modern PMC-like pages and fallback mirrors use several wrapper forms.
+        self._append_leaf_candidate_tables(soup, tables, seen_signatures)
 
         self.article.tables = tables
         return self.article

@@ -7,6 +7,8 @@ from .scrape import _validate_scrape
 import multiprocessing as mp
 from functools import partial
 from tqdm import tqdm
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 logger = logging.getLogger(__name__)
 
@@ -233,3 +235,72 @@ def add_articles(db, files, commit=True, table_dir=None, limit=None,
     db.save()
 
     return missing_sources
+
+
+def extract_and_export(
+    files,
+    output_dir,
+    *,
+    pmid_filenames=True,
+    skip_metadata=True,
+    num_workers=1,
+    use_readability=False,
+):
+    """Extract ACE tables and coordinates from HTML files and export them.
+
+    The extraction database is temporary. ``tables.csv`` contains every table
+    accepted by ACE's candidate gate, including tables for which ACE's
+    deterministic parser extracted no coordinates.
+    """
+    from . import config, database, export
+
+    output_dir = Path(output_dir)
+    file_paths = [str(Path(file_path)) for file_path in files]
+    previous_config = {
+        "SAVE_ORIGINAL_HTML": get_config("SAVE_ORIGINAL_HTML"),
+        "SAVE_ARTICLES_WITHOUT_ACTIVATIONS": get_config(
+            "SAVE_ARTICLES_WITHOUT_ACTIVATIONS"
+        ),
+    }
+
+    with TemporaryDirectory(prefix="ace-extract-") as temp_dir:
+        db_path = Path(temp_dir) / "ace.sqlite"
+        db = database.Database(
+            adapter="sqlite",
+            db_name=f"sqlite:///{db_path}",
+        )
+        try:
+            config.update_config(
+                SAVE_ORIGINAL_HTML=True,
+                SAVE_ARTICLES_WITHOUT_ACTIVATIONS=True,
+            )
+            missing_sources = add_articles(
+                db,
+                file_paths,
+                pmid_filenames=pmid_filenames,
+                force_ingest=True,
+                num_workers=num_workers,
+                skip_metadata=skip_metadata,
+                use_readability=use_readability,
+                expand_linked_tables=True,
+            )
+
+            article_count = db.session.query(database.Article).count()
+            table_count = db.session.query(database.Table).count()
+            coordinate_count = db.session.query(database.Activation).count()
+            export.export_database(
+                db,
+                output_dir,
+                skip_empty=False,
+                table_html=True,
+            )
+        finally:
+            db.session.close()
+            config.update_config(**previous_config)
+
+    return {
+        "articles": article_count,
+        "tables": table_count,
+        "coordinates": coordinate_count,
+        "missing_sources": [str(path) for path in missing_sources],
+    }

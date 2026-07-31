@@ -59,7 +59,7 @@ def export_database(db, foldername, skip_empty=True, table_html=False):
 
         for t in art.tables:
             # Prepare table data row
-            table_foot = t.footnotes if hasattr(t, 'footnotes') else ''
+            table_foot = getattr(t, 'notes', '') or ''
             n_header_rows = t.header_rows if hasattr(t, 'header_rows') else 1
             table_raw_file = (
                 f"tables/{art.id}/{t.id}.html"
