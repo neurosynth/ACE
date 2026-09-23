@@ -235,31 +235,56 @@ def parse_PMID_xml(xml):
 
     return metadata
 
+# Substrings that only ever show up on a blocked/failed scrape.
+BLOCKED_PAGE_PATTERNS = ['Checking if you are a human',
+'Please turn JavaScript on and reload the page',
+'Checking if the site connection is secure',
+'Enable JavaScript and cookies to continue',
+'There was a problem providing the content you requested',
+'<title>Redirecting</title>',
+'<title>Page not available - PMC</title>',
+'Your request cannot be processed at this time. Please try again later',
+'403 Forbidden',
+'Page not found — ScienceDirect',
+'This site can’t be reached',
+'used Cloudflare to restrict access',
+'502 Bad Gateway',
+'Checking your browser before accessing',
+'Checking your browser - reCAPTCHA',
+'/recaptcha/challengepage/',
+]
+
+# Markers for an embedded reCAPTCHA widget. These are *not* proof of a block:
+# PubMed, PMC and several publishers put one in ordinary page furniture (the
+# "Email" form on a PubMed abstract page, for instance). They only indicate a
+# challenge page when the widget is essentially all the page contains.
+RECAPTCHA_PATTERNS = ['g-recaptcha']
+
+# A real article page renders far more text than a challenge interstitial,
+# which only says something like "Checking your browser before accessing ...".
+MIN_VISIBLE_CHARS = 1000
+
+
+def _visible_text(html):
+    """ Rough plain-text rendering of an HTML document, used to tell a real
+    article page apart from an interstitial that carries nothing but a widget. """
+
+    text = re.sub(r'(?is)<(script|style|noscript)\b[^>]*>.*?</\1\s*>', ' ', html)
+    text = re.sub(r'(?s)<!--.*?-->', ' ', text)
+    text = re.sub(r'(?s)<[^>]*>', ' ', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+
 def _validate_scrape(html):
-    """ Checks to see if scraping was successful. 
+    """ Checks to see if scraping was successful.
     For example, checks to see if Cloudfare interfered """
 
-    patterns = ['Checking if you are a human',
-    'Please turn JavaScript on and reload the page',
-    'Checking if the site connection is secure',
-    'Enable JavaScript and cookies to continue',
-    'There was a problem providing the content you requested',
-    '<title>Redirecting</title>',
-    '<title>Page not available - PMC</title>',
-    'Your request cannot be processed at this time. Please try again later',
-    '403 Forbidden',
-    'Page not found — ScienceDirect',
-    'This site can’t be reached',
-    'used Cloudflare to restrict access',
-    '502 Bad Gateway',
-    'Checking your browser before accessing',
-    'Checking your browser - reCAPTCHA',
-    '/recaptcha/challengepage/',
-    'g-recaptcha',
-    ]
-
-    for pattern in patterns:
+    for pattern in BLOCKED_PAGE_PATTERNS:
         if pattern in html:
+            return False
+
+    if any(pattern in html for pattern in RECAPTCHA_PATTERNS):
+        if len(_visible_text(html)) < MIN_VISIBLE_CHARS:
             return False
 
     return True

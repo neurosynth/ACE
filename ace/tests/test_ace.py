@@ -620,6 +620,23 @@ def test_validate_scrape_flags_recaptcha_challenge_page(test_weird_data_path):
     assert scrape._validate_scrape(html) is False
 
 
+def test_validate_scrape_allows_embedded_recaptcha_widget(test_weird_data_path):
+    # PubMed embeds a reCAPTCHA widget in the "Email" form of every abstract
+    # page, so the widget alone must not condemn an otherwise fine scrape.
+    html = open(join(test_weird_data_path, "38814901_pubmed_recaptcha_widget.html")).read()
+    assert "g-recaptcha" in html
+    assert scrape._validate_scrape(html) is True
+
+
+def test_validate_scrape_flags_contentless_recaptcha_page():
+    html = (
+        '<html><head><title>Just a moment</title></head><body>'
+        '<div class="g-recaptcha" data-sitekey="abc"></div>'
+        '</body></html>'
+    )
+    assert scrape._validate_scrape(html) is False
+
+
 @pytest.mark.parametrize(
     "pmid,expected_source",
     [
