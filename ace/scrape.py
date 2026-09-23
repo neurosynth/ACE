@@ -235,31 +235,99 @@ def parse_PMID_xml(xml):
 
     return metadata
 
+# Substrings that only ever show up on a blocked/failed scrape.
+BLOCKED_PAGE_PATTERNS = ['Checking if you are a human',
+'Please turn JavaScript on and reload the page',
+'Checking if the site connection is secure',
+'Enable JavaScript and cookies to continue',
+'There was a problem providing the content you requested',
+'<title>Redirecting</title>',
+'<title>Page not available - PMC</title>',
+'Your request cannot be processed at this time. Please try again later',
+'403 Forbidden',
+'Page not found — ScienceDirect',
+'This site can’t be reached',
+'used Cloudflare to restrict access',
+'502 Bad Gateway',
+'Checking your browser before accessing',
+'Checking your browser - reCAPTCHA',
+'/recaptcha/challengepage/',
+]
+
+# Markers for an embedded reCAPTCHA widget. These are *not* proof of a block:
+# PubMed, PMC and several publishers put one in ordinary page furniture (the
+# "Email" form on a PubMed abstract page, for instance). They only indicate a
+# challenge page when the widget is essentially all the page contains.
+RECAPTCHA_PATTERNS = ['g-recaptcha']
+
+# A real article page renders far more text than a challenge interstitial,
+# which only says something like "Checking your browser before accessing ...".
+MIN_VISIBLE_CHARS = 1000
+
+
+# PubMed journal names of the PLoS titles, mapped to their journals.plos.org
+# site slug. PLoS serves NLM XML (with real, parseable tables) for all of them.
+PLOS_JOURNAL_SITES = {
+    'plos one': 'plosone',
+    'plos biology': 'plosbiology',
+    'plos medicine': 'plosmedicine',
+    'plos computational biology': 'ploscompbiol',
+    'plos genetics': 'plosgenetics',
+    'plos pathogens': 'plospathogens',
+    'plos neglected tropical diseases': 'plosntds',
+}
+
+
+def _is_pubmed_landing_page(url):
+    """ True for the PubMed abstract page, which is where prlinks drops us when
+    an article has no LinkOut record. It is not full text. """
+
+    return re.match(r'https?://pubmed\.ncbi\.nlm\.nih\.gov/\d+/?$', url or '') is not None
+
+
+def _extract_citation_doi(html):
+    """ Pull the DOI out of a page's citation_doi meta tag. """
+
+    if not html:
+        return None
+
+    for tag in re.findall(r'(?is)<meta\b[^>]*>', html):
+        if not re.search(r'''(?i)name\s*=\s*["']?citation_doi["']?''', tag):
+            continue
+        match = re.search(r'''(?i)content\s*=\s*["']([^"']+)["']''', tag)
+        if match:
+            return match.group(1).strip()
+
+    return None
+
+
+def _plos_doi_from_url(url):
+    """ Pull the DOI out of a journals.plos.org article URL, if it is one. """
+
+    match = re.search(r'article\?id=([^&#]+)', url or '')
+    return match.group(1) if match else None
+
+
+def _visible_text(html):
+    """ Rough plain-text rendering of an HTML document, used to tell a real
+    article page apart from an interstitial that carries nothing but a widget. """
+
+    text = re.sub(r'(?is)<(script|style|noscript)\b[^>]*>.*?</\1\s*>', ' ', html)
+    text = re.sub(r'(?s)<!--.*?-->', ' ', text)
+    text = re.sub(r'(?s)<[^>]*>', ' ', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+
 def _validate_scrape(html):
-    """ Checks to see if scraping was successful. 
+    """ Checks to see if scraping was successful.
     For example, checks to see if Cloudfare interfered """
 
-    patterns = ['Checking if you are a human',
-    'Please turn JavaScript on and reload the page',
-    'Checking if the site connection is secure',
-    'Enable JavaScript and cookies to continue',
-    'There was a problem providing the content you requested',
-    '<title>Redirecting</title>',
-    '<title>Page not available - PMC</title>',
-    'Your request cannot be processed at this time. Please try again later',
-    '403 Forbidden',
-    'Page not found — ScienceDirect',
-    'This site can’t be reached',
-    'used Cloudflare to restrict access',
-    '502 Bad Gateway',
-    'Checking your browser before accessing',
-    'Checking your browser - reCAPTCHA',
-    '/recaptcha/challengepage/',
-    'g-recaptcha',
-    ]
-
-    for pattern in patterns:
+    for pattern in BLOCKED_PAGE_PATTERNS:
         if pattern in html:
+            return False
+
+    if any(pattern in html for pattern in RECAPTCHA_PATTERNS):
+        if len(_visible_text(html)) < MIN_VISIBLE_CHARS:
             return False
 
     return True
@@ -639,9 +707,19 @@ class Scraper:
 
         j = journal.lower()
         try:
-            if j == 'plos one':
-                doi_part = re.search('article\?id\=(.*)', url).group(1)
-                return 'http://journals.plos.org/plosone/article/asset?id=%s.XML' % doi_part
+            if j in PLOS_JOURNAL_SITES:
+                doi = _plos_doi_from_url(url)
+                if doi is None and _is_pubmed_landing_page(url):
+                    # E-utilities had no LinkOut for this article, so prlinks
+                    # bounced us to the PubMed abstract page. Its citation_doi
+                    # meta tag is enough to address the full text ourselves.
+                    doi = _extract_citation_doi(html)
+                if doi is None:
+                    return url
+                # The legacy 'asset?id=<doi>.XML' endpoint still works, but only
+                # by redirecting here first.
+                return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (
+                    PLOS_JOURNAL_SITES[j], doi)
             elif j in ['human brain mapping', 'european journal of neuroscience',
                        'brain and behavior', 'epilepsia', 'journal of neuroimaging']:
                 return url.replace('abstract', 'full').split(';')[0]
