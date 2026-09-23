@@ -265,6 +265,49 @@ RECAPTCHA_PATTERNS = ['g-recaptcha']
 MIN_VISIBLE_CHARS = 1000
 
 
+# PubMed journal names of the PLoS titles, mapped to their journals.plos.org
+# site slug. PLoS serves NLM XML (with real, parseable tables) for all of them.
+PLOS_JOURNAL_SITES = {
+    'plos one': 'plosone',
+    'plos biology': 'plosbiology',
+    'plos medicine': 'plosmedicine',
+    'plos computational biology': 'ploscompbiol',
+    'plos genetics': 'plosgenetics',
+    'plos pathogens': 'plospathogens',
+    'plos neglected tropical diseases': 'plosntds',
+}
+
+
+def _is_pubmed_landing_page(url):
+    """ True for the PubMed abstract page, which is where prlinks drops us when
+    an article has no LinkOut record. It is not full text. """
+
+    return re.match(r'https?://pubmed\.ncbi\.nlm\.nih\.gov/\d+/?$', url or '') is not None
+
+
+def _extract_citation_doi(html):
+    """ Pull the DOI out of a page's citation_doi meta tag. """
+
+    if not html:
+        return None
+
+    for tag in re.findall(r'(?is)<meta\b[^>]*>', html):
+        if not re.search(r'''(?i)name\s*=\s*["']?citation_doi["']?''', tag):
+            continue
+        match = re.search(r'''(?i)content\s*=\s*["']([^"']+)["']''', tag)
+        if match:
+            return match.group(1).strip()
+
+    return None
+
+
+def _plos_doi_from_url(url):
+    """ Pull the DOI out of a journals.plos.org article URL, if it is one. """
+
+    match = re.search(r'article\?id=([^&#]+)', url or '')
+    return match.group(1) if match else None
+
+
 def _visible_text(html):
     """ Rough plain-text rendering of an HTML document, used to tell a real
     article page apart from an interstitial that carries nothing but a widget. """
@@ -664,9 +707,19 @@ class Scraper:
 
         j = journal.lower()
         try:
-            if j == 'plos one':
-                doi_part = re.search('article\?id\=(.*)', url).group(1)
-                return 'http://journals.plos.org/plosone/article/asset?id=%s.XML' % doi_part
+            if j in PLOS_JOURNAL_SITES:
+                doi = _plos_doi_from_url(url)
+                if doi is None and _is_pubmed_landing_page(url):
+                    # E-utilities had no LinkOut for this article, so prlinks
+                    # bounced us to the PubMed abstract page. Its citation_doi
+                    # meta tag is enough to address the full text ourselves.
+                    doi = _extract_citation_doi(html)
+                if doi is None:
+                    return url
+                # The legacy 'asset?id=<doi>.XML' endpoint still works, but only
+                # by redirecting here first.
+                return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (
+                    PLOS_JOURNAL_SITES[j], doi)
             elif j in ['human brain mapping', 'european journal of neuroscience',
                        'brain and behavior', 'epilepsia', 'journal of neuroimaging']:
                 return url.replace('abstract', 'full').split(';')[0]

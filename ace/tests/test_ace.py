@@ -183,27 +183,40 @@ def test_database_processing_stream(db, test_data_path):
 
 
 @pytest.mark.vcr(record_mode="once")
-def test_journal_scraping(test_data_path):
+def test_journal_scraping(test_data_path, source_manager):
     scrape_path = join(test_data_path, 'scrape_test')
-    os.makedirs(scrape_path, exist_ok=True)
+    # Start clean: index_pmids makes the scraper skip anything already on disk,
+    # so articles left behind by an earlier failed run would send it past the
+    # PMIDs the cassette covers.
+    shutil.rmtree(scrape_path, ignore_errors=True)
+    os.makedirs(scrape_path)
     # Test with PLoS ONE because it's OA
     scraper = scrape.Scraper(scrape_path)
-    scraper.retrieve_articles(
-        'PLoS ONE',
-        delay=5.0,
-        mode='requests',
-        search='fmri',
-        limit=2,
-        index_pmids=True,
-        skip_pubmed_central=False,
-        invalid_article_log_file=join(scrape_path, 'invalid_articles.log'),
-        prefer_pmc_source=True,
-    )
-    # For now just check to make sure we have expected number of files in the directory
-    plos_dir = join(scrape_path, 'html/PLoS ONE/')
-    n_files = len([name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)])
-    shutil.rmtree(scrape_path)
-    assert n_files == 2
+    try:
+        scraper.retrieve_articles(
+            'PLoS ONE',
+            delay=5.0,
+            mode='requests',
+            search='fmri',
+            limit=2,
+            index_pmids=True,
+            skip_pubmed_central=False,
+            invalid_article_log_file=join(scrape_path, 'invalid_articles.log'),
+            prefer_pmc_source=True,
+        )
+        plos_dir = join(scrape_path, 'html/PLoS ONE/')
+        names = [name for name in os.listdir(plos_dir) if os.path.isfile(plos_dir + name)]
+        docs = [open(join(plos_dir, name)).read() for name in names]
+    finally:
+        shutil.rmtree(scrape_path, ignore_errors=True)
+
+    assert len(names) == 2
+    # Each file must be the PLoS NLM XML, not the PubMed abstract page we get
+    # bounced to when E-utilities has no LinkOut record for an article.
+    for name, doc in zip(names, docs):
+        assert '<article' in doc, name
+        assert 'pubmed.ncbi.nlm.nih.gov' not in doc, name
+        assert source_manager.identify_source(doc).__class__.__name__ == 'PlosSource', name
    
 
 
@@ -626,6 +639,52 @@ def test_validate_scrape_allows_embedded_recaptcha_widget(test_weird_data_path):
     html = open(join(test_weird_data_path, "38814901_pubmed_recaptcha_widget.html")).read()
     assert "g-recaptcha" in html
     assert scrape._validate_scrape(html) is True
+
+
+def test_plos_substitute_url_from_pubmed_landing_page(test_weird_data_path, tmp_path):
+    # When E-utilities has no LinkOut record, prlinks drops us on the PubMed
+    # abstract page. The DOI in its citation_doi meta tag is enough to address
+    # the PLoS full text ourselves.
+    html = open(join(test_weird_data_path, "38814901_pubmed_recaptcha_widget.html")).read()
+    scraper = scrape.Scraper(str(tmp_path))
+
+    url = scraper.check_for_substitute_url(
+        "https://pubmed.ncbi.nlm.nih.gov/38814901/", html, "PLoS ONE")
+
+    assert url == (
+        "https://journals.plos.org/plosone/article/file"
+        "?id=10.1371/journal.pone.0303969&type=manuscript"
+    )
+
+
+def test_plos_substitute_url_from_publisher_page(tmp_path):
+    scraper = scrape.Scraper(str(tmp_path))
+
+    url = scraper.check_for_substitute_url(
+        "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0303969",
+        "", "PLoS ONE")
+
+    assert url == (
+        "https://journals.plos.org/plosone/article/file"
+        "?id=10.1371/journal.pone.0303969&type=manuscript"
+    )
+
+
+def test_plos_substitute_url_covers_sibling_journals(tmp_path):
+    scraper = scrape.Scraper(str(tmp_path))
+    html = '<meta name="citation_doi" content="10.1371/journal.pbio.3000001">'
+
+    url = scraper.check_for_substitute_url(
+        "https://pubmed.ncbi.nlm.nih.gov/12345678/", html, "PLoS Biology")
+
+    assert url.startswith("https://journals.plos.org/plosbiology/article/file")
+
+
+def test_plos_substitute_url_without_a_doi_is_left_alone(tmp_path):
+    scraper = scrape.Scraper(str(tmp_path))
+    landing = "https://pubmed.ncbi.nlm.nih.gov/12345678/"
+
+    assert scraper.check_for_substitute_url(landing, "<html></html>", "PLoS ONE") == landing
 
 
 def test_validate_scrape_flags_contentless_recaptcha_page():
