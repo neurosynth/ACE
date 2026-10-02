@@ -5,6 +5,7 @@ import re
 import os
 import json
 import abc
+import copy
 import importlib
 from glob import glob
 from urllib.parse import urljoin, urlparse
@@ -50,6 +51,51 @@ COORD_HEADER_HINT_RE = re.compile(
 COORD_TRIPLET_HINT_RE = re.compile(
     r"(?<!\d)[+\-−–—]?\d{1,3}\s*[,;/|\t ]\s*[+\-−–—]?\d{1,3}\s*[,;/|\t ]\s*[+\-−–—]?\d{1,3}(?!\d)"
 )
+
+_TABLE_PLACEHOLDER = re.compile(r"\[ace-table-(\d+)\]")
+
+
+def table_text(table):
+    """A table as text: its caption, then one tab-separated line per row.
+
+    Spanned cells are repeated across the columns and rows they cover, as
+    pandas.read_html does, so a value stays in its column.
+    """
+    rows = []
+    spans = {}  # column -> [text, rows still covered]
+    for tr in table.find_all("tr"):
+        row = []
+
+        def _fill_spans():
+            while len(row) in spans:
+                column = len(row)
+                row.append(spans[column][0])
+                spans[column][1] -= 1
+                if spans[column][1] == 0:
+                    del spans[column]
+
+        for cell in tr.find_all(["td", "th"], recursive=False):
+            _fill_spans()
+            text = " ".join(cell.get_text(" ").split())
+            colspan = _span(cell, "colspan")
+            rowspan = _span(cell, "rowspan")
+            for _ in range(colspan):
+                if rowspan > 1:
+                    spans[len(row)] = [text, rowspan - 1]
+                row.append(text)
+        _fill_spans()
+        if any(row):
+            rows.append("\t".join(row))
+    caption = table.find("caption")
+    caption_text = " ".join(caption.get_text(" ").split()) if caption else ""
+    return "\n".join(part for part in [caption_text] + rows if part)
+
+
+def _span(cell, attribute):
+    try:
+        return max(1, min(int(cell.get(attribute, 1)), 100))
+    except (TypeError, ValueError):
+        return 1
 
 # Try to import readabilipy for enhanced HTML cleaning
 try:
@@ -179,6 +225,46 @@ class Source(metaclass=abc.ABCMeta):
             logger.warning(f"Error using readabilipy, falling back to basic HTML cleaning: {e}")
             return self._safe_clean_html(html)
     
+    def _text_with_tables(self, soup):
+        """Article text with every table kept, at its place where possible.
+
+        Readability keeps only paragraphs and headings, so tables are lost
+        from the text. Each innermost table is swapped for a placeholder
+        paragraph before cleaning, then replaced by its rows. A table whose
+        placeholder readability discarded is appended at the end, unless
+        an identical table was already placed (pages often repeat one in a
+        hidden pop-up).
+        """
+        work = copy.copy(soup)
+        tables = {}
+        for index, table in enumerate(
+                [t for t in work.find_all("table") if not t.find("table")]):
+            key = str(index)
+            tables[key] = table_text(table)
+            placeholder = work.new_tag("p")
+            placeholder.string = "[ace-table-%s]" % key
+            table.replace_with(placeholder)
+
+        text = self._clean_html_with_readability(str(work))
+
+        placed = set()
+
+        def _substitute(match):
+            placed.add(match.group(1))
+            return tables.get(match.group(1), "")
+
+        text = _TABLE_PLACEHOLDER.sub(_substitute, text)
+        seen = {tables[key] for key in placed}
+        leftover = []
+        for key, rendered in tables.items():
+            if key in placed or not rendered or rendered in seen:
+                continue
+            seen.add(rendered)
+            leftover.append(rendered)
+        if leftover:
+            text = "\n\n".join([text.rstrip()] + leftover)
+        return text
+
     def _safe_clean_html(self, html):
         """
         Clean HTML content using BeautifulSoup as a fallback.
@@ -240,11 +326,13 @@ class Source(metaclass=abc.ABCMeta):
         pmid=None,
         metadata_dir=None,
         skip_metadata=False,
+        keep_tables=False,
         **kwargs,
     ):
         ''' Takes HTML article as input and returns an Article. PMID Can also be
         passed, which prevents having to scrape it from the article and/or look it
-        up in PubMed. '''
+        up in PubMed. If keep_tables is True, each table is kept in the article
+        text as tab-separated rows; see `_text_with_tables`. '''
         
         html = self.decode_html_entities(html)
         soup = BeautifulSoup(html, "lxml")
@@ -264,7 +352,10 @@ class Source(metaclass=abc.ABCMeta):
             script.extract()
 
         # Get text using readability
-        text = self._clean_html_with_readability(str(soup))
+        if keep_tables:
+            text = self._text_with_tables(soup)
+        else:
+            text = self._clean_html_with_readability(str(soup))
 
         self.article = database.Article(text, pmid=pmid, metadata=metadata)
         self.extract_neurovault(soup)

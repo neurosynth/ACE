@@ -3,6 +3,7 @@ import shutil
 from os.path import dirname, join, exists, sep as pathsep
 
 import pytest
+from bs4 import BeautifulSoup
 
 from ace import sources, database, export, scrape, ingest
 from ace import tableparser
@@ -723,3 +724,40 @@ def test_additional_missed_in_main_text_regressions(test_weird_data_path, source
     assert article is not None
     assert len(article.tables) >= 1
     assert _count_valid_activations(article.tables) >= 1
+
+
+def test_table_text_repeats_spanned_cells():
+    table = BeautifulSoup(
+        "<table><caption>Peaks</caption>"
+        "<tr><th rowspan=2>Region</th><th colspan=3>MNI</th></tr>"
+        "<tr><td>x</td><td>y</td><td>z</td></tr>"
+        "<tr><td>IFG</td><td>-42</td><td>18</td><td>6</td></tr></table>",
+        "lxml",
+    ).table
+    assert sources.table_text(table) == (
+        "Peaks\nRegion\tMNI\tMNI\tMNI\nRegion\tx\ty\tz\nIFG\t-42\t18\t6"
+    )
+
+
+def test_keep_tables_puts_tables_in_the_text(test_data_path, source_manager):
+    html = open(join(test_data_path, 'pmc.html')).read()
+    source = source_manager.identify_source(html)
+    plain = source.parse_article(html, pmid='1', skip_metadata=True).text
+    kept = source.parse_article(
+        html, pmid='1', skip_metadata=True, keep_tables=True).text
+    rows = [line for line in kept.splitlines() if line.count('\t') >= 2]
+    assert rows
+    assert not any(line.count('\t') >= 2 for line in plain.splitlines())
+    assert '[ace-table-' not in kept
+
+
+def test_a_table_readability_drops_is_appended(source_manager):
+    source = source_manager.sources['Default'] if 'Default' in source_manager.sources \
+        else next(iter(source_manager.sources.values()))
+    source._clean_html_with_readability = lambda html: "Body text."
+    soup = BeautifulSoup(
+        "<html><body><p>Body text.</p>"
+        "<table><tr><td>a</td><td>b</td></tr></table>"
+        "<div hidden><table><tr><td>a</td><td>b</td></tr></table></div>"
+        "</body></html>", "lxml")
+    assert source._text_with_tables(soup) == "Body text.\n\na\tb"
