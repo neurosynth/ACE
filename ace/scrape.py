@@ -279,8 +279,8 @@ PLOS_JOURNAL_SITES = {
 
 
 def _is_pubmed_landing_page(url):
-    """ True for the PubMed abstract page, which is where prlinks drops us when
-    an article has no LinkOut record. It is not full text. """
+    """ True for the PubMed abstract page, which is what we open when an
+    article has no LinkOut record. It is not full text. """
 
     return re.match(r'https?://pubmed\.ncbi\.nlm\.nih\.gov/\d+/?$', url or '') is not None
 
@@ -581,33 +581,24 @@ class Scraper:
         return None
 
     @staticmethod
-    def _objurls_from_elink_json(json_content):
-        linksets = json_content.get('linksets', [])
-        if not linksets:
-            return []
-        idurllist = linksets[0].get('idurllist', [])
-        if not idurllist:
-            return []
-        return idurllist[0].get('objurls', [])
+    def _providers_from_elink_json(json_content):
+        """ (provider nameabbr, URL) for each LinkOut entry of a cmd=prlinks
+        JSON response, in NCBI's order. """
+
+        objurls = json_content['linksets'][0]['idurllist'][0]['objurls']
+        return [(obj.get('provider', {}).get('nameabbr'), obj['url']['value']) for obj in objurls]
 
     @staticmethod
-    def _prlinks_target(pmid, objurls):
-        """ The page that elink's cmd=prlinks&retmode=ref would redirect to.
+    def _prlinks_target(pmid, providers):
+        """ The page that elink's cmd=prlinks&retmode=ref redirects to: the
+        first LinkOut provider that isn't PMC, else PMC, else the PubMed
+        abstract page. """
 
-        That redirect is a request to E-utilities without our API key, so NCBI
-        rate limits it per IP. The keyed JSON lookup lists the same LinkOut
-        providers, and the redirect goes to the first one that isn't PMC, to
-        PMC when it is the only one, and to the PubMed abstract page when
-        there are none. """
-
-        urls = [(obj.get('provider', {}).get('nameabbr'), obj.get('url', {}).get('value'))
-                for obj in objurls]
-        urls = [(name, url) for name, url in urls if url]
-        for name, url in urls:
+        for name, url in providers:
             if name != 'PMC':
                 return url
-        if urls:
-            return urls[0][1]
+        if providers:
+            return providers[0][1]
         return f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
 
     def _without_api_key(self, text):
@@ -621,20 +612,13 @@ class Scraper:
                          skip_url_substrings=None):
         try:
             response = self._client.elink(pmid, retmode='json', return_content=False)
-            response.raise_for_status()
-            objurls = self._objurls_from_elink_json(response.json())
+            providers = self._providers_from_elink_json(response.json())
         except Exception as e:
             logger.error(f"E-utilities lookup failed for PMID {pmid}: {self._without_api_key(e)}")
             return None
 
-        providers = {
-            obj.get('provider', {}).get('nameabbr'): obj.get('url', {}).get('value')
-            for obj in objurls
-            if obj.get('provider', {}).get('nameabbr')
-        }
-
         if prefer_pmc_source:
-            if providers.get('PMC'):
+            if any(name == 'PMC' for name, _ in providers):
                 pmc_id = self._get_pmcid_from_pmid(pmid)
                 if pmc_id:
                     pmc_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmc_id}"
@@ -652,8 +636,7 @@ class Scraper:
                 logger.info("\tNo PMC source found! Skipping...")
                 return
 
-        for obj in objurls:
-            provider_url = obj.get('url', {}).get('value')
+        for _, provider_url in providers:
             if self._should_skip_url(provider_url, skip_url_substrings):
                 logger.info(
                     "\tSkipping PMID %s due to blocked provider URL: %s",
@@ -662,7 +645,7 @@ class Scraper:
                 )
                 return
 
-        url = self._prlinks_target(pmid, objurls)
+        url = self._prlinks_target(pmid, providers)
         logger.info(url)
         return self.get_html(
             url,
@@ -684,8 +667,8 @@ class Scraper:
             if j in PLOS_JOURNAL_SITES:
                 doi = _plos_doi_from_url(url)
                 if doi is None and _is_pubmed_landing_page(url):
-                    # E-utilities had no LinkOut for this article, so prlinks
-                    # bounced us to the PubMed abstract page. Its citation_doi
+                    # E-utilities had no LinkOut for this article, so we
+                    # opened the PubMed abstract page. Its citation_doi
                     # meta tag is enough to address the full text ourselves.
                     doi = _extract_citation_doi(html)
                 if doi is None:

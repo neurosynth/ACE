@@ -1,0 +1,72 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/124.0.6367.78 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=21159981&retmode=json
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAALyST2vcMBDF7/0Uiw45raVsk0DXEHIIlF4CgRZ6KGGRpVl7NvrjjiS7Ycl378jb
+        BNL21EPRxZ43fm/mZx3FANoCifYo8tMIohXgMDyKtZiAEsbAlXN5IZ7XotYT5CTab0dhuz1Fz+JY
+        Og+W+9EWcg5TXnS0rL3fbK622w8bVmN3YPn0LT/UvEm7UgOHnMdWqXme5SFAoZgMyki9Mj2q0aN1
+        MT6W8WZCmK9dDP1ZLV6/mvNoaGL4zVWZSDBk79T3AvSkoMd9UjUrtU0zRsrayQH7YUaCGtdUk9TA
+        jwwUtEtAExpIzWnBJmUdrCbbnGbc7ZGbdnsCkOxch0ilO4DJFWPd82EtjM7QR8LlXXwszq2+sP/q
+        cyzE1oJbdM6EXcmnlmq3IkiLXuWR4oS//k/Qvi72iWf+yjMz1FrRXUdvqwv6i/MrJvO8/ivtxLhH
+        b2QwHcrgvAw4yD5OSlNG4yAt2NULYfVPiI0NfwQ0nNoYnxr0uq9svdnVaxVLlmPo/yPF+9LdgV3d
+        Qsik3VuW93e3rxgvt5eM8WE5734CAAD//wMARtYyly4DAAA=
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Tue, 13 Oct 2026 23:42:02 GMT
+      Ncbi-Phid:
+      - 1D33399F89B0DAB50000452E739CCC18.1.1.m_1
+      Ncbi-Sid:
+      - 9A33E62C95FFA478_0AF7SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=9A33E62C95FFA478_0AF7SID; domain=.nih.gov; path=/; expires=Wed, 13
+        Oct 2027 23:42:03 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '10'
+      X-Ratelimit-Remaining:
+      - '6'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
