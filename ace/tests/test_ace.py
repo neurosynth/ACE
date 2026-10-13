@@ -1,8 +1,10 @@
 import os
 import shutil
 from os.path import dirname, join, exists, sep as pathsep
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
+import requests
 from bs4 import BeautifulSoup
 
 from ace import sources, database, export, scrape, ingest
@@ -761,3 +763,50 @@ def test_a_table_readability_drops_is_appended(source_manager):
         "<div hidden><table><tr><td>a</td><td>b</td></tr></table></div>"
         "</body></html>", "lxml")
     assert source._text_with_tables(soup) == "Body text.\n\na\tb"
+
+
+def _requested_urls(cassette):
+    return [request.uri for request in cassette.requests]
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_opens_the_provider_url_from_the_keyed_lookup(vcr, tmp_path):
+    # PMC is listed before Frontiers in the elink JSON, but prlinks sends us to
+    # Frontiers, so that is the page we must open, and without the unkeyed
+    # cmd=prlinks&retmode=ref hop through E-utilities.
+    scraper = scrape.Scraper(str(tmp_path))
+
+    html = scraper.get_html_by_pmid(
+        '25709573', 'Other journal', mode='requests', prefer_pmc_source=False)
+
+    urls = _requested_urls(vcr)
+    assert '10.3389/fnhum.2014.01073' in html
+    eutils = [urlsplit(url) for url in urls if 'eutils.ncbi.nlm.nih.gov' in url]
+    assert [parse_qs(url.query) for url in eutils] == [
+        {'dbfrom': ['pubmed'], 'id': ['25709573'], 'retmode': ['json'], 'cmd': ['prlinks']}
+    ]
+    assert urls[1] == 'https://doi.org/10.3389/fnhum.2014.01073'
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_without_linkout_opens_the_pubmed_page(vcr, tmp_path):
+    # With no LinkOut record prlinks lands on the PubMed abstract page, which
+    # check_for_substitute_url can still use, so open it directly.
+    scraper = scrape.Scraper(str(tmp_path))
+
+    html = scraper.get_html_by_pmid('28520367', 'Other journal', mode='requests')
+
+    urls = _requested_urls(vcr)
+    assert 'retmode=ref' not in ' '.join(urls)
+    assert urls[1:] == ['https://pubmed.ncbi.nlm.nih.gov/28520367/']
+    assert 'pubmed.ncbi.nlm.nih.gov' in html
+
+
+def test_elink_errors_are_logged_without_the_api_key(tmp_path):
+    # requests quotes the whole query string, key included, in its errors.
+    scraper = scrape.Scraper(str(tmp_path), api_key='not-a-real-key')
+    error = requests.exceptions.ConnectionError(
+        "Max retries exceeded with url: /entrez/eutils/elink.fcgi"
+        "?dbfrom=pubmed&id=25709573&retmode=json&cmd=prlinks&api_key=not-a-real-key")
+
+    assert 'not-a-real-key' not in scraper._without_api_key(error)
