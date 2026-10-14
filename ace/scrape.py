@@ -14,7 +14,7 @@ from seleniumbase import Driver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from tqdm import tqdm
 from seleniumbase import SB
 
@@ -265,24 +265,25 @@ RECAPTCHA_PATTERNS = ['g-recaptcha']
 MIN_VISIBLE_CHARS = 1000
 
 
-# PubMed journal names of the PLoS titles, mapped to their journals.plos.org
-# site slug. PLoS serves NLM XML (with real, parseable tables) for all of them.
-PLOS_JOURNAL_SITES = {
-    'plos one': 'plosone',
-    'plos biology': 'plosbiology',
-    'plos medicine': 'plosmedicine',
-    'plos computational biology': 'ploscompbiol',
-    'plos genetics': 'plosgenetics',
-    'plos pathogens': 'plospathogens',
-    'plos neglected tropical diseases': 'plosntds',
-}
+# A journals.plos.org article page: the first path segment is the journal's site
+# slug (plosone, mentalhealth, ...) and the DOI is the id query parameter.
+PLOS_ARTICLE_URL = re.compile(r'^https?://journals\.plos\.org/([^/?#]+)/article\?id=([^&#]+)')
 
 
-def _plos_doi_from_url(url):
-    """ Pull the DOI out of a journals.plos.org article URL, if it is one. """
+def _xml_url(url):
+    """ The publisher's NLM XML for an article page (journals.plos.org or
+    frontiersin.org), or None. Only a plain HTTP fetch can use it: a browser
+    downloads the PLoS manuscript and wraps Frontiers XML in its viewer. """
 
-    match = re.search(r'article\?id=([^&#]+)', url or '')
-    return match.group(1) if match else None
+    match = PLOS_ARTICLE_URL.match(url or '')
+    if match is not None:
+        slug, doi = match.groups()
+        return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (slug, doi)
+    if 'frontiersin.org' in (url or ''):
+        xml = re.sub(r'/(full|abstract)/*$', r'/xml/nlm', url)
+        if xml != url:
+            return xml
+    return None
 
 
 def _visible_text(html):
@@ -365,7 +366,7 @@ class Scraper:
         return doc
 
 
-    def get_html(self, url, journal, mode='browser', headless=True, skip_url_substrings=None):
+    def get_html(self, url, mode='browser', headless=True, skip_url_substrings=None):
 
         ''' Get HTML of full-text article. Uses either browser automation (if mode == 'browser')
         or just gets the URL directly. '''
@@ -374,65 +375,50 @@ class Scraper:
             return None
 
         if mode == 'browser':
-            driver = Driver(
-                uc=True,
-                headless2=headless,
-                agent=random.choice(USER_AGENTS),
-            )
-            for attempt in range(15):
-                try:
-                    driver.set_page_load_timeout(10)
-                    driver.get(url)
-                    url = driver.current_url
-                    if self._should_skip_url(url, skip_url_substrings):
-                        driver.quit()
-                        return None
-                except:
-                    driver.quit()
-                    logger.info(f"Timeout exception #{attempt}. Retrying...")
-                    sleep(5)
-                    continue
-                else:
-                    break
-            else:
-                logger.info("Timeout exception. Giving up.")
-                return None
-            for attempt in range(10):
-                try:
-                    html = driver.page_source
-                except:
-                    logger.info(f"Source Page #{attempt}. Retrying...")
-                    driver.quit()
-                    driver = Driver(
-                        uc=True,
-                        headless2=headless,
-                        agent=random.choice(USER_AGENTS),
-                    )
-                    driver.get(url)
-                    sleep(2)
-                else:
-                    break
-    
-            new_url = self.check_for_substitute_url(url, html, journal)
-            if self._should_skip_url(new_url, skip_url_substrings):
-                driver.quit()
-                return None
-
-            if url != new_url:
-                driver = Driver(
+            def new_driver():
+                d = Driver(
                     uc=True,
                     headless2=headless,
                     agent=random.choice(USER_AGENTS),
                 )
-                driver.get(new_url)
-                if journal.lower() in ['human brain mapping',
-                                            'european journal of neuroscience',
-                                            'brain and behavior','epilepsia']:
-                    sleep(0.5 + random.random() * 1)
+                d.set_page_load_timeout(10)
+                return d
+
+            def load(url):
+                # A slow page is read as far as it got rather than failing the article.
+                try:
+                    driver.get(url)
+                except TimeoutException:
+                    logger.info(f"Page load timed out on {url}; reading what loaded.")
+
+            driver = None
+            try:
+                driver = new_driver()
+                for attempt in range(15):
                     try:
-                        WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'relatedArticles')))
-                    except TimeoutException:
-                        print("Loading Wiley page took too much time!")
+                        driver.get(url)
+                        url = driver.current_url
+                    except:
+                        logger.info(f"Timeout exception #{attempt}. Retrying...")
+                        driver.quit()
+                        sleep(5)
+                        driver = new_driver()
+                    else:
+                        break
+                else:
+                    logger.info("Timeout exception. Giving up.")
+                    return None
+                if self._should_skip_url(url, skip_url_substrings):
+                    return None
+
+                new_url = self.check_for_substitute_url(url)
+                if self._should_skip_url(new_url, skip_url_substrings):
+                    return None
+                if url != new_url:
+                    driver.quit()
+                    driver = new_driver()
+                    url = new_url
+                    load(url)
 
                 # Sometimes we get annoying alerts (e.g., Flash animation
                 # timeouts), so we dismiss them if present.
@@ -442,69 +428,65 @@ class Scraper:
                 except:
                     pass
 
-            logger.info(journal.lower())
-            timeout = 5
-            for attempt in range(10):
-                try:
-                    html = driver.page_source
-                except:
-                    logger.info(f"Source Page #{attempt}. Retrying...")
-                    driver.quit()
-                    driver = Driver(
-                        uc=True,
-                        headless2=headless,
-                        agent=random.choice(USER_AGENTS),
-                    )
-                    driver.get(url)
-                    sleep(2)
-                else:
-                    break
-            if journal.lower() in ['journal of neuroscience', 'j neurosci']:
-                ## Find links with class data-table-url, and click on them
-                ## to load the table data.
-                table_links = driver.find_elements(By.CLASS_NAME, 'table-expand-inline')
+                # ScienceDirect and Wiley fill in the article after the page loads, so
+                # wait for it before the HTML is read below.
+                timeout = 5
+                if ' - ScienceDirect' in driver.title:
+                    try:
+                        element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
+                        WebDriverWait(driver, timeout).until(element_present)
+                    except TimeoutException:
+                        pass
+                elif 'Wiley Online Library' in driver.title:
+                    try:
+                        element_present = EC.presence_of_element_located((By.ID, 'article__content'))
+                        WebDriverWait(driver, timeout).until(element_present)
+                    except TimeoutException:
+                        pass
 
-                if len(table_links):         
-                    for link in table_links:
-                        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((
-                            By.CLASS_NAME, 'table-expand-inline')))    
+                # Tables collapsed behind a "table-expand-inline" link are only in the
+                # page once the link is clicked, so click them all before reading it.
+                # A link that can't be clicked leaves that table collapsed; the page is
+                # still read.
+                for link in driver.find_elements(By.CLASS_NAME, 'table-expand-inline'):
+                    try:
                         driver.execute_script("arguments[0].scrollIntoView();", link)
+                        WebDriverWait(driver, timeout).until(EC.element_to_be_clickable(link))
                         link.click()
-                        sleep(0.5 + random.random() * 1)
+                    except WebDriverException as e:
+                        logger.info(f"Could not expand a table on {url}: {type(e).__name__}")
+                    sleep(0.5 + random.random() * 1)
 
-            # If title has ScienceDirect in in title
-            elif ' - ScienceDirect' in html:
-                try:
-                    element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
-                    WebDriverWait(driver, timeout).until(element_present)
-                except TimeoutException:
-                    pass
-            elif 'Wiley Online Library</title>' in html:
-                try:
-                    element_present = EC.presence_of_element_located((By.ID, 'article__content'))
-                    WebDriverWait(driver, timeout).until(element_present)
-                except TimeoutException:
-                    pass
-
-            ## Uncomment this next line to scroll to end. Doesn't seem to actually help.
-            # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            ## Uncomment next line and insert ID to search for specific element.
-            # driver.find_element_by_id('relatedArticles').send_keys('\t')
-            # This next line helps minimize the number of blank articles saved from ScienceDirect,
-            # which loads content via Ajax requests only after the page is done loading. There is 
-            # probably a better way to do this...
-            
-            driver.quit()
-            return html
+                html = None
+                for attempt in range(10):
+                    try:
+                        html = driver.page_source
+                    except:
+                        logger.info(f"Source Page #{attempt}. Retrying...")
+                        driver.quit()
+                        driver = new_driver()
+                        load(url)
+                        sleep(2)
+                    else:
+                        break
+                return html
+            finally:
+                # Every way out of the browser path, an exception included, closes Chrome.
+                if driver is not None:
+                    try:
+                        driver.quit()
+                    except Exception:
+                        pass
 
         elif mode == 'requests':
             headers = {'User-Agent': random.choice(USER_AGENTS)}
             r = requests.get(url, headers=headers)
             if self._should_skip_url(r.url, skip_url_substrings):
                 return None
-            # For some journals, we can do better than the returned HTML, so get the final URL and 
-            # substitute a better one.
-            url = self.check_for_substitute_url(r.url, r.text, journal)
+            # For some publishers, we can do better than the returned HTML, so get the
+            # XML version. A browser would download it rather than show it, so this
+            # only happens here.
+            url = _xml_url(r.url) or self.check_for_substitute_url(r.url)
             if url != r.url:
                 if self._should_skip_url(url, skip_url_substrings):
                     return None
@@ -594,8 +576,8 @@ class Scraper:
             logger.error(f"E-utilities summary failed for PMID {pmid}: {self._without_api_key(e)}")
             return None
 
-        # The caller's journal can be a label of its own, and PLOS_JOURNAL_SITES
-        # doesn't list every PLOS title. Every PLOS journal DOI has this prefix.
+        # Decided by the DOI, not the caller's journal, which is only a storage
+        # folder. Every PLoS journal DOI has this prefix.
         if doi is None or not doi.startswith('10.1371/journal.'):
             logger.info("\tNo LinkOut record for PMID %s and not a PLoS article. Skipping...", pmid)
             return None
@@ -611,7 +593,7 @@ class Scraper:
             text = text.replace(self._client.api_key, '<api_key>')
         return text
 
-    def get_html_by_pmid(self, pmid, journal, mode='browser', prefer_pmc_source=True, headless=True,
+    def get_html_by_pmid(self, pmid, mode='browser', prefer_pmc_source=True, headless=True,
                          skip_url_substrings=None):
         try:
             response = self._client.elink(pmid, retmode='json', return_content=False)
@@ -627,7 +609,6 @@ class Scraper:
                     pmc_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmc_id}"
                     return self.get_html(
                         pmc_url,
-                        journal,
                         mode=mode,
                         headless=headless,
                         skip_url_substrings=skip_url_substrings,
@@ -660,44 +641,22 @@ class Scraper:
         logger.info(url)
         return self.get_html(
             url,
-            journal,
             mode=mode,
             headless=headless,
             skip_url_substrings=skip_url_substrings,
         )
 
 
-    def check_for_substitute_url(self, url, html, journal):
-        ''' For some journals/publishers, we can get a better document version by modifying the 
-        URL passed from PubMed. E.g., we can get XML with embedded tables from PLoS ONE instead of 
-        the standard HTML, which displays tables as images. For some journals (e.g., Frontiers),  
-        it's easier to get the URL by searching the source, so pass the html in as well. '''
+    def check_for_substitute_url(self, url):
+        ''' For some publishers, a better version of the document is at a different URL
+        than the one PubMed links to. Rules are keyed on the URL alone, since the caller's
+        journal name is only a storage folder. '''
 
-        j = journal.lower()
-        try:
-            if j in PLOS_JOURNAL_SITES:
-                doi = _plos_doi_from_url(url)
-                if doi is None:
-                    return url
-                # The legacy 'asset?id=<doi>.XML' endpoint still works, but only
-                # by redirecting here first.
-                return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (
-                    PLOS_JOURNAL_SITES[j], doi)
-            elif j in ['human brain mapping', 'european journal of neuroscience',
-                       'brain and behavior', 'epilepsia', 'journal of neuroimaging']:
-                return url.replace('abstract', 'full').split(';')[0]
-            elif j == 'journal of cognitive neuroscience':
-                return url.replace('doi/abs', 'doi/full')
-            elif j.startswith('frontiers in'):
-                return re.sub('(full|abstract)\/*$', 'xml\/nlm', url)
-            elif 'sciencedirect' in url:
-                return url + '?np=y'
-            elif 'springer.com' in url:
-                return url + '/fulltext.html'
-            else:
-                return url
-        except Exception as err:
-            return url
+        if 'sciencedirect' in url:
+            return url + '?np=y'
+        if 'springer.com' in url:
+            return url + '/fulltext.html'
+        return url
 
     
     def is_pmc_open_acess(self, pmcid):
@@ -724,7 +683,6 @@ class Scraper:
         # Save the HTML 
         doc = self.get_html_by_pmid(
             id,
-            journal,
             mode=mode,
             prefer_pmc_source=prefer_pmc_source,
             headless=headless,

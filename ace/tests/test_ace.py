@@ -651,33 +651,51 @@ def test_validate_scrape_allows_embedded_recaptcha_widget(test_weird_data_path):
     assert scrape._validate_scrape(html) is True
 
 
-def test_plos_substitute_url_from_publisher_page(tmp_path):
-    scraper = scrape.Scraper(str(tmp_path))
-
-    url = scraper.check_for_substitute_url(
-        "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0303969",
-        "", "PLoS ONE")
-
-    assert url == (
+def test_xml_url_of_a_plos_article_is_its_manuscript():
+    assert scrape._xml_url(
+        "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0303969"
+    ) == (
         "https://journals.plos.org/plosone/article/file"
         "?id=10.1371/journal.pone.0303969&type=manuscript"
     )
 
 
-def test_plos_substitute_url_covers_sibling_journals(tmp_path):
+def test_xml_url_takes_the_plos_site_slug_from_the_url():
+    # A journal that is not in any name map still gets its own site.
+    url = scrape._xml_url(
+        "https://journals.plos.org/mentalhealth/article?id=10.1371/journal.pmen.0000749")
+    assert url.startswith("https://journals.plos.org/mentalhealth/article/file?id=10.1371/journal.pmen.0000749")
+
+
+def test_xml_url_is_none_for_other_publishers():
+    assert scrape._xml_url("https://pubmed.ncbi.nlm.nih.gov/12345678/") is None
+
+
+def test_check_for_substitute_url_leaves_a_plos_article_alone(tmp_path):
+    # The manuscript is a download, which a browser saves to disk, so browser
+    # mode never opens it.
     scraper = scrape.Scraper(str(tmp_path))
-
-    url = scraper.check_for_substitute_url(
-        "https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3000001", "", "PLoS Biology")
-
-    assert url.startswith("https://journals.plos.org/plosbiology/article/file")
+    landing = "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0303969"
+    assert scraper.check_for_substitute_url(landing) == landing
 
 
-def test_plos_substitute_url_without_a_doi_is_left_alone(tmp_path):
+@pytest.mark.parametrize('url, expected', [
+    ("https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/full",
+     "https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/xml/nlm"),
+    ("https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/abstract/",
+     "https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/xml/nlm"),
+    ("https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073", None),
+])
+def test_xml_url_of_a_frontiers_article_is_its_nlm_xml(url, expected):
+    # A literal backslash in the replacement made the old rewrite a 404.
+    assert scrape._xml_url(url) == expected
+
+
+def test_check_for_substitute_url_leaves_a_frontiers_article_alone(tmp_path):
+    # A browser wraps the XML in its viewer, so browser mode reads the HTML page.
     scraper = scrape.Scraper(str(tmp_path))
-    landing = "https://pubmed.ncbi.nlm.nih.gov/12345678/"
-
-    assert scraper.check_for_substitute_url(landing, "<html></html>", "PLoS ONE") == landing
+    page = "https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/full"
+    assert scraper.check_for_substitute_url(page) == page
 
 
 def test_validate_scrape_flags_contentless_recaptcha_page():
@@ -788,20 +806,23 @@ def test_get_html_by_pmid_opens_the_provider_url_from_the_keyed_lookup(vcr, tmp_
     scraper = scrape.Scraper(str(tmp_path))
 
     html = scraper.get_html_by_pmid(
-        '25709573', 'Other journal', mode='requests', prefer_pmc_source=False)
+        '25709573', mode='requests', prefer_pmc_source=False)
 
     played = _played_urls(vcr)
     assert vcr.all_played
     assert played[:2] == [ELINK_PRLINKS.format('25709573'), 'https://doi.org/10.3389/fnhum.2014.01073']
+    # The article's full-text page redirects are followed first; the NLM XML of
+    # that page is the last request.
+    assert played[-1] == 'https://www.frontiersin.org/journals/human-neuroscience/articles/10.3389/fnhum.2014.01073/xml/nlm'
     assert [url for url in played if 'eutils.ncbi.nlm.nih.gov' in url] == [ELINK_PRLINKS.format('25709573')]
-    assert '10.3389/fnhum.2014.01073' in html
+    # The NLM XML, not the article page, is what is saved.
+    assert '<article-title>' in html
 
 
 @pytest.mark.vcr(record_mode="once")
 @pytest.mark.parametrize('pmid, doi, article_page', [
-    ('42868208', '10.1371/journal.pone.0360047', 'https://journals.plos.org/plosone/article?id='),
-    # Not in PLOS_JOURNAL_SITES.
-    ('42868163', '10.1371/journal.pmen.0000749', 'https://journals.plos.org/mentalhealth/article?id='),
+    ('42868208', '10.1371/journal.pone.0360047', 'https://journals.plos.org/plosone/article/file?id='),
+    ('42868163', '10.1371/journal.pmen.0000749', 'https://journals.plos.org/mentalhealth/article/file?id='),
 ], ids=['plos-one', 'plos-mental-health'])
 def test_get_html_by_pmid_without_linkout_opens_the_plos_article_by_doi(
         vcr, tmp_path, attempted_urls, pmid, doi, article_page):
@@ -809,15 +830,17 @@ def test_get_html_by_pmid_without_linkout_opens_the_plos_article_by_doi(
     # passed in is a placeholder, so PubMed's esummary has to say it is PLoS.
     scraper = scrape.Scraper(str(tmp_path))
 
-    html = scraper.get_html_by_pmid(pmid, 'Other journal', mode='requests')
+    html = scraper.get_html_by_pmid(pmid, mode='requests')
 
     played = _played_urls(vcr)
     assert vcr.all_played
     assert set(attempted_urls) == set(played)
     assert played[:3] == [ELINK_PRLINKS.format(pmid), ESUMMARY.format(pmid), f'https://doi.org/{doi}']
-    assert played[-1].startswith(article_page)
+    # The article page is opened, then its NLM XML is fetched; the manuscript
+    # redirects to a signed storage URL.
+    assert [url for url in played if 'type=manuscript' in url and url.startswith(article_page)]
     assert not [url for url in played if 'pubmed.ncbi.nlm.nih.gov' in url]
-    assert f'<meta name="citation_doi" content="{doi}"' in html
+    assert f'<article-id pub-id-type="doi">{doi}</article-id>' in html
     assert scrape._validate_scrape(html)
 
 
@@ -825,12 +848,11 @@ def test_get_html_by_pmid_without_linkout_opens_the_plos_article_by_doi(
 @pytest.mark.parametrize('pmid', ['28520367', '42869849'], ids=['book-chapter', 'article-with-a-doi'])
 def test_get_html_by_pmid_without_linkout_opens_nothing_for_other_journals(
         vcr, tmp_path, caplog, attempted_urls, pmid):
-    # The journal passed in says PLoS; PubMed's esummary says otherwise. The
-    # chapter has no DOI at all.
+    # The chapter has no DOI at all; the article has one that isn't PLoS's.
     scraper = scrape.Scraper(str(tmp_path))
 
     with caplog.at_level('INFO', logger='ace.scrape'):
-        html = scraper.get_html_by_pmid(pmid, 'PLoS ONE', mode='requests')
+        html = scraper.get_html_by_pmid(pmid, mode='requests')
 
     assert html is None
     assert vcr.all_played
@@ -847,7 +869,7 @@ def test_get_html_by_pmid_logs_an_esummary_error_reply_as_a_failed_lookup(vcr, t
     scraper = scrape.Scraper(str(tmp_path))
 
     with caplog.at_level('INFO', logger='ace.scrape'):
-        html = scraper.get_html_by_pmid('99999999', 'Other journal', mode='requests')
+        html = scraper.get_html_by_pmid('99999999', mode='requests')
 
     assert html is None
     assert vcr.all_played
@@ -889,7 +911,7 @@ def test_plos_summary_failure_is_logged_without_the_api_key(vcr, tmp_path, caplo
 def test_get_html_by_pmid_prefers_pmc(vcr, tmp_path):
     scraper = scrape.Scraper(str(tmp_path))
 
-    scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source=True)
+    scraper.get_html_by_pmid('25709573', mode='requests', prefer_pmc_source=True)
 
     played = _played_urls(vcr)
     assert vcr.all_played
@@ -905,7 +927,7 @@ def test_get_html_by_pmid_prefers_pmc(vcr, tmp_path):
 def test_get_html_by_pmid_opens_pmc_when_it_is_the_only_provider(vcr, tmp_path):
     scraper = scrape.Scraper(str(tmp_path))
 
-    scraper.get_html_by_pmid('20311739', 'Other journal', mode='requests', prefer_pmc_source=False)
+    scraper.get_html_by_pmid('20311739', mode='requests', prefer_pmc_source=False)
 
     played = _played_urls(vcr)
     assert vcr.all_played
@@ -919,7 +941,7 @@ def test_get_html_by_pmid_opens_pmc_when_it_is_the_only_provider(vcr, tmp_path):
 def test_get_html_by_pmid_pmc_only_skips_articles_without_pmc(vcr, tmp_path):
     scraper = scrape.Scraper(str(tmp_path))
 
-    html = scraper.get_html_by_pmid('28520367', 'Other journal', mode='requests', prefer_pmc_source='only')
+    html = scraper.get_html_by_pmid('28520367', mode='requests', prefer_pmc_source='only')
 
     assert html is None
     assert _played_urls(vcr) == [ELINK_PRLINKS.format('28520367')]
@@ -929,7 +951,7 @@ def test_get_html_by_pmid_pmc_only_skips_articles_without_pmc(vcr, tmp_path):
 def test_get_html_by_pmid_pmc_only_opens_pmc(vcr, tmp_path):
     scraper = scrape.Scraper(str(tmp_path))
 
-    html = scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source='only')
+    html = scraper.get_html_by_pmid('25709573', mode='requests', prefer_pmc_source='only')
 
     assert html is not None
     assert vcr.all_played
@@ -948,7 +970,7 @@ def test_get_html_by_pmid_pmc_only_skips_when_the_pmcid_lookup_fails(vcr, tmp_pa
     scraper = _without_retry_backoff(scrape.Scraper(str(tmp_path), api_key=FAKE_API_KEY))
 
     with caplog.at_level('INFO', logger='ace.scrape'):
-        html = scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source='only')
+        html = scraper.get_html_by_pmid('25709573', mode='requests', prefer_pmc_source='only')
 
     assert html is None
     assert sorted(_played_urls(vcr)) == sorted([ELINK_PRLINKS.format('25709573')] + [ELINK_PMC.format('25709573')] * 6)
@@ -962,7 +984,7 @@ def test_get_html_by_pmid_treats_an_elink_reply_without_linksets_as_a_failed_loo
     # with no LinkOut; an empty id gets a 200 with "linksets": [].
     scraper = scrape.Scraper(str(tmp_path))
 
-    html = scraper.get_html_by_pmid('', 'Other journal', mode='requests', prefer_pmc_source=False)
+    html = scraper.get_html_by_pmid('', mode='requests', prefer_pmc_source=False)
 
     assert html is None
     # Filtering api_key re-encodes the stored query without the blank id.
@@ -977,7 +999,7 @@ def test_get_html_by_pmid_skips_a_blocked_provider_it_would_not_open(vcr, tmp_pa
     scraper = scrape.Scraper(str(tmp_path))
 
     html = scraper.get_html_by_pmid(
-        '21159981', 'Other journal', mode='requests', prefer_pmc_source=False,
+        '21159981', mode='requests', prefer_pmc_source=False,
         skip_url_substrings=['pmc.ncbi.nlm.nih.gov'])
 
     assert html is None
@@ -992,7 +1014,7 @@ def test_get_html_by_pmid_returns_none_when_the_keyed_lookup_fails(vcr, tmp_path
     scraper = _without_retry_backoff(scrape.Scraper(str(tmp_path), api_key=FAKE_API_KEY))
 
     with caplog.at_level('ERROR', logger='ace.scrape'):
-        html = scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source=False)
+        html = scraper.get_html_by_pmid('25709573', mode='requests', prefer_pmc_source=False)
 
     assert html is None
     assert vcr.all_played
