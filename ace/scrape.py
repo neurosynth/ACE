@@ -14,7 +14,7 @@ from seleniumbase import Driver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from tqdm import tqdm
 from seleniumbase import SB
 
@@ -388,10 +388,16 @@ class Scraper:
                     driver.quit()
                     logger.info(f"Timeout exception #{attempt}. Retrying...")
                     sleep(5)
+                    driver = Driver(
+                        uc=True,
+                        headless2=headless,
+                        agent=random.choice(USER_AGENTS),
+                    )
                     continue
                 else:
                     break
             else:
+                driver.quit()
                 logger.info("Timeout exception. Giving up.")
                 return None
 
@@ -436,11 +442,15 @@ class Scraper:
 
             # Tables collapsed behind a "table-expand-inline" link are only in the
             # page once the link is clicked, so click them all before reading it.
+            # A link that can't be clicked leaves that table collapsed; the page is
+            # still read.
             for link in driver.find_elements(By.CLASS_NAME, 'table-expand-inline'):
-                WebDriverWait(driver, 20).until(EC.element_to_be_clickable((
-                    By.CLASS_NAME, 'table-expand-inline')))
-                driver.execute_script("arguments[0].scrollIntoView();", link)
-                link.click()
+                try:
+                    driver.execute_script("arguments[0].scrollIntoView();", link)
+                    WebDriverWait(driver, timeout).until(EC.element_to_be_clickable(link))
+                    link.click()
+                except WebDriverException as e:
+                    logger.info(f"Could not expand a table on {url}: {type(e).__name__}")
                 sleep(0.5 + random.random() * 1)
 
             for attempt in range(10):
