@@ -1,12 +1,20 @@
+import gzip
+import json
 import os
 import shutil
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from os.path import dirname, join, exists, sep as pathsep
 
 import pytest
+import requests
 from bs4 import BeautifulSoup
+from vcr import VCR
 
 from ace import sources, database, export, scrape, ingest
 from ace import tableparser
+
+from .conftest import API_KEY_PLACEHOLDER, FAKE_API_KEY
 
 
 @pytest.fixture(scope="module")
@@ -761,3 +769,221 @@ def test_a_table_readability_drops_is_appended(source_manager):
         "<div hidden><table><tr><td>a</td><td>b</td></tr></table></div>"
         "</body></html>", "lxml")
     assert source._text_with_tables(soup) == "Body text.\n\na\tb"
+
+
+ELINK_PRLINKS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id={}&retmode=json'
+ELINK_PMC = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id={}&linkname=pubmed_pmc&retmode=json'
+CASSETTES = join(dirname(__file__), 'cassettes', 'test_ace')
+PROVIDER_CASSETTE = join(CASSETTES, 'test_get_html_by_pmid_opens_the_provider_url_from_the_keyed_lookup.yaml')
+PREFERS_PMC_CASSETTE = join(CASSETTES, 'test_get_html_by_pmid_prefers_pmc.yaml')
+PMCID_LOOKUP_400_CASSETTE = join(CASSETTES, 'test_pmcid_lookup_failure_is_logged_without_the_api_key.yaml')
+
+
+def _played_urls(cassette):
+    # cassette.requests is everything the cassette file holds; play_counts is
+    # what the code actually asked for, so a test that uses this fails on the
+    # run that records its cassette. Cassette URIs are stored with api_key
+    # filtered out and the query sorted.
+    return [request.uri for index, request in enumerate(cassette.requests) if cassette.play_counts[index]]
+
+
+def _without_retry_backoff(scraper):
+    # PubMedAPI retries a 400 five times with exponential backoff, 30 s in
+    # all; keep the retries and skip the sleeps.
+    scraper._client.session.get_adapter('https://').max_retries.backoff_factor = 0
+    return scraper
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_opens_the_provider_url_from_the_keyed_lookup(vcr, tmp_path):
+    # PMC is listed before Frontiers in the elink JSON, but prlinks sends us to
+    # Frontiers, so that is the page we must open, and without the unkeyed
+    # cmd=prlinks&retmode=ref hop through E-utilities.
+    scraper = scrape.Scraper(str(tmp_path))
+
+    html = scraper.get_html_by_pmid(
+        '25709573', 'Other journal', mode='requests', prefer_pmc_source=False)
+
+    played = _played_urls(vcr)
+    assert vcr.all_played
+    assert played[:2] == [ELINK_PRLINKS.format('25709573'), 'https://doi.org/10.3389/fnhum.2014.01073']
+    assert [url for url in played if 'eutils.ncbi.nlm.nih.gov' in url] == [ELINK_PRLINKS.format('25709573')]
+    assert '10.3389/fnhum.2014.01073' in html
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_without_linkout_opens_the_pubmed_page(vcr, tmp_path):
+    # With no LinkOut record prlinks lands on the PubMed abstract page. In
+    # requests mode PubMed answers with its proof-of-work challenge page, so
+    # only the URL we opened is checked.
+    scraper = scrape.Scraper(str(tmp_path))
+
+    scraper.get_html_by_pmid('28520367', 'Other journal', mode='requests')
+
+    assert _played_urls(vcr) == [
+        ELINK_PRLINKS.format('28520367'),
+        'https://pubmed.ncbi.nlm.nih.gov/28520367/',
+    ]
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_prefers_pmc(vcr, tmp_path):
+    scraper = scrape.Scraper(str(tmp_path))
+
+    scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source=True)
+
+    played = _played_urls(vcr)
+    assert vcr.all_played
+    assert played[:3] == [
+        ELINK_PRLINKS.format('25709573'),
+        ELINK_PMC.format('25709573'),
+        'https://pmc.ncbi.nlm.nih.gov/articles/PMC4325919',
+    ]
+    assert not [url for url in played if 'doi.org' in url or 'frontiersin' in url]
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_opens_pmc_when_it_is_the_only_provider(vcr, tmp_path):
+    scraper = scrape.Scraper(str(tmp_path))
+
+    scraper.get_html_by_pmid('20311739', 'Other journal', mode='requests', prefer_pmc_source=False)
+
+    played = _played_urls(vcr)
+    assert vcr.all_played
+    assert played[:2] == [
+        ELINK_PRLINKS.format('20311739'),
+        'https://pmc.ncbi.nlm.nih.gov/articles/pmid/20311739/',
+    ]
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_pmc_only_skips_articles_without_pmc(vcr, tmp_path):
+    scraper = scrape.Scraper(str(tmp_path))
+
+    html = scraper.get_html_by_pmid('28520367', 'Other journal', mode='requests', prefer_pmc_source='only')
+
+    assert html is None
+    assert _played_urls(vcr) == [ELINK_PRLINKS.format('28520367')]
+
+
+@pytest.mark.vcr(PREFERS_PMC_CASSETTE, record_mode="none")
+def test_get_html_by_pmid_pmc_only_opens_pmc(vcr, tmp_path):
+    scraper = scrape.Scraper(str(tmp_path))
+
+    html = scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source='only')
+
+    assert html is not None
+    assert vcr.all_played
+    assert _played_urls(vcr)[:3] == [
+        ELINK_PRLINKS.format('25709573'),
+        ELINK_PMC.format('25709573'),
+        'https://pmc.ncbi.nlm.nih.gov/articles/PMC4325919',
+    ]
+
+
+# No PMID we tried lists PMC in LinkOut without a pubmed_pmc link, so this
+# pairs the recorded prlinks JSON for 25709573 with the recorded 400s NCBI
+# gave its PMCID lookup under an invalid key.
+@pytest.mark.vcr(PROVIDER_CASSETTE, PMCID_LOOKUP_400_CASSETTE, record_mode="none")
+def test_get_html_by_pmid_pmc_only_skips_when_the_pmcid_lookup_fails(vcr, tmp_path, caplog):
+    scraper = _without_retry_backoff(scrape.Scraper(str(tmp_path), api_key=FAKE_API_KEY))
+
+    with caplog.at_level('INFO', logger='ace.scrape'):
+        html = scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source='only')
+
+    assert html is None
+    assert sorted(_played_urls(vcr)) == sorted([ELINK_PRLINKS.format('25709573')] + [ELINK_PMC.format('25709573')] * 6)
+    assert 'Failed to resolve PMCID for PMID 25709573' in caplog.text
+    assert 'PMC source detected, but PMCID lookup failed' in caplog.text
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_treats_an_elink_reply_without_linksets_as_a_failed_lookup(vcr, tmp_path):
+    # NCBI answers every PMID it can parse with linksets[0].idurllist, even
+    # with no LinkOut; an empty id gets a 200 with "linksets": [].
+    scraper = scrape.Scraper(str(tmp_path))
+
+    html = scraper.get_html_by_pmid('', 'Other journal', mode='requests', prefer_pmc_source=False)
+
+    assert html is None
+    # Filtering api_key re-encodes the stored query without the blank id.
+    assert _played_urls(vcr) == [
+        'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&retmode=json']
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_skips_a_blocked_provider_it_would_not_open(vcr, tmp_path):
+    # HighWire is listed first and is the page prlinks opens; PMC, listed
+    # second, is blocked, and any blocked provider skips the article.
+    scraper = scrape.Scraper(str(tmp_path))
+
+    html = scraper.get_html_by_pmid(
+        '21159981', 'Other journal', mode='requests', prefer_pmc_source=False,
+        skip_url_substrings=['pmc.ncbi.nlm.nih.gov'])
+
+    assert html is None
+    assert scraper._skip_article_due_to_url
+    assert _played_urls(vcr) == [ELINK_PRLINKS.format('21159981')]
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_returns_none_when_the_keyed_lookup_fails(vcr, tmp_path, caplog):
+    # NCBI answers an invalid key with 400 "API key invalid". There is no
+    # fallback to the unkeyed prlinks hop, and the key stays out of the log.
+    scraper = _without_retry_backoff(scrape.Scraper(str(tmp_path), api_key=FAKE_API_KEY))
+
+    with caplog.at_level('ERROR', logger='ace.scrape'):
+        html = scraper.get_html_by_pmid('25709573', 'Other journal', mode='requests', prefer_pmc_source=False)
+
+    assert html is None
+    assert vcr.all_played
+    assert set(_played_urls(vcr)) == {ELINK_PRLINKS.format('25709573')}
+    assert {response['status']['code'] for response in vcr.responses} == {400}
+    assert '<api_key>' in caplog.text
+    assert FAKE_API_KEY not in caplog.text
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_pmcid_lookup_failure_is_logged_without_the_api_key(vcr, tmp_path, caplog):
+    scraper = _without_retry_backoff(scrape.Scraper(str(tmp_path), api_key=FAKE_API_KEY))
+
+    with caplog.at_level('ERROR', logger='ace.scrape'):
+        pmc_id = scraper._get_pmcid_from_pmid('25709573')
+
+    assert pmc_id is None
+    assert vcr.all_played
+    assert '<api_key>' in caplog.text
+    assert FAKE_API_KEY not in caplog.text
+
+
+def test_recorded_cassettes_do_not_store_the_api_key(vcr_config, tmp_path):
+    # NCBI echoes a rejected key in its error body. A local server stands in
+    # for it, so the scrub is checked on every run, not only when a cassette
+    # is re-recorded.
+    body = gzip.compress(json.dumps({"error": "API key invalid", "api-key": FAKE_API_KEY}).encode())
+
+    class EchoesTheKey(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(400)
+            self.send_header('Content-Encoding', 'gzip')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('X-Echoed-Key', FAKE_API_KEY)
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(('127.0.0.1', 0), EchoesTheKey)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    cassette = tmp_path / 'echo.yaml'
+    try:
+        with VCR(**vcr_config).use_cassette(str(cassette), record_mode='all'):
+            requests.get(f'http://127.0.0.1:{server.server_port}/elink.fcgi', params={'api_key': FAKE_API_KEY})
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    recorded = cassette.read_text()
+    assert FAKE_API_KEY not in recorded
+    assert recorded.count(API_KEY_PLACEHOLDER) == 2

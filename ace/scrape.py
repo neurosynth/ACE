@@ -279,8 +279,8 @@ PLOS_JOURNAL_SITES = {
 
 
 def _is_pubmed_landing_page(url):
-    """ True for the PubMed abstract page, which is where prlinks drops us when
-    an article has no LinkOut record. It is not full text. """
+    """ True for the PubMed abstract page, which is what we open when an
+    article has no LinkOut record. It is not full text. """
 
     return re.match(r'https?://pubmed\.ncbi\.nlm\.nih\.gov/\d+/?$', url or '') is not None
 
@@ -573,7 +573,7 @@ class Scraper:
 
             return pmc_id
         except requests.RequestException as e:
-            logger.error(f"Failed to resolve PMCID for PMID {pmid}: {e}")
+            logger.error(f"Failed to resolve PMCID for PMID {pmid}: {self._without_api_key(e)}")
         except (ValueError, KeyError, IndexError, TypeError) as e:
             logger.error(f"Unexpected PMCID response for PMID {pmid}: {e}")
         except Exception as e:
@@ -581,117 +581,74 @@ class Scraper:
         return None
 
     @staticmethod
-    def _provider_urls_from_elink_json(json_content):
-        provider_urls = []
-        linksets = json_content.get('linksets', [])
-        if not linksets:
-            return provider_urls
-        idurllist = linksets[0].get('idurllist', [])
-        if not idurllist:
-            return provider_urls
-        objurls = idurllist[0].get('objurls', [])
-        for obj in objurls:
-            provider_url = obj.get('url', {}).get('value')
-            if provider_url:
-                provider_urls.append(provider_url)
-        return provider_urls
+    def _providers_from_elink_json(json_content):
+        """ (provider nameabbr, URL) for each LinkOut entry of a cmd=prlinks
+        JSON response, in NCBI's order. """
 
+        objurls = json_content['linksets'][0]['idurllist'][0]['objurls']
+        return [(obj.get('provider', {}).get('nameabbr'), obj['url']['value']) for obj in objurls]
 
-    def get_html_by_pmid(self, pmid, journal, mode='browser', retmode='ref', prefer_pmc_source=True, headless=True,
+    @staticmethod
+    def _prlinks_target(pmid, providers):
+        """ The page that elink's cmd=prlinks&retmode=ref redirects to: the
+        first LinkOut provider that isn't PMC, else PMC, else the PubMed
+        abstract page. """
+
+        for name, url in providers:
+            if name != 'PMC':
+                return url
+        if providers:
+            return providers[0][1]
+        return f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+
+    def _without_api_key(self, text):
+        # requests puts the full query string, key included, in its errors.
+        text = str(text)
+        if self._client.api_key:
+            text = text.replace(self._client.api_key, '<api_key>')
+        return text
+
+    def get_html_by_pmid(self, pmid, journal, mode='browser', prefer_pmc_source=True, headless=True,
                          skip_url_substrings=None):
-        base_url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi"
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+        try:
+            response = self._client.elink(pmid, retmode='json', return_content=False)
+            providers = self._providers_from_elink_json(response.json())
+        except Exception as e:
+            logger.error(f"E-utilities lookup failed for PMID {pmid}: {self._without_api_key(e)}")
+            return None
 
         if prefer_pmc_source:
-            try:
-                response = self._client.elink(pmid, retmode='json', return_content=False)
-                response.raise_for_status()  # Raise an HTTPError for bad responses
-                json_content = response.json()
-
-                objurls = []
-                linksets = json_content.get('linksets', [])
-                if linksets:
-                    idurllist = linksets[0].get('idurllist', [])
-                    if idurllist:
-                        objurls = idurllist[0].get('objurls', [])
-                provider_urls = self._provider_urls_from_elink_json(json_content)
-
-                providers = {
-                    obj.get('provider', {}).get('nameabbr'): obj.get('url', {}).get('value')
-                    for obj in objurls
-                    if obj.get('provider', {}).get('nameabbr')
-                }
-                pmc_url = providers.get('PMC')
-
-                if pmc_url:
-                    pmc_id = self._get_pmcid_from_pmid(pmid)
-                    if pmc_id:
-                        pmc_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmc_id}"
-                        return self.get_html(
-                            pmc_url,
-                            journal,
-                            mode=mode,
-                            headless=headless,
-                            skip_url_substrings=skip_url_substrings,
-                        )
-                    if prefer_pmc_source == "only":
-                        logger.info("\tPMC source detected, but PMCID lookup failed. Skipping...")
-                        return
-                elif prefer_pmc_source == "only":
-                    logger.info("\tNo PMC source found! Skipping...")
+            if any(name == 'PMC' for name, _ in providers):
+                pmc_id = self._get_pmcid_from_pmid(pmid)
+                if pmc_id:
+                    pmc_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmc_id}"
+                    return self.get_html(
+                        pmc_url,
+                        journal,
+                        mode=mode,
+                        headless=headless,
+                        skip_url_substrings=skip_url_substrings,
+                    )
+                if prefer_pmc_source == "only":
+                    logger.info("\tPMC source detected, but PMCID lookup failed. Skipping...")
                     return
-                else:
-                    for provider_url in provider_urls:
-                        if self._should_skip_url(provider_url, skip_url_substrings):
-                            logger.info(
-                                "\tSkipping PMID %s due to blocked provider URL: %s",
-                                pmid,
-                                provider_url,
-                            )
-                            return
-            except requests.RequestException as e:
-                logger.error(f"Request failed: {e}")
-            except (ValueError, KeyError, IndexError, TypeError) as e:
-                logger.error(f"Unexpected E-utilities response for PMID {pmid}: {e}")
-            except Exception as e:
-                logger.error(f"E-utilities lookup failed for PMID {pmid}: {e}")
-        else:
-            if skip_url_substrings:
-                try:
-                    response = self._client.elink(pmid, retmode='json', return_content=False)
-                    response.raise_for_status()
-                    for provider_url in self._provider_urls_from_elink_json(response.json()):
-                        if self._should_skip_url(provider_url, skip_url_substrings):
-                            logger.info(
-                                "\tSkipping PMID %s due to blocked provider URL: %s",
-                                pmid,
-                                provider_url,
-                            )
-                            return
-                except requests.RequestException as e:
-                    logger.error(f"Provider URL pre-check failed for PMID {pmid}: {e}")
-                except (ValueError, KeyError, IndexError, TypeError) as e:
-                    logger.error(f"Unexpected provider pre-check response for PMID {pmid}: {e}")
-                except Exception as e:
-                    logger.error(f"Provider URL pre-check lookup failed for PMID {pmid}: {e}")
-            query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
-            logger.info(query)
-            return self.get_html(
-                query,
-                journal,
-                mode=mode,
-                headless=headless,
-                skip_url_substrings=skip_url_substrings,
-            )
+            elif prefer_pmc_source == "only":
+                logger.info("\tNo PMC source found! Skipping...")
+                return
 
-        if prefer_pmc_source == "only":
-            logger.info("\tNo PMC source found!! Skipping...")
-            return
+        for _, provider_url in providers:
+            if self._should_skip_url(provider_url, skip_url_substrings):
+                logger.info(
+                    "\tSkipping PMID %s due to blocked provider URL: %s",
+                    pmid,
+                    provider_url,
+                )
+                return
 
-        # Fallback if no PMC link found
-        query = f"{base_url}?dbfrom=pubmed&id={pmid}&cmd=prlinks&retmode={retmode}"
+        url = self._prlinks_target(pmid, providers)
+        logger.info(url)
         return self.get_html(
-            query,
+            url,
             journal,
             mode=mode,
             headless=headless,
@@ -710,8 +667,8 @@ class Scraper:
             if j in PLOS_JOURNAL_SITES:
                 doi = _plos_doi_from_url(url)
                 if doi is None and _is_pubmed_landing_page(url):
-                    # E-utilities had no LinkOut for this article, so prlinks
-                    # bounced us to the PubMed abstract page. Its citation_doi
+                    # E-utilities had no LinkOut for this article, so we
+                    # opened the PubMed abstract page. Its citation_doi
                     # meta tag is enough to address the full text ourselves.
                     doi = _extract_citation_doi(html)
                 if doi is None:

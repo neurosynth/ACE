@@ -1,0 +1,320 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.122 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=25709573&linkname=pubmed_pmc&retmode=json
+  response:
+    body:
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 14 Oct 2026 00:12:42 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '3'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '91'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.122 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=25709573&linkname=pubmed_pmc&retmode=json
+  response:
+    body:
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 14 Oct 2026 00:12:42 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '3'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '91'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.122 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=25709573&linkname=pubmed_pmc&retmode=json
+  response:
+    body:
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 14 Oct 2026 00:12:42 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '3'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '91'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.122 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=25709573&linkname=pubmed_pmc&retmode=json
+  response:
+    body:
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 14 Oct 2026 00:12:42 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '3'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '91'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.122 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=25709573&linkname=pubmed_pmc&retmode=json
+  response:
+    body:
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 14 Oct 2026 00:12:43 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '3'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '91'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.122 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=25709573&linkname=pubmed_pmc&retmode=json
+  response:
+    body:
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 14 Oct 2026 00:12:42 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '3'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '91'
+    status:
+      code: 400
+      message: Bad Request
+version: 1

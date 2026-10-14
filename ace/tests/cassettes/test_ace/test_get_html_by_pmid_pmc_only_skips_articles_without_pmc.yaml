@@ -1,0 +1,67 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+        Gecko) Chrome/124.0.6367.207 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=28520367&retmode=json
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAADzMPQvCMBAG4N1fEW4uUlr8ILOLUHRykg4JueJpmpR8FCT0v3vtILe9z3tvgRcq
+        gwFkgfSdECSgJfeBCmYMkbzjpN63sFSw5hFTBPksYPQQ/Mg4ZT2i4T6ZHKylmDYnw9acD03dHk+s
+        Xr+Z19+eq27wzDcvOt685yS2baFmRVZpi2LwQTyuFyn+E0vPt/sBAAD//wMAUT1EubAAAAA=
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Tue, 13 Oct 2026 23:42:03 GMT
+      Ncbi-Phid:
+      - 1D33399F89B0DAB50000612E72D98844.1.1.m_1
+      Ncbi-Sid:
+      - 233B65C27722C57C_2642SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=233B65C27722C57C_2642SID; domain=.nih.gov; path=/; expires=Wed, 13
+        Oct 2027 23:42:03 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '10'
+      X-Ratelimit-Remaining:
+      - '6'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
