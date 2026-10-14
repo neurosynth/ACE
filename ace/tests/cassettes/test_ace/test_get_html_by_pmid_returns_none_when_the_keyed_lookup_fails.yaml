@@ -9,28 +9,26 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.91
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
         Safari/537.36
     method: GET
     uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=25709573&retmode=json
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAKpWSi0qyi9SslJyDPBUyE6tVMjMK0vMyUxR0lFKLMjUBYoA5fLyS3QTdYtSE3PA
-        AjpKJZUFqUBxuFoupeKSxJLSYqBYaV52Xn55nlItAAAA//8DAK5pnlFbAAAA
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
     headers:
       Access-Control-Expose-Headers:
       - X-RateLimit-Limit,X-RateLimit-Remaining
       Alt-Svc:
       - clear
-      Content-Encoding:
-      - gzip
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - application/json
       Date:
-      - Tue, 13 Oct 2026 23:42:02 GMT
+      - Wed, 14 Oct 2026 00:12:41 GMT
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -49,6 +47,8 @@ interactions:
       - IE=Edge
       X-Xss-Protection:
       - 1; mode=block
+      content-length:
+      - '91'
     status:
       code: 400
       message: Bad Request
@@ -62,28 +62,26 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.91
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
         Safari/537.36
     method: GET
     uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=25709573&retmode=json
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAKpWSi0qyi9SslJyDPBUyE6tVMjMK0vMyUxR0lFKLMjUBYoA5fLyS3QTdYtSE3PA
-        AjpKJZUFqUBxuFoupeKSxJLSYqBYaV52Xn55nlItAAAA//8DAK5pnlFbAAAA
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
     headers:
       Access-Control-Expose-Headers:
       - X-RateLimit-Limit,X-RateLimit-Remaining
       Alt-Svc:
       - clear
-      Content-Encoding:
-      - gzip
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - application/json
       Date:
-      - Tue, 13 Oct 2026 23:42:03 GMT
+      - Wed, 14 Oct 2026 00:12:41 GMT
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -102,6 +100,8 @@ interactions:
       - IE=Edge
       X-Xss-Protection:
       - 1; mode=block
+      content-length:
+      - '91'
     status:
       code: 400
       message: Bad Request
@@ -115,28 +115,26 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.91
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
         Safari/537.36
     method: GET
     uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=25709573&retmode=json
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAKpWSi0qyi9SslJyDPBUyE6tVMjMK0vMyUxR0lFKLMjUBYoA5fLyS3QTdYtSE3PA
-        AjpKJZUFqUBxuFoupeKSxJLSYqBYaV52Xn55nlItAAAA//8DAK5pnlFbAAAA
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
     headers:
       Access-Control-Expose-Headers:
       - X-RateLimit-Limit,X-RateLimit-Remaining
       Alt-Svc:
       - clear
-      Content-Encoding:
-      - gzip
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - application/json
       Date:
-      - Tue, 13 Oct 2026 23:42:03 GMT
+      - Wed, 14 Oct 2026 00:12:41 GMT
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -155,6 +153,8 @@ interactions:
       - IE=Edge
       X-Xss-Protection:
       - 1; mode=block
+      content-length:
+      - '91'
     status:
       code: 400
       message: Bad Request
@@ -168,28 +168,26 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.91
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
         Safari/537.36
     method: GET
     uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=25709573&retmode=json
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAKpWSi0qyi9SslJyDPBUyE6tVMjMK0vMyUxR0lFKLMjUBYoA5fLyS3QTdYtSE3PA
-        AjpKJZUFqUBxuFoupeKSxJLSYqBYaV52Xn55nlItAAAA//8DAK5pnlFbAAAA
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
     headers:
       Access-Control-Expose-Headers:
       - X-RateLimit-Limit,X-RateLimit-Remaining
       Alt-Svc:
       - clear
-      Content-Encoding:
-      - gzip
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - application/json
       Date:
-      - Tue, 13 Oct 2026 23:42:03 GMT
+      - Wed, 14 Oct 2026 00:12:42 GMT
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -208,6 +206,8 @@ interactions:
       - IE=Edge
       X-Xss-Protection:
       - 1; mode=block
+      content-length:
+      - '91'
     status:
       code: 400
       message: Bad Request
@@ -221,28 +221,26 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.91
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
         Safari/537.36
     method: GET
     uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=25709573&retmode=json
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAKpWSi0qyi9SslJyDPBUyE6tVMjMK0vMyUxR0lFKLMjUBYoA5fLyS3QTdYtSE3PA
-        AjpKJZUFqUBxuFoupeKSxJLSYqBYaV52Xn55nlItAAAA//8DAK5pnlFbAAAA
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
     headers:
       Access-Control-Expose-Headers:
       - X-RateLimit-Limit,X-RateLimit-Remaining
       Alt-Svc:
       - clear
-      Content-Encoding:
-      - gzip
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - application/json
       Date:
-      - Tue, 13 Oct 2026 23:42:03 GMT
+      - Wed, 14 Oct 2026 00:12:42 GMT
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -261,6 +259,8 @@ interactions:
       - IE=Edge
       X-Xss-Protection:
       - 1; mode=block
+      content-length:
+      - '91'
     status:
       code: 400
       message: Bad Request
@@ -274,28 +274,26 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.91
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
         Safari/537.36
     method: GET
     uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=25709573&retmode=json
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAKpWSi0qyi9SslJyDPBUyE6tVMjMK0vMyUxR0lFKLMjUBYoA5fLyS3QTdYtSE3PA
-        AjpKJZUFqUBxuFoupeKSxJLSYqBYaV52Xn55nlItAAAA//8DAK5pnlFbAAAA
+      string: '{"error":"API key invalid","api-key":"<api_key>","type":"invalid",
+
+        "status":"unknown"}'
     headers:
       Access-Control-Expose-Headers:
       - X-RateLimit-Limit,X-RateLimit-Remaining
       Alt-Svc:
       - clear
-      Content-Encoding:
-      - gzip
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - application/json
       Date:
-      - Tue, 13 Oct 2026 23:42:03 GMT
+      - Wed, 14 Oct 2026 00:12:41 GMT
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -314,6 +312,8 @@ interactions:
       - IE=Edge
       X-Xss-Protection:
       - 1; mode=block
+      content-length:
+      - '91'
     status:
       code: 400
       message: Bad Request
