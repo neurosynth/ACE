@@ -1,0 +1,880 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+        Gecko) Chrome/124.0.6367.118 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=42868208&retmode=json
+  response:
+    body:
+      string: '{"header":{"type":"elink","version":"0.3"},"linksets":[{"dbfrom":"pubmed","idurllist":[{"id":"42868208","objurls":[],"info":"No
+        LinkOut links available for UID: 42868208"}]}]}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 14 Oct 2026 12:57:54 GMT
+      Ncbi-Phid:
+      - 1D3407F95CD407A500002BEFC1B73A6C.1.1.m_1
+      Ncbi-Sid:
+      - A30F269E0869977C_2E6DSID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=A30F269E0869977C_2E6DSID; domain=.nih.gov; path=/; expires=Thu, 14
+        Oct 2027 12:57:54 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '10'
+      X-Ratelimit-Remaining:
+      - '8'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '176'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Cookie:
+      - ncbi_sid=A30F269E0869977C_2E6DSID
+      User-Agent:
+      - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+        Gecko) Chrome/124.0.6367.118 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=42868208&retmode=json
+  response:
+    body:
+      string: "{\"header\":{\"type\":\"esummary\",\"version\":\"0.3\"},\"result\":{\"uids\":[\"42868208\"],\"42868208\":{\"uid\":\"42868208\",\"pubdate\":\"2026\",\"epubdate\":\"2026
+        Oct 13\",\"source\":\"PLoS One\",\"authors\":[{\"name\":\"Urra-Barra G\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Acevedo
+        G\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Leighton-Vallejos
+        E\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Ruiz-Gonz\xE1lez
+        V\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"D\xEDaz-Ib\xE1\xF1ez
+        C\",\"authtype\":\"Author\",\"clusterid\":\"\"}],\"lastauthor\":\"D\xEDaz-Ib\xE1\xF1ez
+        C\",\"title\":\"Practice-based initial teacher education in alternative teaching
+        certification programs: A scoping review protocol.\",\"sorttitle\":\"practice
+        based initial teacher education in alternative teaching certification programs
+        a scoping review protocol\",\"volume\":\"21\",\"issue\":\"10\",\"pages\":\"e0360047\",\"lang\":[\"eng\"],\"nlmuniqueid\":\"101285081\",\"issn\":\"\",\"essn\":\"1932-6203\",\"pubtype\":[\"Journal
+        Article\"],\"recordstatus\":\"PubMed - indexed for MEDLINE\",\"pubstatus\":\"258\",\"articleids\":[{\"idtype\":\"pubmed\",\"idtypen\":1,\"value\":\"42868208\"},{\"idtype\":\"doi\",\"idtypen\":3,\"value\":\"10.1371/journal.pone.0360047\"},{\"idtype\":\"pii\",\"idtypen\":4,\"value\":\"PONE-D-26-12708\"},{\"idtype\":\"pmc\",\"idtypen\":8,\"value\":\"PMC13660980\"},{\"idtype\":\"pmcid\",\"idtypen\":5,\"value\":\"pmc-id:
+        PMC13660980;\"}],\"history\":[{\"pubstatus\":\"received\",\"date\":\"2026/04/29
+        00:00\"},{\"pubstatus\":\"accepted\",\"date\":\"2026/09/21 00:00\"},{\"pubstatus\":\"medline\",\"date\":\"2026/10/13
+        23:37\"},{\"pubstatus\":\"pubmed\",\"date\":\"2026/10/13 23:36\"},{\"pubstatus\":\"entrez\",\"date\":\"2026/10/13
+        18:14\"},{\"pubstatus\":\"pmc-release\",\"date\":\"2026/10/13 00:00\"}],\"references\":[],\"attributes\":[\"Has
+        Abstract\"],\"pmcrefcount\":20,\"fulljournalname\":\"PloS one\",\"elocationid\":\"doi:
+        10.1371/journal.pone.0360047\",\"doctype\":\"citation\",\"srccontriblist\":[],\"booktitle\":\"\",\"medium\":\"\",\"edition\":\"\",\"publisherlocation\":\"\",\"publishername\":\"\",\"srcdate\":\"\",\"reportnumber\":\"\",\"availablefromurl\":\"\",\"locationlabel\":\"\",\"doccontriblist\":[],\"docdate\":\"\",\"bookname\":\"\",\"chapter\":\"\",\"sortpubdate\":\"2026/10/13
+        00:00\",\"sortfirstauthor\":\"Urra-Barra G\",\"vernaculartitle\":\"\"}}}\n"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 14 Oct 2026 12:57:54 GMT
+      Ncbi-Phid:
+      - 1D322F91B7495C35000038E45B96D6E8.1.1.m_1
+      Ncbi-Sid:
+      - A30F269E0869977C_2E6DSID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=A30F269E0869977C_2E6DSID; domain=.nih.gov; path=/; expires=Thu, 14
+        Oct 2027 12:57:55 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '10'
+      X-Ratelimit-Remaining:
+      - '7'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '2087'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.86
+        Safari/537.36
+    method: GET
+    uri: https://journals.plos.org/plosone/article/file?id=10.1371%2Fjournal.pone.0360047&type=manuscript
+  response:
+    body:
+      string: ''
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - max-age=3600
+      Content-Length:
+      - '0'
+      Date:
+      - Wed, 14 Oct 2026 12:57:55 GMT
+      Location:
+      - https://storage.googleapis.com/plos-corpus-prod/10.1371/journal.pone.0360047/1/pone.0360047.xml?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=wombat-sa%40plos-prod.iam.gserviceaccount.com%2F20261014%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20261014T065306Z&X-Goog-Expires=86400&X-Goog-SignedHeaders=host&X-Goog-Signature=4e17444ef0c430a33abad3ac0210332144f05c9e715bbdadbac1c4fbae7db1254b823054dafdee078e991739d067803b6e20735c2a16f686b3b5f6c8a931f3bb69193d3b66d3eeaa7328686638c6f757b764c824573d52fd7629c8fa99c78df9aec1c8c25dea19865986e7421962b08d900ae2f6d4d282b8f928562a13eeec39d721bcef07b943139ef4e14361b85b1791e29d260bf7ac38b769ca7451482775842aea6e206d772c1edbb6a224f07ca2f5f032bc05f808cdd4faaff80dc024cb8e63714c3fec49218e86d28df11f50ed70dfe3795a3ecb9c3830dd7a85aeb7b6a87da7ab5cc953f96d7905a4f9f40056d462af846bf641cda9a19a41720b8c95
+      Server:
+      - Apache
+      Set-Cookie:
+      - GCLB=CPvL-qzrgcfdexAD; path=/; HttpOnly
+      Strict-Transport-Security:
+      - max-age=31536000
+      - max-age=31536000 ; includeSubDomains
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 302
+      message: Found
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.86
+        Safari/537.36
+    method: GET
+    uri: https://storage.googleapis.com/plos-corpus-prod/10.1371/journal.pone.0360047/1/pone.0360047.xml?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=wombat-sa%40plos-prod.iam.gserviceaccount.com%2F20261014%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20261014T065306Z&X-Goog-Expires=86400&X-Goog-Signature=4e17444ef0c430a33abad3ac0210332144f05c9e715bbdadbac1c4fbae7db1254b823054dafdee078e991739d067803b6e20735c2a16f686b3b5f6c8a931f3bb69193d3b66d3eeaa7328686638c6f757b764c824573d52fd7629c8fa99c78df9aec1c8c25dea19865986e7421962b08d900ae2f6d4d282b8f928562a13eeec39d721bcef07b943139ef4e14361b85b1791e29d260bf7ac38b769ca7451482775842aea6e206d772c1edbb6a224f07ca2f5f032bc05f808cdd4faaff80dc024cb8e63714c3fec49218e86d28df11f50ed70dfe3795a3ecb9c3830dd7a85aeb7b6a87da7ab5cc953f96d7905a4f9f40056d462af846bf641cda9a19a41720b8c95&X-Goog-SignedHeaders=host
+  response:
+    body:
+      string: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE article PUBLIC
+        \"-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.3 20210610//EN\" \"http://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.dtd\">\n<article
+        article-type=\"research-article\" dtd-version=\"1.3\" xml:lang=\"en\" xmlns:mml=\"http://www.w3.org/1998/Math/MathML\"
+        xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n<processing-meta>\n<custom-meta-group
+        content-type=\"composition\">\n<custom-meta specific-use=\"newgen\" xlink:href=\"https://www.newgen.co/\">\n<meta-name>Composition
+        Vendor</meta-name>\n<meta-value>Newgen KnowledgeWorks (P) Ltd.</meta-value>\n</custom-meta>\n</custom-meta-group>\n</processing-meta>\n<front>\n<journal-meta>\n<journal-id
+        journal-id-type=\"nlm-ta\">PLoS One</journal-id>\n<journal-id journal-id-type=\"publisher-id\">plos</journal-id>\n<journal-id
+        journal-id-type=\"pmc\">plosone</journal-id>\n<journal-title-group>\n<journal-title>PLOS
+        One</journal-title>\n</journal-title-group>\n<issn pub-type=\"epub\">1932-6203</issn>\n<publisher>\n<publisher-name>Public
+        Library of Science</publisher-name>\n<publisher-loc>San Francisco, CA USA</publisher-loc>\n</publisher>\n</journal-meta>\n<article-meta>\n<article-id
+        pub-id-type=\"doi\">10.1371/journal.pone.0360047</article-id>\n<article-id
+        pub-id-type=\"publisher-id\">PONE-D-26-12708</article-id>\n<article-categories>\n<subj-group
+        subj-group-type=\"heading\">\n<subject>Study Protocol</subject>\n</subj-group>\n<subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>People and places</subject><subj-group><subject>Population
+        groupings</subject><subj-group><subject>Professions</subject><subj-group><subject>Teachers</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Research and analysis methods</subject><subj-group><subject>Database
+        and informatics methods</subject><subj-group><subject>Database searching</subject></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Biology and life sciences</subject><subj-group><subject>Neuroscience</subject><subj-group><subject>Cognitive
+        science</subject><subj-group><subject>Cognitive psychology</subject><subj-group><subject>Learning</subject><subj-group><subject>Human
+        learning</subject></subj-group></subj-group></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Biology and life sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Cognitive
+        psychology</subject><subj-group><subject>Learning</subject><subj-group><subject>Human
+        learning</subject></subj-group></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Social sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Cognitive
+        psychology</subject><subj-group><subject>Learning</subject><subj-group><subject>Human
+        learning</subject></subj-group></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Biology and life sciences</subject><subj-group><subject>Neuroscience</subject><subj-group><subject>Learning
+        and memory</subject><subj-group><subject>Learning</subject><subj-group><subject>Human
+        learning</subject></subj-group></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Research and analysis methods</subject><subj-group><subject>Research
+        design</subject></subj-group></subj-group><subj-group subj-group-type=\"Discipline-v3\">\n<subject>Social
+        sciences</subject><subj-group><subject>Sociology</subject><subj-group><subject>Education</subject></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Biology and life sciences</subject><subj-group><subject>Neuroscience</subject><subj-group><subject>Cognitive
+        science</subject><subj-group><subject>Cognitive psychology</subject><subj-group><subject>Language</subject></subj-group></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Biology and life sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Cognitive
+        psychology</subject><subj-group><subject>Language</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Social sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Cognitive
+        psychology</subject><subj-group><subject>Language</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Social sciences</subject><subj-group><subject>Political
+        science</subject><subj-group><subject>United Nations</subject></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Research and analysis methods</subject><subj-group><subject>Research
+        assessment</subject><subj-group><subject>Systematic reviews</subject></subj-group></subj-group></subj-group></article-categories>\n<title-group>\n<article-title>Practice-based
+        initial teacher education in alternative teaching certification programs:
+        A scoping review protocol</article-title>\n<alt-title alt-title-type=\"running-head\">Practice-based
+        teacher education in alternative certification programs: Scoping review protoco</alt-title>\n</title-group>\n<contrib-group>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Urra-Barra</surname>\n<given-names>Gerardo</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/methodology/\">Methodology</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"/></contrib>\n<contrib
+        contrib-type=\"author\" corresp=\"yes\" xlink:type=\"simple\">\n<contrib-id
+        authenticated=\"true\" contrib-id-type=\"orcid\">https://orcid.org/0000-0001-8100-6663</contrib-id>\n<name
+        name-style=\"western\">\n<surname>Acevedo</surname>\n<given-names>Graciela</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/methodology/\">Methodology</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"corresp\" rid=\"cor001\">*</xref>\n<xref
+        ref-type=\"aff\" rid=\"aff001\"/></contrib>\n<contrib contrib-type=\"author\"
+        xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Leighton-Vallejos</surname>\n<given-names>Erich</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/methodology/\">Methodology</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"/></contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Ruiz-Gonz\xE1lez</surname>\n<given-names>V\xEDctor</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/methodology/\">Methodology</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"/></contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>D\xEDaz-Ib\xE1\xF1ez</surname>\n<given-names>Camila</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/methodology/\">Methodology</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"/></contrib>\n</contrib-group>\n<aff
+        id=\"aff001\"><institution-wrap><institution content-type=\"dept\">Facultad
+        de Educaci\xF3n</institution></institution-wrap>, <institution-wrap><institution
+        content-type=\"institution\">Universidad San Sebasti\xE1n</institution></institution-wrap>,
+        <country country=\"cl\">Chile</country></aff>\n<contrib-group>\n<contrib contrib-type=\"editor\"
+        xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Baker</surname>\n<given-names>Rogis</given-names>\n</name>\n<role>Editor</role>\n<xref
+        ref-type=\"aff\" rid=\"edit1\"/></contrib>\n</contrib-group>\n<aff id=\"edit1\"><institution-wrap><institution
+        content-type=\"institution\">Universiti Pertahanan Nasional Malaysia</institution></institution-wrap>,
+        <country country=\"my\">MALAYSIA</country></aff>\n<author-notes>\n<corresp
+        id=\"cor001\">* E-mail: <email xlink:type=\"simple\">Graciela.acevedo@uss.cl</email></corresp>\n<fn
+        fn-type=\"conflict\" id=\"coi001\">\n<p>The authors have declared that no
+        competing interests exist.</p>\n</fn>\n</author-notes>\n<pub-date pub-type=\"epub\"><day>13</day><month>10</month><year>2026</year></pub-date>\n<pub-date
+        pub-type=\"collection\"><year>2026</year></pub-date>\n<volume>21</volume>\n<issue>10</issue>\n<elocation-id>e0360047</elocation-id>\n<history>\n<date
+        date-type=\"received\"><day>29</day><month>4</month><year>2026</year></date>\n<date
+        date-type=\"accepted\"><day>21</day><month>9</month><year>2026</year></date>\n</history>\n<permissions>\n<copyright-year>2026</copyright-year>\n<copyright-holder>Urra-Barra
+        et al</copyright-holder>\n<license xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">\n<license-p>This is an open access article distributed
+        under the terms of the <ext-link ext-link-type=\"uri\" xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">Creative Commons Attribution License</ext-link>, which
+        permits unrestricted use, distribution, and reproduction in any medium, provided
+        the original author and source are credited.</license-p></license>\n</permissions>\n<self-uri
+        content-type=\"pdf\" xlink:href=\"info:doi/10.1371/journal.pone.0360047\"/>\n<abstract>\n<p>Given
+        the shortage of specialized teachers, Initial Teacher Education requires alternative
+        teacher preparation routes, such as Alternative Teaching Certification Programs,
+        that allow the incorporation of professionals who already possess prior work
+        experience into the educational system. However, this situation raises new
+        challenges regarding the design and implementation of the teacher preparation
+        model within these programs. Consequently, this study aims to map and synthesize
+        the existing evidence on the characteristics of practice-based teacher education
+        (PBTE) programs, understood as an approach in which professional learning
+        is constructed through authentic, situated teaching experiences rather than
+        primarily theoretical instruction, designed for individuals who already hold
+        technical, bachelor\u2019s, or professional degrees. The review will be conducted
+        following the JBI (Joanna Briggs Institute) methodology for scoping reviews,
+        and will be reported in accordance with PRISMA-ScR guidelines. Data extraction
+        and synthesis will be structured around the JBI Participants, Concept, and
+        Context (PCC) analytical framework. Database searches will be conducted in
+        Web of Science (WoS) and Scopus, including studies published between 2009
+        and 2025 in English, Spanish, and Portuguese. The review will specifically
+        examine program duration, mentoring structures, practicum design, institutional
+        type, teaching strategies, and reported outcomes. This protocol has been registered
+        in the Open Science Framework (OSF) and will be publicly available once approved.</p>\n</abstract>\n<funding-group>\n<funding-statement>This
+        study was supported by Vicerrector\xEDa Acad\xE9mica and Centro de Investigaci\xF3n
+        para la Educaci\xF3n Superior \u2013 Fondo USS-FIN-2026_APC_VRA-013.</funding-statement>\n</funding-group>\n<counts>\n<fig-count
+        count=\"0\"/>\n<table-count count=\"2\"/>\n<page-count count=\"8\"/>\n</counts>\n<custom-meta-group>\n<custom-meta
+        id=\"data-availability\">\n<meta-name>Data Availability</meta-name>\n<meta-value>No
+        datasets were generated or analysed during the current study. All relevant
+        data from this study will be made available upon study completion.</meta-value>\n</custom-meta>\n</custom-meta-group>\n</article-meta>\n</front>\n<body>\n<sec
+        id=\"sec001\" sec-type=\"intro\">\n<title>Introduction</title>\n<p>Initial
+        Teacher Education (ITE; in Spanish, <italic>Formaci\xF3n Inicial Docente</italic>,
+        FID) is understood as a systematic and structured process aimed at developing
+        the professional competencies required for teaching across the different levels
+        of the educational system [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref001\">1</xref>,<xref
+        ref-type=\"bibr\" rid=\"pone.0360047.ref002\">2</xref>].</p>\n<p>At a global
+        level, the United Nations estimate that approximately 44 million new teachers
+        will be needed by 2030 in order to respond to the growing educational demand
+        [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref003\">3</xref>]. This shortage
+        poses concrete demands on teacher preparation systems, which must not only
+        increase enrollment, but also guarantee training that is both high in quality
+        and relevant to current teaching practice.</p>\n<p>In this context, alternative
+        teaching certification programs have emerged as a relevant alternative within
+        the Chilean tertiary education system. For the purposes of this review, Alternative
+        Teaching Certification Programs (ATCPs) are defined as initial teacher education
+        pathways designed for individuals who already hold a prior technical, professional,
+        or academic qualification, offering an abbreviated or alternative route to
+        a teaching credential that recognizes prior learning and work experience [<xref
+        ref-type=\"bibr\" rid=\"pone.0360047.ref004\">4</xref>]. These programs connect
+        prior learning experiences with the completion of a bachelor\u2019s degree
+        in education and a specific disciplinary teaching certification. The National
+        Accreditation Commission (CNA; in Spanish: [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref005\">5</xref>]
+        defines these programs as designed, formalized, and implemented with the purpose
+        of offering study continuity to individuals who already hold a prior professional
+        or technical degree or an academic qualification, recognizing work experience
+        and knowledge acquired within the school system. Notwithstanding, their growth
+        also raises challenges regarding the program\u2019s quality assurance, particularly
+        under current regulations, in which accreditation is required to enroll new
+        students.</p>\n<p>In response to these challenges, it becomes necessary to
+        reconsider the teacher preparation models offered to pre-service teachers.
+        Within this scenario, the international approach of Practice-Based Teacher
+        Education (PBTE) has gained relevance. PBTE argues that professional learning
+        should be constructed through authentic teaching experiences that integrate
+        pedagogical theory, disciplinary knowledge, and situated action in the classroom
+        [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref006\">6</xref>,<xref ref-type=\"bibr\"
+        rid=\"pone.0360047.ref007\">7</xref>]. This approach implies a substantial
+        transformation in the design of ITE (FID) programs, particularly in relation
+        to mentoring practices and the articulation between universities and schools.
+        Unlike models focused primarily on theoretical or didactic preparation, PBTE
+        promotes the active participation of pre-service teachers in simulated teaching,
+        analysis of real classroom practices, guided mentorship, and systematic processes
+        of critical reflection [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref008\">8</xref>,<xref
+        ref-type=\"bibr\" rid=\"pone.0360047.ref009\">9</xref>]. Its implementation
+        becomes especially relevant in alternative teaching certification programs,
+        where candidates bring prior educational and/or work experiences that require
+        pedagogical proposals capable of recognizing and articulating those forms
+        of knowledge with concrete opportunities for situated and contextualized professional
+        development. While PBTE is associated with stronger practical readiness and
+        greater coherence between theory and classroom action, the literature also
+        identifies persistent tensions regarding the risk of reducing the theoretical
+        and disciplinary foundations of teacher preparation, the resource demands
+        of high-quality mentorship, and the variability in how authentic practice
+        is operationalized across programs and institutional contexts.</p>\n<p>Despite
+        its expansion, the ways in which this approach is implemented to guide pedagogical
+        processes in teacher education programs vary significantly across countries,
+        institutions, and levels of development of teacher preparation systems [<xref
+        ref-type=\"bibr\" rid=\"pone.0360047.ref010\">10</xref>\u2013<xref ref-type=\"bibr\"
+        rid=\"pone.0360047.ref013\">13</xref>]. These experiences illustrate that
+        PBTE is being adopted and adapted through diverse methodological approaches,
+        without yet converging on shared definitions, common program structures, or
+        agreed criteria for what constitutes a practice-based component in teacher
+        preparation. This conceptual and empirical heterogeneity signals a field that
+        is still under development, for which a scoping review is the most appropriate
+        first synthesis step rather than a systematic effectiveness review.</p>\n<p>Given
+        the diversity of frameworks, designs, and contexts involved, a scoping review
+        was considered the most appropriate methodological approach. Unlike systematic
+        reviews focused on effectiveness, scoping reviews allow researchers to explore
+        the range, nature, and characteristics of a broad body of literature, map
+        emergent categories, and synthesize key concepts [<xref ref-type=\"bibr\"
+        rid=\"pone.0360047.ref014\">14</xref>,<xref ref-type=\"bibr\" rid=\"pone.0360047.ref015\">15</xref>].
+        This approach is particularly pertinent when the field of study is under development,
+        as is the case of PBTE, and when a structured overview of the available knowledge
+        is required.</p>\n<p>For this reason, the purpose of this scoping review is
+        to map the available literature on PBTE, identifying its main characteristics
+        in terms of program duration, mentoring structures, practicum design, and
+        institutional type, as well as pedagogical strategies and reported outcomes,
+        in the context of alternative teaching certification programs that enable
+        professionals with prior educational experiences and certifications to obtain
+        a teaching degree.</p>\n<sec id=\"sec002\">\n<title>Research question</title>\n<p>What
+        evidence does the literature report regarding the design, implementation,
+        and outcomes of practice-based initial teacher education programs for individuals
+        with existing degrees, including post-baccalaureate, alternative, and consecutive
+        routes?</p>\n</sec>\n</sec>\n<sec id=\"sec003\" sec-type=\"materials|methods\">\n<title>Methods</title>\n<p>The
+        proposed scoping review will be conducted in accordance with the Joanna Briggs
+        Institute (JBI) methodology for scoping reviews, as outlined in the JBI Manual
+        for Evidence Synthesis [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref014\">14</xref>],
+        and following the PRISMA-ScR recommendations [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref016\">16</xref>].
+        The protocol has been registered in the Open Science Framework (OSF) under
+        the registration number <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.17605/OSF.IO/UTR6V\"
+        xlink:type=\"simple\">10.17605/OSF.IO/UTR6V</ext-link>, ensuring transparency
+        and traceability throughout the process.</p>\n<sec id=\"sec004\">\n<title>Inclusion
+        criteria</title>\n<p>Participants: Studies involving both teacher candidates
+        and teacher educators participating in programs explicitly defined by their
+        authors as alternative teaching certification programs, and that are directed
+        at students or professionals who hold a prior academic or professional qualification
+        (e.g., bachelor\u2019s degree, tertiary technical degree, or professional
+        title) will be included. Studies reporting only on traditional initial teacher
+        education programs (i.e., those involving teacher candidates without such
+        prior qualifications) will be excluded.</p>\n<p>Concept: Studies examining
+        initial teacher education programs that implement a practice-based teacher
+        education (PBTE) approach will be considered. PBTE is characterized by the
+        structured and systematic integration of authentic teaching experiences as
+        the core element of teacher professional learning. Such experiences include,
+        among others, simulated lessons, analysis of real classroom practice, reflective
+        practice, and guided mentorship provided by experienced educators [<xref ref-type=\"bibr\"
+        rid=\"pone.0360047.ref006\">6</xref>,<xref ref-type=\"bibr\" rid=\"pone.0360047.ref017\">17</xref>].
+        For the purposes of this review, a program will be considered PBTE-aligned
+        if it explicitly incorporates at least one of the three processes described
+        by Grossman et al. [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref008\">8</xref>]:
+        representation of practice, decomposition of practice, or approximation to
+        practice, implemented in a structured and recurring manner within the program
+        design. No restrictions will be placed regarding the length of the program,
+        disciplinary area, intended education level, or any other characteristics
+        of the program or its participants. The language of program implementation
+        is not a restriction; however, publications reporting on the program must
+        be written in English, Spanish, or Portuguese, as these are the languages
+        the research team can assess.</p>\n<p>Context: Studies conducted in practice-based
+        initial teacher education programs directed at individuals with prior academic
+        or professional qualifications (post-baccalaureate/alternative/consecutive
+        routes) and delivered by higher education institutions worldwide will be included.</p>\n</sec>\n<sec
+        id=\"sec005\">\n<title>Types of sources</title>\n<p>This scoping review will
+        consider studies adopting experimental and quasi-experimental designs. Likewise,
+        analytical observational studies including prospective and retrospective cohort
+        studies, case-control studies, and analytical cross-sectional studies will
+        be included. Descriptive observational designs such as case series, single
+        case reports, and descriptive cross-sectional studies will be considered.</p>\n<p>Additionally,
+        qualitative studies informed by approaches such as phenomenology, grounded
+        theory, ethnography, qualitative description, and action research will be
+        included. Opinion pieces and reflective articles relevant to the object of
+        study and meeting the inclusion criteria will also be considered. Opinion
+        and reflective articles are included because PBTE within alternative teaching
+        certification programs is an emerging area in which much of the available
+        knowledge is still expressed through expert commentary and practitioner reflection
+        rather than empirical studies. During data charting, these sources will be
+        flagged by type and synthesized separately from empirical studies in the narrative
+        synthesis.</p>\n</sec>\n<sec id=\"sec006\">\n<title>Search strategy</title>\n<p>Systematic
+        database searches will be conducted in Web of Science Core Collection and
+        Scopus. These two databases were selected because they offer the broadest
+        interdisciplinary coverage of peer-reviewed literature in education and social
+        sciences, support advanced Boolean search logic, and together index the large
+        majority of high-impact journals in teacher education research [<xref ref-type=\"bibr\"
+        rid=\"pone.0360047.ref018\">18</xref>,<xref ref-type=\"bibr\" rid=\"pone.0360047.ref019\">19</xref>].
+        The search strings were structured in three thematic blocks: Block A covers
+        PBTE terminology, Block B covers initial teacher education, and Block C covers
+        alternative certification programs. The three blocks are crossed using the
+        AND operator. No language restriction is applied at the level of program implementation;
+        studies are limited to those published in English, Spanish, or Portuguese,
+        reflecting the linguistic competencies of the research team. Studies published
+        between 2009 and 2025 will be included, as this period corresponds to the
+        emergence and consolidation of practice-based approaches in teacher education,
+        particularly with the development of models such as practice-based teacher
+        education and the consolidation of concepts such as core practices and high-leverage
+        practices [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref007\">7</xref>,<xref
+        ref-type=\"bibr\" rid=\"pone.0360047.ref008\">8</xref>]. The complete Boolean
+        search strategies for both databases are presented in <xref ref-type=\"table\"
+        rid=\"pone.0360047.t001\">Table 1</xref> (Web of Science) and <xref ref-type=\"table\"
+        rid=\"pone.0360047.t002\">Table 2</xref> (Scopus).</p>\n<table-wrap id=\"pone.0360047.t001\"
+        position=\"float\"><object-id pub-id-type=\"doi\">10.1371/journal.pone.0360047.t001</object-id><label>Table
+        1</label><caption><title>Web of Science Core Collection search strategy (TS\u2009=\u2009Topic
+        field).</title></caption>\n<alternatives><graphic id=\"pone.0360047.t001g\"
+        mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pone.0360047.t001\"
+        xlink:type=\"simple\"/><table><colgroup>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n</colgroup>\n<thead>\n<tr>\n<th align=\"left\">#</th>\n<th
+        align=\"left\">Search query</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">1</td>\n<td
+        align=\"left\">TS=(\u201Cpractice-based teacher education\u201D OR \u201Cpractice-based
+        teacher preparation\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">2</td>\n<td
+        align=\"left\">TS=(\u201Ccore practices\u201D OR \u201Chigh-leverage practices\u201D
+        OR \u201Chigh leverage practices\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">3</td>\n<td
+        align=\"left\">TS=(\u201Cpedagogies of enactment\u201D OR \u201Capproximations
+        of practice\u201D OR \u201Cdecompositions of practice\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">4</td>\n<td align=\"left\">TS=(practicum OR \u201Cfield experience\u201D
+        OR \u201Cclinical experience\u201D OR \u201Cmentored teaching\u201D OR \u201Cguided
+        mentorship\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">5</td>\n<td align=\"left\">#1
+        OR #2 OR #3 OR #4 [Block A \u2014 PBTE]</td>\n</tr>\n<tr>\n<td align=\"left\">6</td>\n<td
+        align=\"left\">TS=(\u201Cinitial teacher education\u201D OR \u201Cteacher
+        preparation\u201D OR \u201Cteacher training\u201D OR \u201Cpreservice teacher\u201D
+        OR \u201Cpre-service teacher\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">7</td>\n<td
+        align=\"left\">TS=(\u201Cstudent teacher\u201D OR \u201Cteacher candidate\u201D
+        OR \u201Cprospective teacher\u201D OR \u201Cteacher educator\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">8</td>\n<td align=\"left\">#6 OR #7 [Block B \u2014 ITE]</td>\n</tr>\n<tr>\n<td
+        align=\"left\">9</td>\n<td align=\"left\">TS=(\u201Calternative certification\u201D
+        OR \u201Calternative licensure\u201D OR \u201Calternative route\u201D OR \u201Calternative
+        teacher certification\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">10</td>\n<td
+        align=\"left\">TS=(\u201Cpost-baccalaureate\u201D OR postbaccalaureate OR
+        \u201Cconsecutive teacher education\u201D OR \u201Cconsecutive route\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">11</td>\n<td align=\"left\">TS=(\u201Ccareer changer\u201D
+        OR \u201Csecond-career teacher\u201D OR \u201Ctransition-to-teaching\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">12</td>\n<td align=\"left\">#9 OR #10 OR #11 [Block C \u2014
+        ATCP]</td>\n</tr>\n<tr>\n<td align=\"left\">13</td>\n<td align=\"left\">#5
+        AND #8 AND #12 [Final intersection]</td>\n</tr>\n<tr>\n<td align=\"left\">14</td>\n<td
+        align=\"left\">#13 AND Publication Years: 2009\u20132025</td>\n</tr>\n</tbody>\n</table>\n</alternatives><table-wrap-foot>\n<fn
+        id=\"t001fn001\"><p>Source: Prepared by the authors.</p></fn>\n</table-wrap-foot>\n</table-wrap>\n<table-wrap
+        id=\"pone.0360047.t002\" position=\"float\"><object-id pub-id-type=\"doi\">10.1371/journal.pone.0360047.t002</object-id><label>Table
+        2</label><caption><title>Scopus search strategy (TITLE-ABS-KEY field).</title></caption>\n<alternatives><graphic
+        id=\"pone.0360047.t002g\" mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pone.0360047.t002\"
+        xlink:type=\"simple\"/><table><colgroup>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n</colgroup>\n<thead>\n<tr>\n<th align=\"left\">#</th>\n<th
+        align=\"left\">Search query</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">1</td>\n<td
+        align=\"left\">TITLE-ABS-KEY(\u201Cpractice-based teacher education\u201D
+        OR \u201Cpractice-based teacher preparation\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">2</td>\n<td align=\"left\">TITLE-ABS-KEY(\u201Ccore practices\u201D
+        OR \u201Chigh-leverage practices\u201D OR \u201Chigh leverage practices\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">3</td>\n<td align=\"left\">TITLE-ABS-KEY(\u201Cpedagogies of
+        enactment\u201D OR \u201Capproximations of practice\u201D OR \u201Cdecompositions
+        of practice\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">4</td>\n<td align=\"left\">TITLE-ABS-KEY(practicum
+        OR \u201Cfield experience\u201D OR \u201Cclinical experience\u201D OR \u201Cmentored
+        teaching\u201D OR \u201Cguided mentorship\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">5</td>\n<td
+        align=\"left\">#1 OR #2 OR #3 OR #4 [Block A \u2014 PBTE]</td>\n</tr>\n<tr>\n<td
+        align=\"left\">6</td>\n<td align=\"left\">TITLE-ABS-KEY(\u201Cinitial teacher
+        education\u201D OR \u201Cteacher preparation\u201D OR \u201Cteacher training\u201D
+        OR \u201Cpreservice teacher\u201D OR \u201Cpre-service teacher\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">7</td>\n<td align=\"left\">TITLE-ABS-KEY(\u201Cstudent teacher\u201D
+        OR \u201Cteacher candidate\u201D OR \u201Cprospective teacher\u201D OR \u201Cteacher
+        educator\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">8</td>\n<td align=\"left\">#6
+        OR #7 [Block B \u2014 ITE]</td>\n</tr>\n<tr>\n<td align=\"left\">9</td>\n<td
+        align=\"left\">TITLE-ABS-KEY(\u201Calternative certification\u201D OR \u201Calternative
+        licensure\u201D OR \u201Calternative route\u201D OR \u201Calternative teacher
+        certification\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">10</td>\n<td align=\"left\">TITLE-ABS-KEY(\u201Cpost-baccalaureate\u201D
+        OR postbaccalaureate OR \u201Cconsecutive teacher education\u201D OR \u201Cconsecutive
+        route\u201D)</td>\n</tr>\n<tr>\n<td align=\"left\">11</td>\n<td align=\"left\">TITLE-ABS-KEY(\u201Ccareer
+        changer\u201D OR \u201Csecond-career teacher\u201D OR \u201Ctransition-to-teaching\u201D)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">12</td>\n<td align=\"left\">#9 OR #10 OR #11 [Block C \u2014
+        ATCP]</td>\n</tr>\n<tr>\n<td align=\"left\">13</td>\n<td align=\"left\">#5
+        AND #8 AND #12 [Final intersection]</td>\n</tr>\n<tr>\n<td align=\"left\">14</td>\n<td
+        align=\"left\">#13 AND PUBYEAR\u2009&gt;\u20092008 AND PUBYEAR\u2009&lt;\u20092026</td>\n</tr>\n</tbody>\n</table>\n</alternatives><table-wrap-foot>\n<fn
+        id=\"t002fn001\"><p>Source: Prepared by the authors.</p></fn>\n</table-wrap-foot>\n</table-wrap>\n</sec>\n<sec
+        id=\"sec007\">\n<title>Selection of studies and sources of evidence</title>\n<p>All
+        citations will be imported into Rayyan, a systematic screening tool, and duplicates
+        will be removed automatically. Prior to full-scale screening, a pilot test
+        will be conducted with four articles selected purposively from the initial
+        search results to represent a range of study designs and geographic contexts.
+        The pilot aims to confirm inter-rater agreement on the application of the
+        eligibility criteria and to identify any ambiguity in their wording. An agreement
+        rate below 75% on the pilot set will trigger a joint discussion between reviewers
+        and, if necessary, a revision of the inclusion and exclusion criteria before
+        full screening proceeds. It is acknowledged that four articles constitute
+        a limited pilot sample given the conceptual complexity of PBTE; the research
+        team will therefore remain attentive to recurring disagreements during the
+        early stages of full screening as an informal extension of the pilot phase.
+        After the pilot, titles and abstracts will be assessed independently by at
+        least two reviewers. References that meet the inclusion criteria will proceed
+        to full-text assessment, which will also be conducted independently by two
+        reviewers. Any discrepancies will be resolved by consensus or by involving
+        a third reviewer.</p>\n<p>The complete study selection process will be reported
+        in the final review using a PRISMA-ScR flow diagram for scoping reviews [<xref
+        ref-type=\"bibr\" rid=\"pone.0360047.ref020\">20</xref>].</p>\n</sec>\n<sec
+        id=\"sec008\">\n<title>Data extraction</title>\n<p>Data will be extracted
+        independently by two or more reviewers using a data extraction tool specifically
+        designed by the research team for this review. This tool will include structured
+        fields aligned with the PCC framework (Participants, Concept, and Context).
+        Furthermore, this tool will also include additional variables concerning methodological
+        designs, program implementation characteristics, and the main findings reported
+        in each study. This strategy will ensure a systematic, rigorous, and coherent
+        data collection process aligned with the objectives of the scoping review.</p>\n<p>The
+        data extraction form will be piloted with an initial sample of included studies
+        to assess its relevance, clarity, and alignment with the review objectives.
+        Based on the pilot, the research team will refine the form as necessary before
+        proceeding with full data extraction. Any modifications made to the extraction
+        tool during the review process will be documented and justified in the final
+        review to ensure transparency and reproducibility.</p>\n<p>In cases where
+        relevant information is not available in the full text of a study, corresponding
+        authors will be contacted to request missing data or necessary clarifications.
+        If no response is received within two weeks, a reminder will be sent. If the
+        information remains unavailable after a further two weeks, the missing data
+        will be coded as not reported. If the search yields fewer studies than anticipated,
+        the research team will broaden the search terms and extend manual reference
+        list screening before concluding that the evidence base is genuinely limited.
+        If a database becomes temporarily inaccessible during the search window, the
+        search for that database will be repeated when access is restored and the
+        execution date will be documented in the PRISMA-ScR flow diagram.</p>\n</sec>\n<sec
+        id=\"sec009\">\n<title>Data analysis and presentation</title>\n<p>The results
+        will be presented descriptively and narratively, organized around the components
+        of the PCC framework and directly addressing the objectives and central research
+        question of the review. Accordingly, different formats will be used to enhance
+        the visualization and understanding of the findings.</p>\n<p>First, the results
+        will be organized into tables that will map key characteristics of the included
+        studies, such as country of origin, type of program, participant population,
+        type of institution, methodological approach, implemented practice-based components,
+        and main findings. These tables will provide an overview of how practice-based
+        teacher education has been addressed in programs aimed at individuals with
+        prior technical, academic, or professional qualifications.</p>\n<p>Second,
+        graphical representations and thematic maps will be used to identify patterns,
+        knowledge gaps, and geographical or institutional concentrations within the
+        available evidence. These visualizations will support the identification of
+        emerging areas, recurrent practices, and potential gaps in the implementation
+        of the PBTE approach across specific contexts.</p>\n<p>In addition, a narrative
+        synthesis will be conducted to interpret the findings in relation to the PCC
+        framework. Themes will be identified using a primarily deductive approach
+        structured around the dimensions stated in the research objective, specifically
+        program duration, mentoring structures, practicum design, and institutional
+        type, while remaining open to inductively coding patterns that emerge from
+        the data and do not fit these predefined categories. Two reviewers will independently
+        group the extracted data into preliminary themes. Discrepancies in theme labeling
+        or grouping will be resolved by discussion and, where necessary, by a third
+        reviewer.</p>\n<p>Finally, in accordance with the purposes of a scoping review,
+        no critical appraisal of methodological quality will be conducted for the
+        included studies. However, when appropriate, comments will be made regarding
+        the diversity of designs and methodologies used, with the aim of informing
+        future systematic or empirical research.</p>\n</sec>\n<sec id=\"sec010\">\n<title>Significance</title>\n<p>At
+        the national level, this review responds directly to the expansion of alternative
+        teaching certification programs in Chile under accreditation requirements
+        that currently lack an evidence base on how practice-based components should
+        be designed and implemented. Mapping international evidence on PBTE can therefore
+        inform program design and quality assurance criteria in this specific context.
+        At the global level, given the United Nations projection of approximately
+        44 million additional teachers needed by 2030 [<xref ref-type=\"bibr\" rid=\"pone.0360047.ref003\">3</xref>],
+        alternative certification routes are expanding as a workforce strategy across
+        multiple countries. This review contributes by synthesizing, for the first
+        time, evidence on how practice-based approaches have been conceptualized and
+        implemented specifically within this type of program, supporting future systematic
+        reviews and informing policy decisions in national systems facing comparable
+        teacher shortage pressures.</p>\n</sec>\n<sec id=\"sec011\">\n<title>Limitations</title>\n<p>This
+        protocol presents several anticipated limitations. First, restricting the
+        systematic database search to Web of Science and Scopus, while justified by
+        their interdisciplinary coverage and advanced Boolean search capabilities,
+        means that studies indexed exclusively in discipline-specific or regional
+        databases may not be captured. Second, the pilot test involves only four articles,
+        which is a modest sample given the conceptual complexity of PBTE; this is
+        acknowledged and partially mitigated by the informal extension of the pilot
+        phase during early full-text screening. Third, the inclusion of opinion and
+        reflective articles alongside empirical studies introduces heterogeneity in
+        the strength of evidence synthesized; this is addressed by analyzing and reporting
+        these source types separately in the narrative synthesis. Fourth, consistent
+        with standard scoping review methodology, no formal quality appraisal of included
+        studies will be conducted; the review will therefore map the breadth of available
+        evidence rather than evaluate its methodological robustness. Fifth, while
+        the regulatory context of Chilean alternative teaching certification programs
+        motivates this study, the global scope of the review means that findings will
+        need to be interpreted in light of each country\u2019s specific institutional
+        and regulatory conditions.</p>\n</sec>\n</sec>\n</body>\n<back>\n<ack>\n<p>This
+        study was supported by Vicerrector\xEDa Acad\xE9mica and Centro de Investigaci\xF3n
+        para la Educaci\xF3n Superior \u2013 Fondo USS-FIN-2026_APC_VRA-013.</p>\n</ack>\n<ref-list>\n<title>References</title>\n<ref
+        id=\"pone.0360047.ref001\"><label>1</label><mixed-citation publication-type=\"book\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Cornejo</surname>
+        <given-names>J</given-names></name>, <name name-style=\"western\"><surname>Fuentealba</surname>
+        <given-names>R</given-names></name>. <source>Pr\xE1cticas reflexivas para
+        la formaci\xF3n profesional docente: \xBFqu\xE9 las hace eficaces?</source>
+        <publisher-loc>Santiago</publisher-loc>: <publisher-name>Ediciones Universidad
+        Cat\xF3lica Silva Henr\xEDquez</publisher-name>; <year>2008</year>.</mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref002\"><label>2</label><mixed-citation publication-type=\"book\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>\xC1valos</surname>
+        <given-names>B.</given-names></name> <article-title>La formaci\xF3n de profesores
+        y su desarrollo profesional. Pr\xE1cticas innovadoras en busca de pol\xEDticas.</article-title>
+        In: <name name-style=\"western\"><surname>Cox</surname> <given-names>C</given-names></name>,
+        editor. <source>Pol\xEDticas educacionales en el cambio de siglo. La reforma
+        del sistema escolar de Chile</source>. <publisher-loc>Santiago</publisher-loc>:
+        <publisher-name>Editorial Universitaria</publisher-name>; <year>2003</year>.
+        p. <fpage>559</fpage>\u2013<lpage>94</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref003\"><label>3</label><mixed-citation publication-type=\"other\"
+        xlink:type=\"simple\"><collab>UNESCO, International Task Force on Teachers
+        for Education 2030</collab>. Global report on teachers: addressing teacher
+        shortages and transforming the profession. <publisher-loc>Paris</publisher-loc>:
+        <publisher-name>UNESCO</publisher-name>; <year>2024</year>. Available from:
+        <ext-link ext-link-type=\"uri\" xlink:href=\"https://teachertaskforce.org/sites/default/files/2024-04/2349-23_GlobalReportonTeacher_WEB.pdf\"
+        xlink:type=\"simple\">https://teachertaskforce.org/sites/default/files/2024-04/2349-23_GlobalReportonTeacher_WEB.pdf</ext-link></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref004\"><label>4</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Bast\xEDas-Bast\xEDas</surname>
+        <given-names>LS</given-names></name>, <name name-style=\"western\"><surname>Iturra-Herrera</surname>
+        <given-names>C</given-names></name>. <article-title>La formaci\xF3n inicial
+        docente en Chile: Una revisi\xF3n bibliogr\xE1fica sobre su implementaci\xF3n
+        y logros</article-title>. <source>Rev Electr Educare</source>. <year>2022</year>;<volume>26</volume>(<issue>1</issue>):<fpage>1</fpage>\u2013<lpage>22</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.15359/ree.26-1.13\"
+        xlink:type=\"simple\">10.15359/ree.26-1.13</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref005\"><label>5</label><mixed-citation publication-type=\"book\"
+        xlink:type=\"simple\"><collab>Comisi\xF3n Nacional de Acreditaci\xF3n (CNA)</collab>.
+        <source>T\xEDtulo exacto del documento. Falta completarla. Probablemente corresponde
+        a los Criterios y est\xE1ndares de calidad para la acreditaci\xF3n de carreras
+        y programas de pedagog\xEDa; confirmen cu\xE1l documento citaron</source>.
+        <publisher-loc>Santiago</publisher-loc>: <publisher-name>CNA</publisher-name>;
+        <year>2023</year>.</mixed-citation></ref>\n<ref id=\"pone.0360047.ref006\"><label>6</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Zeichner</surname>
+        <given-names>K</given-names></name>. <article-title>The turn once again toward
+        practice-based teacher education</article-title>. <source>J Teach Educ</source>.
+        <year>2012</year>;<volume>63</volume>(<issue>5</issue>):<fpage>376</fpage>\u2013<lpage>82</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1177/0022487112445789\"
+        xlink:type=\"simple\">10.1177/0022487112445789</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref007\"><label>7</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Ball</surname>
+        <given-names>DL</given-names></name>, <name name-style=\"western\"><surname>Forzani</surname>
+        <given-names>FM</given-names></name>. <article-title>The work of teaching
+        and the challenge for teacher education</article-title>. <source>J Teach Educ</source>.
+        <year>2009</year>;<volume>60</volume>(<issue>5</issue>):<fpage>497</fpage>\u2013<lpage>511</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1177/0022487109348479\"
+        xlink:type=\"simple\">10.1177/0022487109348479</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref008\"><label>8</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Grossman</surname>
+        <given-names>P</given-names></name>, <name name-style=\"western\"><surname>Compton</surname>
+        <given-names>C</given-names></name>, <name name-style=\"western\"><surname>Igra</surname>
+        <given-names>D</given-names></name>, <name name-style=\"western\"><surname>Ronfeldt</surname>
+        <given-names>M</given-names></name>, <name name-style=\"western\"><surname>Shahan</surname>
+        <given-names>E</given-names></name>, <name name-style=\"western\"><surname>Williamson</surname>
+        <given-names>P</given-names></name>. <article-title>Teaching practice: a cross-professional
+        perspective</article-title>. <source>Teach Coll Rec</source>. <year>2009</year>;<volume>111</volume>(<issue>9</issue>):<fpage>2055</fpage>\u2013<lpage>100</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref009\"><label>9</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Matsumoto-Royo</surname>
+        <given-names>K</given-names></name>, <name name-style=\"western\"><surname>Ram\xEDrez-Montoya</surname>
+        <given-names>MS</given-names></name>. <article-title>Core practices in practice-based
+        teacher education: a systematic literature review of its teaching and assessment
+        process</article-title>. <source>Stud Educ Eval</source>. <year>2021</year>;<volume>70</volume>:<fpage>101047</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.stueduc.2021.101047\"
+        xlink:type=\"simple\">10.1016/j.stueduc.2021.101047</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref010\"><label>10</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Lim</surname>
+        <given-names>JM</given-names></name>, <name name-style=\"western\"><surname>Choi</surname>
+        <given-names>HJ</given-names></name>, <name name-style=\"western\"><surname>Hwang</surname>
+        <given-names>H</given-names></name>. <article-title>Supporting preservice
+        teachers\u2019 reflection with an AI chatbot: The mediating role of cognitive
+        and emotional engagement</article-title>. <source>Teach Teach Educ</source>.
+        <year>2025</year>;<volume>137</volume>:<fpage>104447</fpage>. <comment>doi:
+        <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.tate.2023.104447\"
+        xlink:type=\"simple\">10.1016/j.tate.2023.104447</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref011\"><label>11</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Flamand</surname>
+        <given-names>L</given-names></name>, <name name-style=\"western\"><surname>Vanderlinde</surname>
+        <given-names>R</given-names></name>, <name name-style=\"western\"><surname>Tuytens</surname>
+        <given-names>M</given-names></name>. <article-title>Promoting epistemic agency
+        in teacher education: A learning path for student teachers and teacher educators</article-title>.
+        <source>Teach Teach Educ</source>. <year>2025</year>;<volume>138</volume>:<fpage>104456</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.tate.2023.104456\"
+        xlink:type=\"simple\">10.1016/j.tate.2023.104456</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref012\"><label>12</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>DeJarnette</surname>
+        <given-names>NK</given-names></name>, <name name-style=\"western\"><surname>Hord</surname>
+        <given-names>C</given-names></name>. <article-title>Building teacher candidates\u2019
+        interdisciplinary capacity through design challenges</article-title>. <source>J
+        STEM Educ Res</source>. <year>2025</year>. <comment>doi: <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://doi.org/10.1007/s41979-024-00157-2\" xlink:type=\"simple\">10.1007/s41979-024-00157-2</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref013\"><label>13</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Waychunas</surname>
+        <given-names>W.</given-names></name> <article-title>Scaffolding novices toward
+        ambitious social studies teaching: a learning progression for enactment of
+        core practices</article-title>. <source>Proceedings of the 2025 AERA Annual
+        Meeting</source>. <year>2025</year>. <comment>doi: <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://doi.org/10.3102/2197149\" xlink:type=\"simple\">10.3102/2197149</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref014\"><label>14</label><mixed-citation publication-type=\"book\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Peters</surname>
+        <given-names>MDJ</given-names></name>, <name name-style=\"western\"><surname>Godfrey</surname>
+        <given-names>C</given-names></name>, <name name-style=\"western\"><surname>McInerney</surname>
+        <given-names>P</given-names></name>, <name name-style=\"western\"><surname>Munn</surname>
+        <given-names>Z</given-names></name>, <name name-style=\"western\"><surname>Tricco</surname>
+        <given-names>AC</given-names></name>, <name name-style=\"western\"><surname>Khalil</surname>
+        <given-names>H.</given-names></name> <article-title>Chapter 11: Scoping reviews
+        (2020 version).</article-title> In: <name name-style=\"western\"><surname>Aromataris</surname>
+        <given-names>E</given-names></name>, <name name-style=\"western\"><surname>Munn</surname>
+        <given-names>Z</given-names></name>, editors. <source>JBI Manual for Evidence
+        Synthesis</source>. <publisher-name>JBI</publisher-name>; <year>2020</year>.</mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref015\"><label>15</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Arksey</surname>
+        <given-names>H</given-names></name>, <name name-style=\"western\"><surname>O\u2019Malley</surname>
+        <given-names>L</given-names></name>. <article-title>Scoping studies: towards
+        a methodological framework</article-title>. <source>Int J Soc Res Methodol</source>.
+        <year>2005</year>;<volume>8</volume>(<issue>1</issue>):<fpage>19</fpage>\u2013<lpage>32</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1080/1364557032000119616\"
+        xlink:type=\"simple\">10.1080/1364557032000119616</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref016\"><label>16</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Tricco</surname>
+        <given-names>AC</given-names></name>, <name name-style=\"western\"><surname>Lillie</surname>
+        <given-names>E</given-names></name>, <name name-style=\"western\"><surname>Zarin</surname>
+        <given-names>W</given-names></name>, <name name-style=\"western\"><surname>O\u2019Brien</surname>
+        <given-names>KK</given-names></name>, <name name-style=\"western\"><surname>Colquhoun</surname>
+        <given-names>H</given-names></name>, <name name-style=\"western\"><surname>Levac</surname>
+        <given-names>D</given-names></name>, <etal>et al</etal>. <article-title>PRISMA
+        Extension for Scoping Reviews (PRISMA-ScR): Checklist and Explanation</article-title>.
+        <source>Ann Intern Med</source>. <year>2018</year>;<volume>169</volume>(<issue>7</issue>):<fpage>467</fpage>\u2013<lpage>73</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.7326/M18-0850\"
+        xlink:type=\"simple\">10.7326/M18-0850</ext-link></comment> <object-id pub-id-type=\"pmid\">30178033</object-id></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref017\"><label>17</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Ball</surname>
+        <given-names>DL</given-names></name>, <name name-style=\"western\"><surname>Sleep</surname>
+        <given-names>L</given-names></name>, <name name-style=\"western\"><surname>Boerst</surname>
+        <given-names>TA</given-names></name>, <name name-style=\"western\"><surname>Bass</surname>
+        <given-names>H</given-names></name>. <article-title>Combining the Development
+        of Practice and the Practice of Development in Teacher Education</article-title>.
+        <source>Elem Sch J</source>. <year>2009</year>;<volume>109</volume>(<issue>5</issue>):<fpage>458</fpage>\u2013<lpage>74</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1086/596996\"
+        xlink:type=\"simple\">10.1086/596996</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref018\"><label>18</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Harzing</surname>
+        <given-names>A-W</given-names></name>, <name name-style=\"western\"><surname>Alakangas</surname>
+        <given-names>S</given-names></name>. <article-title>Google Scholar, Scopus
+        and the Web of Science: a longitudinal and cross-disciplinary comparison</article-title>.
+        <source>Scientometrics</source>. <year>2016</year>;<volume>106</volume>(<issue>2</issue>):<fpage>787</fpage>\u2013<lpage>804</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1007/s11192-015-1798-9\"
+        xlink:type=\"simple\">10.1007/s11192-015-1798-9</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref019\"><label>19</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Mongeon</surname>
+        <given-names>P</given-names></name>, <name name-style=\"western\"><surname>Paul-Hus</surname>
+        <given-names>A</given-names></name>. <article-title>The journal coverage of
+        Web of Science and Scopus: a comparative analysis</article-title>. <source>Scientometrics</source>.
+        <year>2016</year>;<volume>106</volume>(<issue>1</issue>):<fpage>213</fpage>\u2013<lpage>28</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1007/s11192-015-1765-5\"
+        xlink:type=\"simple\">10.1007/s11192-015-1765-5</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pone.0360047.ref020\"><label>20</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Page</surname>
+        <given-names>MJ</given-names></name>, <name name-style=\"western\"><surname>McKenzie</surname>
+        <given-names>JE</given-names></name>, <name name-style=\"western\"><surname>Bossuyt</surname>
+        <given-names>PM</given-names></name>, <name name-style=\"western\"><surname>Boutron</surname>
+        <given-names>I</given-names></name>, <name name-style=\"western\"><surname>Hoffmann</surname>
+        <given-names>TC</given-names></name>, <name name-style=\"western\"><surname>Mulrow</surname>
+        <given-names>CD</given-names></name>, <etal>et al</etal>. <article-title>The
+        PRISMA 2020 statement: an updated guideline for reporting systematic reviews</article-title>.
+        <source>BMJ</source>. <year>2021</year>;<volume>372</volume>:n71. <comment>doi:
+        <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1136/bmj.n71\"
+        xlink:type=\"simple\">10.1136/bmj.n71</ext-link></comment> <object-id pub-id-type=\"pmid\">33782057</object-id></mixed-citation></ref>\n</ref-list>\n</back>\n</article>"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private, max-age=0
+      Content-Disposition:
+      - attachment; filename=journal.pone.0360047.xml
+      Content-Length:
+      - '54783'
+      Content-Type:
+      - application/xml
+      Date:
+      - Wed, 14 Oct 2026 12:57:55 GMT
+      ETag:
+      - '"2f0d55f8a9c67c6e52306ec0572825b7"'
+      Expires:
+      - Wed, 14 Oct 2026 12:57:55 GMT
+      Last-Modified:
+      - Tue, 13 Oct 2026 17:48:14 GMT
+      Server:
+      - UploadServer
+      X-GUploader-UploadID:
+      - AP6rU81xzxa_Qg7j7DKGHokGBW_hXpPJJnOBQIFw0_nRprLhu-9DitMlUxs8imRoHzC_aP3IRF_vHOsFaC-PPA
+      x-goog-generation:
+      - '1791913694195892'
+      x-goog-hash:
+      - crc32c=LvdmRw==
+      - md5=Lw1V+KnGfG5SMG7AVygltw==
+      x-goog-metageneration:
+      - '1'
+      x-goog-storage-class:
+      - STANDARD
+      x-goog-stored-content-encoding:
+      - identity
+      x-goog-stored-content-length:
+      - '54783'
+    status:
+      code: 200
+      message: OK
+version: 1

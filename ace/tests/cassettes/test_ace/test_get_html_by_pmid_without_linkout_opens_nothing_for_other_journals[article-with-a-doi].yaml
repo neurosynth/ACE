@@ -1,0 +1,147 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.86 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?cmd=prlinks&dbfrom=pubmed&id=42869849&retmode=json
+  response:
+    body:
+      string: '{"header":{"type":"elink","version":"0.3"},"linksets":[{"dbfrom":"pubmed","idurllist":[{"id":"42869849","objurls":[],"info":"No
+        LinkOut links available for UID: 42869849"}]}]}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 14 Oct 2026 13:05:21 GMT
+      Ncbi-Phid:
+      - 1D33C7E9FE8B2C65000056F4C5D7A4C5.1.1.m_1
+      Ncbi-Sid:
+      - DC69A73962DDC2FA_F265SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=DC69A73962DDC2FA_F265SID; domain=.nih.gov; path=/; expires=Thu, 14
+        Oct 2027 13:05:21 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '10'
+      X-Ratelimit-Remaining:
+      - '9'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '176'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Cookie:
+      - ncbi_sid=DC69A73962DDC2FA_F265SID
+      User-Agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,
+        like Gecko) Chrome/123.0.6312.86 Safari/537.36
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=42869849&retmode=json
+  response:
+    body:
+      string: '{"header":{"type":"esummary","version":"0.3"},"result":{"uids":["42869849"],"42869849":{"uid":"42869849","pubdate":"2026
+        Oct","epubdate":"","source":"ACR Open Rheumatol","authors":[{"name":"Lerkvaleekul
+        B","authtype":"Author","clusterid":""},{"name":"Sirachainan N","authtype":"Author","clusterid":""},{"name":"Songdej
+        D","authtype":"Author","clusterid":""},{"name":"Paisooksantivatana K","authtype":"Author","clusterid":""},{"name":"Chinudomwong
+        P","authtype":"Author","clusterid":""},{"name":"Vilaiyuk S","authtype":"Author","clusterid":""}],"lastauthor":"Vilaiyuk
+        S","title":"The Usefulness of White Blood Cell Inflammatory Parameters in
+        Children With Systemic Lupus Erythematosus.","sorttitle":"usefulness of white
+        blood cell inflammatory parameters in children with systemic lupus erythematosus","volume":"8","issue":"10","pages":"e90152","lang":["eng"],"nlmuniqueid":"101740025","issn":"","essn":"2578-5745","pubtype":["Journal
+        Article"],"recordstatus":"PubMed","pubstatus":"4","articleids":[{"idtype":"pubmed","idtypen":1,"value":"42869849"},{"idtype":"doi","idtypen":3,"value":"10.1002/acr2.90152"}],"history":[{"pubstatus":"revised","date":"2026/08/18
+        00:00"},{"pubstatus":"received","date":"2026/05/15 00:00"},{"pubstatus":"accepted","date":"2026/09/01
+        00:00"},{"pubstatus":"medline","date":"2026/10/13 23:37"},{"pubstatus":"pubmed","date":"2026/10/13
+        23:36"},{"pubstatus":"entrez","date":"2026/10/13 22:53"}],"references":[],"attributes":["Has
+        Abstract"],"pmcrefcount":"","fulljournalname":"ACR open rheumatology","elocationid":"doi:
+        10.1002/acr2.90152","doctype":"citation","srccontriblist":[],"booktitle":"","medium":"","edition":"","publisherlocation":"","publishername":"","srcdate":"","reportnumber":"","availablefromurl":"","locationlabel":"","doccontriblist":[],"docdate":"","bookname":"","chapter":"","sortpubdate":"2026/10/01
+        00:00","sortfirstauthor":"Lerkvaleekul B","vernaculartitle":""}}}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 14 Oct 2026 13:05:20 GMT
+      Ncbi-Phid:
+      - 1D33C7E9FE8B2C6500002EF4C66B1DAF.1.1.m_1
+      Ncbi-Sid:
+      - DC69A73962DDC2FA_F265SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=DC69A73962DDC2FA_F265SID; domain=.nih.gov; path=/; expires=Thu, 14
+        Oct 2027 13:05:21 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '10'
+      X-Ratelimit-Remaining:
+      - '8'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+      content-length:
+      - '1912'
+    status:
+      code: 200
+      message: OK
+version: 1
