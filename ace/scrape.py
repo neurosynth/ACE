@@ -285,14 +285,6 @@ def _plos_doi_from_url(url):
     return match.group(1) if match else None
 
 
-def _plos_manuscript_url(journal, doi):
-    """ The NLM XML of a PLoS article. The legacy 'asset?id=<doi>.XML'
-    endpoint still works, but only by redirecting here first. """
-
-    return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (
-        PLOS_JOURNAL_SITES[journal.lower()], doi)
-
-
 def _visible_text(html):
     """ Rough plain-text rendering of an HTML document, used to tell a real
     article page apart from an interstitial that carries nothing but a widget. """
@@ -584,8 +576,8 @@ class Scraper:
         return providers[0][1]
 
     def _plos_url_without_linkout(self, pmid):
-        """ The PLoS manuscript URL of an article that has no LinkOut record,
-        from its keyed esummary, or None if it isn't a PLoS article. """
+        """ The doi.org URL of a PLoS article that has no LinkOut record, from
+        its keyed esummary, or None (logged) for any other article. """
 
         try:
             response = self._client.get(
@@ -594,17 +586,23 @@ class Scraper:
                 return_content=False,
             )
             summary = response.json()['result'][str(pmid)]
+            # An unknown PMID comes back as HTTP 200 with only an error.
+            if 'error' in summary:
+                raise ValueError(summary['error'])
+            doi = next((a['value'] for a in summary['articleids'] if a['idtype'] == 'doi'), None)
         except Exception as e:
             logger.error(f"E-utilities summary failed for PMID {pmid}: {self._without_api_key(e)}")
             return None
 
-        # The caller's journal can be a label of its own rather than PubMed's
-        # name for it, so PubMed's record decides whether this is PLoS.
-        journal = summary.get('fulljournalname', '')
-        doi = next((a['value'] for a in summary.get('articleids', []) if a['idtype'] == 'doi'), None)
-        if journal.lower() not in PLOS_JOURNAL_SITES or doi is None:
+        # The caller's journal can be a label of its own, and PLOS_JOURNAL_SITES
+        # doesn't list every PLOS title. Every PLOS journal DOI has this prefix.
+        if doi is None or not doi.startswith('10.1371/journal.'):
+            logger.info("\tNo LinkOut record for PMID %s and not a PLoS article. Skipping...", pmid)
             return None
-        return _plos_manuscript_url(journal, doi)
+        # doi.org lands on the journals.plos.org article page, as LinkOut does.
+        # The manuscript URL is a download, which the browser saves to disk
+        # instead of loading.
+        return f"https://doi.org/{doi}"
 
     def _without_api_key(self, text):
         # requests puts the full query string, key included, in its errors.
@@ -658,7 +656,6 @@ class Scraper:
             # so only a PLoS article, addressed by its DOI, is opened.
             url = self._plos_url_without_linkout(pmid)
             if url is None:
-                logger.info("\tNo LinkOut record for PMID %s and no PLoS manuscript to open. Skipping...", pmid)
                 return None
         logger.info(url)
         return self.get_html(
@@ -682,7 +679,10 @@ class Scraper:
                 doi = _plos_doi_from_url(url)
                 if doi is None:
                     return url
-                return _plos_manuscript_url(j, doi)
+                # The legacy 'asset?id=<doi>.XML' endpoint still works, but only
+                # by redirecting here first.
+                return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (
+                    PLOS_JOURNAL_SITES[j], doi)
             elif j in ['human brain mapping', 'european journal of neuroscience',
                        'brain and behavior', 'epilepsia', 'journal of neuroimaging']:
                 return url.replace('abstract', 'full').split(';')[0]
