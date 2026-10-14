@@ -47,8 +47,6 @@ interactions:
         Oct 2027 13:44:09 GMT
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
       Via:
       - 1.1 google
       X-Ratelimit-Limit:
@@ -129,8 +127,6 @@ interactions:
         Oct 2027 13:44:09 GMT
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
       Via:
       - 1.1 google
       X-Ratelimit-Limit:
@@ -182,8 +178,6 @@ interactions:
       - cloudflare
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
@@ -2824,8 +2818,6 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000
       - max-age=31536000 ; includeSubDomains
-      Transfer-Encoding:
-      - chunked
       Vary:
       - Accept-Encoding
       Via:
@@ -2838,6 +2830,1871 @@ interactions:
       - 1; mode=block
       content-length:
       - '222922'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
+        Safari/537.36
+    method: GET
+    uri: https://journals.plos.org/mentalhealth/article/file?id=10.1371%2Fjournal.pmen.0000749&type=manuscript
+  response:
+    body:
+      string: ''
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Cache-Control:
+      - max-age=3600
+      Content-Length:
+      - '0'
+      Date:
+      - Wed, 14 Oct 2026 17:36:08 GMT
+      Location:
+      - https://storage.googleapis.com/plos-corpus-prod/10.1371/journal.pmen.0000749/1/pmen.0000749.xml?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=wombat-sa%40plos-prod.iam.gserviceaccount.com%2F20261014%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20261014T131450Z&X-Goog-Expires=86400&X-Goog-SignedHeaders=host&X-Goog-Signature=9beb1b02b48af2e8c924bd88eca063f9c5b53ccc1e5f1b66f6dad86440ae554942f46d356abf5da3adafe2764978b4af332ed6792f1830b0ea69e407562f7721e07b98d9b5014dab1567effd01fc0988df7e03ec473ce27b036d5589b0c091f51277a62f1e25477d605292237c63a6d748294fa2c3bfaae82bff6ff166a6893d1e9d6ee8283e64fc4b78b370c572f4f027280436f3aaec97782d856c7e0f6c87645a23d8e0e98d419c60882819ea06830cddf219598933bfc3196e3967826410bf8e05b633ad00d308a6b0c5a114b0ff59387f4da13c09dbcd1a2172050e6283217566c71984000d38edd4630220e2bd9c136577a0d95312d3b189fe10c17386
+      Server:
+      - Apache
+      Set-Cookie:
+      - GCLB=CKSWlLugqM7FhQEQAw; path=/; HttpOnly
+      Strict-Transport-Security:
+      - max-age=31536000
+      - max-age=31536000 ; includeSubDomains
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 302
+      message: Found
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118
+        Safari/537.36
+    method: GET
+    uri: https://storage.googleapis.com/plos-corpus-prod/10.1371/journal.pmen.0000749/1/pmen.0000749.xml?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=wombat-sa%40plos-prod.iam.gserviceaccount.com%2F20261014%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20261014T131450Z&X-Goog-Expires=86400&X-Goog-Signature=9beb1b02b48af2e8c924bd88eca063f9c5b53ccc1e5f1b66f6dad86440ae554942f46d356abf5da3adafe2764978b4af332ed6792f1830b0ea69e407562f7721e07b98d9b5014dab1567effd01fc0988df7e03ec473ce27b036d5589b0c091f51277a62f1e25477d605292237c63a6d748294fa2c3bfaae82bff6ff166a6893d1e9d6ee8283e64fc4b78b370c572f4f027280436f3aaec97782d856c7e0f6c87645a23d8e0e98d419c60882819ea06830cddf219598933bfc3196e3967826410bf8e05b633ad00d308a6b0c5a114b0ff59387f4da13c09dbcd1a2172050e6283217566c71984000d38edd4630220e2bd9c136577a0d95312d3b189fe10c17386&X-Goog-SignedHeaders=host
+  response:
+    body:
+      string: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE article PUBLIC
+        \"-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.3 20210610//EN\" \"http://jats.nlm.nih.gov/publishing/1.3/JATS-journalpublishing1-3.dtd\">\n<article
+        article-type=\"research-article\" dtd-version=\"1.3\" xml:lang=\"en\" xmlns:mml=\"http://www.w3.org/1998/Math/MathML\"
+        xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n<processing-meta>\n<custom-meta-group
+        content-type=\"composition\">\n<custom-meta specific-use=\"newgen\" xlink:href=\"https://www.newgen.co/\">\n<meta-name>Composition
+        Vendor</meta-name>\n<meta-value>Newgen KnowledgeWorks (P) Ltd.</meta-value>\n</custom-meta>\n</custom-meta-group>\n</processing-meta>\n<front>\n<journal-meta>\n<journal-id
+        journal-id-type=\"nlm-ta\">PLOS Ment Health</journal-id>\n<journal-id journal-id-type=\"publisher-id\">plos</journal-id>\n<journal-id
+        journal-id-type=\"pmc\">plosmenthealth</journal-id>\n<journal-title-group>\n<journal-title>PLOS
+        Mental Health</journal-title>\n</journal-title-group>\n<issn pub-type=\"epub\">2837-8156</issn>\n<publisher>\n<publisher-name>Public
+        Library of Science</publisher-name>\n<publisher-loc>San Francisco, CA USA</publisher-loc>\n</publisher>\n</journal-meta>\n<article-meta>\n<article-id
+        pub-id-type=\"doi\">10.1371/journal.pmen.0000749</article-id>\n<article-id
+        pub-id-type=\"publisher-id\">PMEN-D-25-00562</article-id>\n<article-categories>\n<subj-group
+        subj-group-type=\"heading\">\n<subject>Research Article</subject>\n</subj-group>\n<subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Medicine and health sciences</subject><subj-group><subject>Mental
+        health and psychiatry</subject><subj-group><subject>Psychological stress</subject></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Biology and life sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Psychological
+        stress</subject></subj-group></subj-group></subj-group><subj-group subj-group-type=\"Discipline-v3\">\n<subject>Social
+        sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Psychological
+        stress</subject></subj-group></subj-group></subj-group><subj-group subj-group-type=\"Discipline-v3\">\n<subject>Biology
+        and life sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Emotions</subject><subj-group><subject>Anxiety</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Social sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Emotions</subject><subj-group><subject>Anxiety</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Earth sciences</subject><subj-group><subject>Atmospheric
+        science</subject><subj-group><subject>Climatology</subject><subj-group><subject>Climate
+        change</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Medicine and health sciences</subject><subj-group><subject>Mental
+        health and psychiatry</subject></subj-group></subj-group><subj-group subj-group-type=\"Discipline-v3\">\n<subject>People
+        and places</subject><subj-group><subject>Geographical locations</subject><subj-group><subject>North
+        America</subject><subj-group><subject>United States</subject><subj-group><subject>South
+        Carolina</subject></subj-group></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>People and places</subject><subj-group><subject>Geographical
+        locations</subject><subj-group><subject>North America</subject><subj-group><subject>United
+        States</subject><subj-group><subject>Florida</subject></subj-group></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Research and analysis methods</subject><subj-group><subject>Research
+        design</subject><subj-group><subject>Survey research</subject><subj-group><subject>Surveys</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Biology and life sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Collective
+        human behavior</subject><subj-group><subject>Interpersonal relationships</subject></subj-group></subj-group></subj-group></subj-group><subj-group
+        subj-group-type=\"Discipline-v3\">\n<subject>Social sciences</subject><subj-group><subject>Psychology</subject><subj-group><subject>Collective
+        human behavior</subject><subj-group><subject>Interpersonal relationships</subject></subj-group></subj-group></subj-group></subj-group></article-categories>\n<title-group>\n<article-title>Associations
+        between hurricane stressors, social capital, and climate anxiety among individuals
+        who experienced Hurricanes Helene and Milton</article-title>\n<alt-title alt-title-type=\"running-head\">Hurricane
+        stressors, social capital, and climate anxiety in the aftermath of Hurricanes</alt-title>\n</title-group>\n<contrib-group>\n<contrib
+        contrib-type=\"author\" corresp=\"yes\" xlink:type=\"simple\">\n<contrib-id
+        authenticated=\"true\" contrib-id-type=\"orcid\">https://orcid.org/0000-0002-7580-3663</contrib-id>\n<name
+        name-style=\"western\">\n<surname>Dalisay</surname>\n<given-names>Francis</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/formal-analysis/\">Formal
+        analysis</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/investigation/\">Investigation</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/methodology/\">Methodology</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/project-administration/\">Project
+        administration</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/visualization/\">Visualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"><sup>1</sup></xref>\n<xref
+        ref-type=\"corresp\" rid=\"cor001\">*</xref>\n</contrib>\n<contrib contrib-type=\"author\"
+        xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Liu</surname>\n<given-names>Wenlin</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/formal-analysis/\">Formal
+        analysis</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/methodology/\">Methodology</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"><sup>1</sup></xref>\n</contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Yamamoto</surname>\n<given-names>Masahiro</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/conceptualization/\">Conceptualization</role>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff002\"><sup>2</sup></xref>\n</contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Chu</surname>\n<given-names>Haoran</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"><sup>1</sup></xref>\n</contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Hmielowski</surname>\n<given-names>Jay</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"><sup>1</sup></xref>\n</contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<contrib-id authenticated=\"true\"
+        contrib-id-type=\"orcid\">https://orcid.org/0000-0002-0366-5687</contrib-id>\n<name
+        name-style=\"western\">\n<surname>Hong</surname>\n<given-names>Young-Rock</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff003\"><sup>3</sup></xref>\n</contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<contrib-id authenticated=\"true\"
+        contrib-id-type=\"orcid\">https://orcid.org/0000-0002-8389-0197</contrib-id>\n<name
+        name-style=\"western\">\n<surname>Liu</surname>\n<given-names>Jiawei</given-names>\n</name>\n<role
+        content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"><sup>1</sup></xref>\n</contrib>\n<contrib
+        contrib-type=\"author\" xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Johnson</surname>\n<given-names>Benjamin
+        K.</given-names>\n</name>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-original-draft/\">Writing
+        \u2013 original draft</role>\n<role content-type=\"http://credit.niso.org/contributor-roles/writing-review-editing/\">Writing
+        \u2013 review &amp; editing</role>\n<xref ref-type=\"aff\" rid=\"aff001\"><sup>1</sup></xref>\n</contrib>\n</contrib-group>\n<aff
+        id=\"aff001\"><label>1</label> <institution-wrap><institution content-type=\"dept\">College
+        of Journalism and Communications</institution></institution-wrap>, <institution-wrap><institution
+        content-type=\"institution\">University of Florida</institution></institution-wrap>,
+        <city>Gainesville</city>, <state>Florida</state>, <country country=\"us\">United
+        States of America</country></aff>\n<aff id=\"aff002\"><label>2</label> <institution-wrap><institution
+        content-type=\"dept\">Department of Communication</institution></institution-wrap>,
+        <institution-wrap><institution content-type=\"institution\">University at
+        Albany, State University of New York</institution></institution-wrap>, <city>Albany</city>,
+        <state>New York</state>, <country country=\"us\">United States of America</country></aff>\n<aff
+        id=\"aff003\"><label>3</label> <institution-wrap><institution content-type=\"dept\">School
+        of Medicine, Department of Family and Preventive Medicine</institution></institution-wrap>,
+        <institution-wrap><institution content-type=\"institution\">Emory University</institution></institution-wrap>,
+        <city>Atlanta</city>, <state>Georgia</state>, <country country=\"us\">United
+        States of America</country></aff>\n<contrib-group>\n<contrib contrib-type=\"editor\"
+        xlink:type=\"simple\">\n<name name-style=\"western\">\n<surname>Reyes</surname>\n<given-names>Marc
+        Eric Santos</given-names>\n</name>\n<role>Editor</role>\n<xref ref-type=\"aff\"
+        rid=\"edit1\"/></contrib>\n</contrib-group>\n<aff id=\"edit1\"><institution-wrap><institution
+        content-type=\"institution\">University of Santo Tomas College of Science</institution></institution-wrap>,
+        <country country=\"ph\">PHILIPPINES</country></aff>\n<author-notes>\n<corresp
+        id=\"cor001\">* E-mail: <email xlink:type=\"simple\">f.dalisay@ufl.edu</email></corresp>\n<fn
+        fn-type=\"conflict\" id=\"coi001\">\n<p>The authors have declared that no
+        competing interests exist.</p>\n</fn>\n</author-notes>\n<pub-date pub-type=\"epub\"><day>13</day><month>10</month><year>2026</year></pub-date>\n<pub-date
+        pub-type=\"collection\"><year>2026</year></pub-date>\n<volume>3</volume>\n<issue>10</issue>\n<elocation-id>e0000749</elocation-id>\n<history>\n<date
+        date-type=\"received\"><day>15</day><month>12</month><year>2025</year></date>\n<date
+        date-type=\"accepted\"><day>22</day><month>9</month><year>2026</year></date>\n</history>\n<permissions>\n<copyright-year>2026</copyright-year>\n<copyright-holder>Dalisay
+        et al</copyright-holder>\n<license xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">\n<license-p>This is an open access article distributed
+        under the terms of the <ext-link ext-link-type=\"uri\" xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">Creative Commons Attribution License</ext-link>, which
+        permits unrestricted use, distribution, and reproduction in any medium, provided
+        the original author and source are credited.</license-p></license>\n</permissions>\n<self-uri
+        content-type=\"pdf\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749\"/>\n<abstract>\n<p>This
+        study examined how hurricane stressors and three forms of social capital\u2014bonding,
+        bridging, and linking\u2014are associated with climate anxiety, and whether
+        the three forms of social capital would moderate the relationship between
+        hurricane stressors and climate anxiety. We analyzed data from a cross-sectional
+        survey (<italic>N</italic>\u2009=\u20091,342) administered in Georgia, North
+        Carolina, and South Carolina following Hurricane Helene and in Florida following
+        Hurricane Milton in 2024. Results showed that hurricane stressors were positively
+        associated with climate anxiety, and these associations held after controlling
+        for symptoms of generalized anxiety. Findings also revealed a nuanced role
+        of social capital. Bonding social capital had a direct negative association
+        with climate anxiety. However, our results suggested that bonding social capital\u2019s
+        protective role is conditional and reverses under high stress. That is, bonding
+        social capital weakened the relationship between hurricane stressors and climate
+        anxiety only when hurricane stressors were low. As stressors accumulated,
+        bonding social capital strengthened the association between stressors and
+        climate anxiety. In contrast, both bridging and linking social capital were
+        positively associated with climate anxiety and strengthened the positive relationship
+        between hurricane stressors and climate anxiety. We discussed theoretical
+        insights and practical implications.</p>\n</abstract>\n<funding-group>\n<funding-statement>The
+        author(s) received no specific funding for this work.</funding-statement>\n</funding-group>\n<counts>\n<fig-count
+        count=\"3\"/>\n<table-count count=\"3\"/>\n<page-count count=\"16\"/>\n</counts>\n<custom-meta-group>\n<custom-meta
+        id=\"data-availability\">\n<meta-name>Data Availability</meta-name>\n<meta-value>The
+        data analyzed in this study can be accessed on the following Open Society
+        Foundations (OSF) page: <ext-link ext-link-type=\"uri\" xlink:href=\"https://osf.io/adg8f/overview\"
+        xlink:type=\"simple\">https://osf.io/adg8f/overview</ext-link>.</meta-value>\n</custom-meta>\n</custom-meta-group>\n</article-meta>\n</front>\n<body>\n<sec
+        id=\"sec001\" sec-type=\"intro\">\n<title>1. Introduction</title>\n<p>The
+        Southeastern region of the United States experienced the compounded destructive
+        effects of Hurricanes Helene and Milton during the fall of 2024 [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref001\">1</xref>,<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref002\">2</xref>].
+        The intensities of both hurricanes have been linked to climate change [<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref003\">3</xref>]. In the aftermath
+        of these storms, news media reported that, beyond physical destruction, Hurricanes
+        Helene and Milton had significant negative impacts on survivors\u2019 mental
+        health [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref004\">4</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref005\">5</xref>]. These accounts are
+        consistent with past studies providing compelling evidence that extreme weather
+        events, including hurricanes, impose significant psychological strain, including
+        heightened anxiety [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref006\">6</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref007\">7</xref>]. Prior research particularly
+        demonstrates that individuals who experience hurricane stressors\u2014such
+        as personal losses, injuries, or other disruptions\u2014may face an increased
+        risk of developing climate anxiety [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref008\">8</xref>],
+        a form of distress distinct from generalized anxiety and defined as emotional
+        or psychological distress marked by heightened fear and constant worrying
+        about the climate crisis [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref009\">9</xref>].</p>\n<p>Against
+        the backdrop of studies examining climate anxiety, another line of research
+        has highlighted the protective role of social capital, or social connections
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref010\">10</xref>], in mitigating
+        distress associated with natural disasters [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref011\">11</xref>].
+        Indeed, a long-established area of disaster research suggests that social
+        capital could shape how communities respond to climate-related hazards and
+        influence their capacity for recovery [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref012\">12</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref013\">13</xref>]. Despite this evidence,
+        little is known about how social capital relates to climate anxiety, or whether
+        social capital may moderate the psychological effects of hurricane stressors.</p>\n<p>To
+        bridge the above-noted research gaps, the present study seeks to accomplish
+        three goals. First, within the context of the recovery from Hurricanes Helene
+        and Milton, we assess the relationship between hurricane stressors and climate
+        anxiety. Second, we examine the relationship between social capital and climate
+        anxiety. Third, we explore whether social capital moderates the relationship
+        between hurricane stressors and climate anxiety. We analyze data from online
+        surveys conducted in late 2024 with residents of U.S. Federal Emergency Management
+        Agency (FEMA)-declared disaster counties in Georgia, North Carolina, and South
+        Carolina, following Hurricane Helene, and in Florida following Hurricane Helene/Milton.</p>\n</sec>\n<sec
+        id=\"sec002\">\n<title>2. Literature review</title>\n<sec id=\"sec003\">\n<title>2.1
+        Hurricane stressors and climate anxiety</title>\n<p>The present study is guided
+        by three theoretical frameworks to explain the relationship between hurricane
+        stressors and climate anxiety: the stress process model, the environmental
+        identity framework, and the concept of eco-grief.</p>\n<p>This stress process
+        model provides a framework that explains the relationships between stressors,
+        resources, and mental health outcomes [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref014\">14</xref>].
+        According to this model, stressors, which are acute or chronic disruptive
+        events (e.g., adversities due to a hurricane), trigger mental health responses,
+        such as increased anxiety. The model also views resources as central in explaining
+        how a stressor affects mental health outcomes. That is, the extent to which
+        a stressor impacts one\u2019s mental health could be conditioned by the resources
+        one has available to cope with the stressor. As we will discuss below, resources
+        facilitated by social ties could play a role in moderating the relationship
+        between hurricane stressors and climate-induced anxiety.</p>\n<p>Based on
+        the stress process model, we first predict that hurricane stressors would
+        be positively associated with climate anxiety. As mentioned, hurricane stressors
+        refer to the adversities and critical losses of resources that one experiences
+        due to a hurricane [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref015\">15</xref>].
+        Such stressors can range from losing access to resources such as food, water,
+        shelter, or electricity to experiencing injuries. Climate anxiety is a form
+        of environment-related distress specifically tied to the perceived threat
+        of climate change [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref016\">16</xref>],
+        manifesting as extreme and persistent concern and rumination about climate
+        change [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref009\">9</xref>]. A recent
+        study conducted by Asgarizadeh et al. showed that personal past experiences
+        with climate-related events was associated with heightened levels of anxiety
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref017\">17</xref>].</p>\n<p>Yet
+        we note that direct experiences with hurricane stressors could plausibly produce
+        generalized anxiety. As stated, research has specifically established a positive
+        relationship between experiencing stressful hurricane events and increased
+        levels of psychological distress [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref008\">8</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref018\">18</xref>], including anxiety
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref019\">19</xref>,<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref020\">20</xref>]. For instance, in their study of individuals
+        who experienced Hurricane Katrina, Galea et al. found that hurricane-related
+        stressors, namely, experiencing property loss, physical injury, and physical
+        adversity, were positively associated with symptoms of anxiety [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref006\">6</xref>].</p>\n<p>However, climate anxiety represents
+        a theoretically and empirically distinct outcome. Generalized anxiety is characterized
+        by diffuse, object-independent excessive worry about a number of events, disproportionate
+        to the actual likelihood or impact of those events [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref021\">21</xref>]. Climate anxiety, on the other hand,
+        is object-specific and ecologically grounded and reflects an appraisal of
+        systemic environmental threat rather than a pathological response to personal
+        danger. Indeed, Clayton and Karazsia\u2019s [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref009\">9</xref>]
+        work has demonstrated empirically that climate anxiety is distinct from general
+        psychological distress, establishing it as a separate construct warranting
+        independent investigation. In a 5-year cohort survey of Texas and Florida
+        residents who directly experienced category 3 or higher hurricanes, Garfin
+        and Wong-Parodi found that having previous direct exposure to hurricanes,
+        measured with items such as having a home destroyed, losing property or a
+        pet, and knowing someone who was injured, was positively associated with climate
+        anxiety [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref008\">8</xref>].</p>\n<p>Complementing
+        the stress process model, the framework of environmental identity [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref022\">22</xref>] and the concept of ecological grief
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref023\">23</xref>] provide the
+        psychological mechanism for why directly experiencing hurricane stressors
+        activates this climate-specific form of anxiety rather than generalized distress.
+        First, on a cognitive level, environmental identity (EID) represents a sense
+        of connection to the non-human natural environment influencing how individuals
+        perceive and act toward the environment [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref022\">22</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref024\">24</xref>]. For people with
+        strong EID, the natural environment plays an important role in their self-concept
+        and who they are. Having a strong EID is positively linked with pro-environmental
+        attitudes and behaviors [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref022\">22</xref>],
+        as well as climate change risk perception and climate anxiety [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref025\">25</xref>]. While EID varies across individuals,
+        the EID framework suggests that in processing the destruction resulting from
+        a major hurricane, people may interpret such an event through an ecological
+        framework. That is, through an ecological lens, hurricane-related stressors
+        such as losses, damages, and adversities may not be perceived solely as personal
+        misfortune. Rather, experiencing such stressors may serve as evidence of a
+        larger, systemic environmental threat posed by climate change, thereby activating
+        climate-specific anxiety rather than generalized anxiety. Furthermore, through
+        an ecological lens, the losses and damages experienced because of an extreme
+        weather event or natural disaster, such as a major hurricane, may manifest
+        affectively as ecological grief, which refers to grief felt in response to
+        experienced or anticipated ecological losses [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref023\">23</xref>].
+        As grief itself has been known to associate with anxiety, researchers have
+        found that ecological grief is associated with eco-related anxiety [<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref023\">23</xref>,<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref026\">26</xref>]. In sum, environmental identity and
+        ecological grief provide the psychological mechanism explaining why hurricane
+        stressor experience produces climate anxiety as a distinct outcome rather
+        than undifferentiated psychological distress.</p>\n<p>Based on the literature
+        above, we propose the following hypothesis:</p>\n<p><bold>H1:</bold> Hurricane
+        stressors will be positively associated with climate anxiety.</p>\n</sec>\n<sec
+        id=\"sec004\">\n<title>2.2 Social capital</title>\n<p>Our study also examines
+        the potential relationship between social capital and climate anxiety. Social
+        capital refers to social ties and informal or formal connections that enable
+        individuals to develop norms of trust, reciprocity, and honesty [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref010\">10</xref>]. People with higher social capital
+        tend to be more likely to engage in collective action, ranging from joining
+        or volunteering for community organizations to watching over their neighbors\u2019
+        properties [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref010\">10</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref027\">27</xref>]. Scholars have identified
+        three forms of social capital: bonding, bridging, and linking. Bonding, or
+        homophilous social capital, refers to the strong ties one has with kin and
+        close friends [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref028\">28</xref>].
+        Such ties offer emotional support and build shared identity, although they
+        tend to form among those who already share similar values and goals. In contrast
+        to bonding social capital, bridging and linking social capital are both considered
+        heterophilous, as they involve ties among individuals of diverse groups [<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref028\">28</xref>]. Bridging and linking
+        social capital are typically facilitated through participation in political,
+        civic, religious, and work-related activities. Such activities lean toward
+        being goal-oriented and offer networking opportunities and access to external
+        resources via extra-community ties [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref028\">28</xref>].
+        However, bridging and linking social capital are conceptually distinct. Bridging
+        social capital involves horizontal connections between people from different
+        groups and social levels, while linking social capital represents vertical
+        connections between people of varying levels of power (e.g., being connected
+        to public officials).</p>\n<p>Social capital may serve a protective role against
+        distress experienced because of disasters. For instance, a study conducted
+        in Japan during the recovery from the 2011 Fukushima nuclear power plant disaster
+        showed that higher levels of social capital were associated with experiencing
+        less anxiety [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref011\">11</xref>].
+        The central mechanism underlying social capital\u2019s protective role against
+        distress is its capacity to facilitate the support that enables individuals
+        to cope with a disaster. For example, Hawkins and Maurer [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref029\">29</xref>] analyzed social capital during the
+        recovery period following Hurricane Katrina. They found that bonding social
+        capital effectively fostered immediate support after the hurricane. That is,
+        during the period immediately after Hurricane Katrina, most individuals who
+        experienced the storm first received or lent help to their families or others
+        in their immediate networks. Moreover, bridging and linking social capital,
+        which connect individuals from different backgrounds, could facilitate access
+        to resources needed to recover from a natural disaster [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref029\">29</xref>]. Bridging and linking social capital
+        could serve as sources for instrumental support, or tangible resources, after
+        a disaster such as a hurricane [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref029\">29</xref>].
+        Examples of instrumental support in the context of hurricane recovery include
+        receiving water, food, shelter, or financial assistance. Linking social capital,
+        in particular, which encompasses connections between people of varying levels
+        of power or authority (e.g., knowing a government official), could open access
+        to resources that one would not otherwise have available [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref028\">28</xref>]. Having access to resources is important
+        when navigating through or coping with stressful experiences. After a hurricane,
+        those with connections to government officials or institutions may be the
+        first to know where to look for governmental aid or how to apply for disaster
+        relief. In this case, as Hawkins and Maurer\u2019s work suggests, bridging
+        and linking social capital may be more important than bonding social capital
+        for sustaining the long-term post-hurricane recovery and revitalization of
+        a community [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref029\">29</xref>].</p>\n<p>However,
+        it is important to acknowledge that a line of work informed by Portes indicates
+        that social capital may have a \u201Cdark side\u201D [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref030\">30</xref>]. That is, it may result in negative
+        consequences in relation to disaster resilience and mental health [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref031\">31</xref>\u2013<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref033\">33</xref>].
+        For instance, disaster literature points to the \u201Ccontagion of stress\u201D
+        effect of social capital among close-knit communities [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref031\">31</xref>]. Specifically, in cohesive communities,
+        the stress experienced by one individual can easily spread through a well-connected
+        social network, creating a contagion that then amplifies the entire community\u2019s
+        anxiety levels [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref033\">33</xref>].
+        Bonding social capital, which is based on strong ties shared among homogenous
+        group members, may potentially heighten anxiety about climate change if such
+        ties include individuals who already feel extremely anxious about the climate
+        crisis. Thus, individuals within bonding social networks may also face similar
+        challenges and experience similar levels of climate anxiety due to the homogeneity
+        of such networks. Additionally, higher bridging and linking social capital
+        increases the potential of being exposed to a wide range of information regarding
+        climate change, particularly, those pertaining to climate threats. As previous
+        research has found, exposure to information about the impacts of climate change
+        is associated with heightened levels of climate anxiety [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref016\">16</xref>].</p>\n<p>In sum, the research to date
+        indicates that social capital can serve a protective role against distress
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref011\">11</xref>,<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref028\">28</xref>,<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref029\">29</xref>].
+        However, a specific line of research suggests social capital may function
+        as a double-edged sword, exerting both positive and negative effects on disaster
+        resilience [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref032\">32</xref>]
+        and health outcomes [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref033\">33</xref>].
+        In acknowledging the positive and negative aspects of social capital, we propose
+        the following:</p>\n<p><bold>RQ1:</bold> How are (a) bonding, (b) bridging,
+        and (c) linking social capital differentially associated with climate anxiety?</p>\n<p>We
+        also examine the possibility that social capital would moderate the proposed
+        relationship between hurricane stressors and climate anxiety. As previously
+        stated, the stress process model views resources as central in explaining
+        how a stressor affects mental health outcomes [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref014\">14</xref>].
+        This model suggests that resources, such as those facilitated through social
+        capital, would condition the effects that stressors have on mental health
+        outcomes [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref015\">15</xref>].
+        First, on the one hand, extant research supports a \u201Cbuffering\u201D potential
+        of social capital. That is, it could help mitigate various forms of psychological
+        distress and enhance mental health [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref034\">34</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref035\">35</xref>]. Such research specifically
+        suggests that social capital markedly buffers the distress associated with
+        experiencing a disaster [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref011\">11</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref036\">36</xref>]. An explanation for
+        social capital\u2019s \u201Cbuffering\u201D potential is that it fosters the
+        support and resources necessary to cope with a natural disaster.</p>\n<p>On
+        the other hand, we also noted the \u201Cdark side\u201D potential of social
+        capital [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref030\">30</xref>]. That
+        is, it is possible that the stresses experienced because of a hurricane may
+        be amplified by social capital, which would then result in heightened climate
+        anxiety. Disaster literature points to the \u201Ccontagion of stress\u201D
+        effect of social capital among close-knit communities [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref031\">31</xref>]. For instance, in cohesive communities,
+        the stress experienced by one individual can easily spread through a well-connected
+        social network, creating a contagion that then amplifies the entire community\u2019s
+        anxiety levels [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref033\">33</xref>].</p>\n<p>In
+        sum, the above literature suggests that social capital can both buffer and
+        amplify the relationship between hurricane stressors and climate anxiety.
+        However, the empirical evidence on how different types of social capital\u2014bonding,
+        bridging, or linking\u2014can differently shape climate anxiety or moderate
+        the psychological impact of hurricane stressors on anxiety, remains significantly
+        under-explored. Instead of hypothesizing a uniform buffering effect, we propose
+        the following research question:</p>\n<p><bold>RQ2:</bold> How will (a) bonding,
+        (b) bridging, and (c) linking social capital moderate the proposed positive
+        association between hurricane stressors and climate anxiety?</p>\n</sec>\n</sec>\n<sec
+        id=\"sec005\" sec-type=\"materials|methods\">\n<title>3. Materials and methods</title>\n<sec
+        id=\"sec006\">\n<title>3.1 Ethics statement</title>\n<p>The survey and study
+        were approved by the Institutional Review Board (IRB) for human subjects research
+        based at the University of Florida, Gainesville, FL, USA [IRB Protocol # ET00043626,
+        Approval date: October 10, 2024] prior to data collection. Electronic informed
+        consent, specifically, active consent via a click-through process, was ensured
+        before participants were allowed to complete the survey. That is, prior to
+        completing the online survey, participants read a cover page that informed
+        them about the survey and study\u2019s purpose, the voluntary nature of the
+        study, and that their responses would remain anonymous. The bottom of the
+        informed consent page contained instructions stating that if participants
+        agreed to participate, they could click on the \u201CI agree to participate\u201D
+        button to continue; however, if they did not consent to participate, they
+        could click on the \u201CI do not wish to participate\u201D button or just
+        close the browser window.</p>\n</sec>\n<sec id=\"sec007\">\n<title>3.2 Procedure
+        and participants</title>\n<p>This cross-sectional study utilized online surveys
+        targeting residents of counties with FEMA disaster declarations in Georgia,
+        North Carolina, and South Carolina following Hurricane Helene and in Florida
+        following both Helene and Milton. We contracted Qualtrics to collect the data
+        and administer the survey. Quota sampling was used to ensure representation
+        across demographic characteristics, including age and sex. In Georgia, North
+        Carolina, and South Carolina, surveys were administered in late October 2024,
+        roughly one month after Hurricane Helene made landfall, through the end of
+        November 2024 (recruitment of participants commenced on October 30, 2024,
+        and ended on November 28, 2024). In Florida, the survey was administered through
+        November 2024, about a month after Hurricane Milton made landfall (recruitment
+        of participants commenced on November 9, 2024, and ended on November 21, 2024).
+        In total, there were 3,329 completion attempts. Participants who did not consent
+        to taking the survey, sped through the survey, or indicated that they did
+        not live in a county impacted by either of the hurricanes, were excluded.
+        This left a final sample size of <italic>N</italic>\u2009=\u20091,342. The
+        completion rate was 40%.</p>\n</sec>\n<sec id=\"sec008\">\n<title>3.3 Measures</title>\n<sec
+        id=\"sec009\">\n<title>3.3.1 Hurricane stressors.</title>\n<p>We asked participants
+        whether, in the past month, they had indirectly or directly experienced hurricane-related
+        stressors from Hurricane Helene/Milton. We listed the following six stressors:
+        (a) lack of any resource (food, water, shelter, electricity) for over a week,
+        (b) loss of sentimental possessions or pets, (c) self or household member
+        had health problems, (d) financial loss, (e) housing situation changed as
+        a result of the hurricane, and (f) experienced any issues with mold, contamination,
+        or structural damage in your home due to the hurricane. The first four items
+        were adapted from Lowe et al. [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref015\">15</xref>]
+        and we created the two remaining items. Responses to all the items for hurricane-related
+        stressors were scored with 1\u2009=\u2009yes, 0\u2009=\u2009no. We summed
+        and combined the items to form a single measure (<italic>M</italic>\u2009=\u20092.32,
+        <italic>SD</italic>\u2009=\u20091.91, \u03B1\u2009=\u2009.77).</p>\n</sec>\n<sec
+        id=\"sec010\">\n<title>3.3.2 Climate change anxiety.</title>\n<p>Three items
+        from Clayton and Karazsia\u2019s climate anxiety scale were used [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref009\">9</xref>]: (a) thinking about climate change makes
+        it difficult for me to concentrate, (b) I have nightmares about climate change,
+        and (c) my friends say I think about climate change too much [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref009\">9</xref>]. Responses were measured along a 5-point
+        scale (1\u2009=\u2009strongly disagree, 5\u2009=\u2009strongly agree), then
+        we averaged and combined the items to form a single measure (<italic>M</italic>\u2009=\u20092.47,
+        <italic>SD</italic>\u2009=\u20091.07, a\u2009=\u2009.85).</p>\n</sec>\n<sec
+        id=\"sec011\">\n<title>3.3.3 Social capital.</title>\n<p>Drawing on prior
+        work on personal social capital, online/social-media-enabled social capital,
+        bonding and bridging social capital, and linking social capital in disaster
+        recovery, we adapted items to assess three forms of social capital relevant
+        to post-disaster coping and resource access [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref029\">29</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref037\">37</xref>\u2013<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref039\">39</xref>]. Bonding social capital captured access
+        to close interpersonal support, bridging social capital captured access to
+        resources and information beyond one\u2019s immediate family or close friends,
+        and linking social capital captured perceived access to government-related
+        contacts, information, and disaster-relief resources.</p>\n<p><italic>Bonding</italic>
+        social capital was measured with the following items: (a) I have people I
+        can turn to and ask for help, (b) there is someone I can talk about my problems
+        with, and (c) there is someone who can give me emotional support (1\u2009=\u2009strongly
+        disagree, 5\u2009=\u2009strongly agree). The items were averaged and combined
+        to form a single measure (<italic>M</italic>\u2009=\u20093.79, <italic>SD</italic>\u2009=\u2009.98,
+        \u03B1\u2009=\u2009.88).</p>\n<p><italic>Bridging</italic> social capital
+        was measured with three items: (a) I know someone with resources that my family
+        or friends do not have, (b) there are people I can turn to for new job opportunities,
+        and (c) I know someone who can help me learn about things that happen outside
+        my community (1\u2009=\u2009strongly disagree, 5\u2009=\u2009strongly agree).
+        We averaged and combined these items to form a single measure (<italic>M</italic>\u2009=\u20093.29,
+        <italic>SD</italic>\u2009=\u2009.94, \u03B1 =\u2009.74).</p>\n<p><italic>Linking</italic>
+        social capital was measured with the following three items: (a) I know someone
+        who works in the government, (b) I know how to apply for disaster relief from
+        the government, and (c) I know where to look for governmental aid during disasters
+        (1\u2009=\u2009strongly disagree, 5\u2009=\u2009strongly agree). We averaged
+        and combined the items to form a single measure (<italic>M</italic>\u2009=\u20093.08,
+        <italic>SD</italic>\u2009=\u2009.95, \u03B1\u2009=\u2009.66).</p>\n</sec>\n<sec
+        id=\"sec012\">\n<title>3.3.4 Covariates.</title>\n<p>We measured and controlled
+        for age, biological sex, state (Florida, Georgia, North Carolina, South Carolina),
+        educational attainment (continuous), income (continuous), race and ethnicity,
+        and political orientation (1\u2009=\u2009very conservative, 5\u2009=\u2009very
+        liberal). For state, Florida was treated as the reference group in all the
+        regression models as discussed in our analytical strategy below. We thus included
+        only Georgia, North Carolina, and South Carolina as covariates in the regression
+        models. For race, White was treated as the reference group, and only Non-White
+        Hispanic or Latino, Black, Asian and other ethnicities as covariates in our
+        regression models. We also included a measure for generalized anxiety as a
+        covariate [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref040\">40</xref>],
+        which included the following four items adapted from the GAD-7 that asked
+        respondents whether in the last 2 weeks, how often they had experienced the
+        following: (a) been bothered by feeling nervous, anxious, or on edge, (b)
+        been bothered by not being able to stop or control worrying, (c) been bothered
+        by worrying too much about different things, and (d) been bothered by having
+        trouble relaxing. Responses were averaged and combined to form a single measure
+        (<italic>M</italic>\u2009=\u20092.17, <italic>SD</italic>\u2009=\u2009.96;
+        \u03B1\u2009=\u2009.93). Finally, the bonding, bridging, and linking social
+        capital were included as covariates when they were not respectively entered
+        as moderators.</p>\n</sec>\n</sec>\n<sec id=\"sec013\">\n<title>3.4 Data analysis
+        strategy</title>\n<p>All analyses were performed using SPSS version 30 and
+        the regression analyses were performed using the PROCESS macro [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref041\">41</xref>]. Listwise deletion was used to deal
+        with missing data, and as such, all analyses were performed on complete data
+        (<italic>n</italic>\u2009=\u20091,327). To test H1 and investigate RQ, we
+        used PROCESS Model 1 to estimate three separate moderation analyses, each
+        respectively examining one form of social capital (bonding, bridging, and
+        linking social capital) as a moderator of the hurricane stressor-climate anxiety
+        relationship. This approach allowed us to isolate the unique moderating effect
+        of each social capital type while controlling for the others. Ninety-five
+        percent bootstrap confidence intervals (CIs) with 5,000 resamples were generated
+        for inference tests. The hypothesized moderation effects were assessed at
+        the analytical mean and one standard deviation below and above the mean of
+        each social capital variable. All predictors (hurricane stressors and the
+        three social capital variables) were mean-centered prior to analysis for the
+        purpose of interpreting the correlation when the interaction term was added
+        in the model. The covariates previously identified were included in all regression
+        analyses. We note that prior to analyzing the data, we also inspected the
+        zero-order correlation between the measure of generalized anxiety and climate
+        change anxiety, which was <italic>r</italic>\u2009=\u2009.24 (<italic>p</italic>\u2009&lt;\u2009.05).
+        This level of correlation does not raise concerns about multicollinearity.
+        Lastly, all regression coefficients reported below are unstandardized (<italic>b</italic>).</p>\n</sec>\n</sec>\n<sec
+        id=\"sec014\" sec-type=\"results\">\n<title>4. Results</title>\n<sec id=\"sec015\">\n<title>4.1
+        Sample characteristics</title>\n<p>Participant characteristics are reported
+        in <xref ref-type=\"table\" rid=\"pmen.0000749.t001\">Table 1</xref>. The
+        mean age of participants was 46.03 years (<italic>SD</italic>\u2009=\u200917.33).
+        There were also slightly more males (55.1%) than females (44.9%), a majority
+        of the sample resided in Florida (53.5%), and most identified as White (63%)
+        and politically moderate (39.3%). Finally, the median education level reported
+        was \u201Cone or more years of college,\u201D and the median annual income
+        reported was between \u201C$40,000-$59,999.\u201D</p>\n<table-wrap id=\"pmen.0000749.t001\"
+        position=\"float\"><object-id pub-id-type=\"doi\">10.1371/journal.pmen.0000749.t001</object-id><label>Table
+        1</label><caption><title>Means, standard deviations, and descriptive statistics
+        of key variables among participants (<italic>N</italic>\u2009=\u20091,342).</title></caption>\n<alternatives><graphic
+        id=\"pmen.0000749.t001g\" mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.t001\"
+        xlink:type=\"simple\"/><table><colgroup>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n<col align=\"left\" valign=\"middle\"/>\n</colgroup>\n<thead>\n<tr>\n<th
+        align=\"left\"/>\n<th align=\"left\">Descriptives</th>\n<th align=\"left\"/>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td
+        align=\"left\">Sex</td>\n<td align=\"left\" colspan=\"2\">Male 55.1%, Female
+        44.9%</td>\n</tr>\n<tr>\n<td align=\"left\">Age</td>\n<td align=\"left\">46.09
+        (17.32)</td>\n<td align=\"left\"/>\n</tr>\n<tr>\n<td align=\"left\">State</td>\n<td
+        align=\"left\" colspan=\"2\">Florida (53.5%)<break/>Georgia (11.7%)<break/>North
+        Carolina (20.7%)<break/>South Carolina (14%)</td>\n</tr>\n<tr>\n<td align=\"left\">Education</td>\n<td
+        align=\"left\" colspan=\"2\">Median \u201Cone or more years of college\u201D</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Income</td>\n<td align=\"left\">Median $40,000-$59,999</td>\n<td
+        align=\"left\"/>\n</tr>\n<tr>\n<td align=\"left\">Ethnicity</td>\n<td align=\"left\"
+        colspan=\"2\">White (63%)<break/>Black (21.5%)<break/>Non-White Hispanic or
+        Latino (4.8%)<break/>Asian (1.4%)<break/>Other (10%)</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Political orientation</td>\n<td align=\"left\">Very conservative
+        (16.8%)<break/>Conservative (20.8%)<break/>Moderate (39.3%)<break/>Liberal
+        (14.5%)<break/>Very liberal (8.6%)<break/>2.77 (1.15)</td>\n<td align=\"left\"/>\n</tr>\n<tr>\n<td
+        align=\"left\"/>\n<td align=\"left\"><bold>M(SD)</bold></td>\n<td align=\"left\"><bold>Cronbach\u2019s
+        \u03B1</bold></td>\n</tr>\n<tr>\n<td align=\"left\">Hurricane stressor</td>\n<td
+        align=\"left\">2.33 (1.91)</td>\n<td align=\"left\">.77</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Climate change anxiety</td>\n<td align=\"left\">2.47 (1.07)</td>\n<td
+        align=\"left\">.85</td>\n</tr>\n<tr>\n<td align=\"left\"><bold>Moderators</bold></td>\n<td
+        align=\"left\"/>\n<td align=\"left\"/>\n</tr>\n<tr>\n<td align=\"left\">Bonding
+        social capital</td>\n<td align=\"left\">3.79 (.98)</td>\n<td align=\"left\">.88</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Bridging social capital</td>\n<td align=\"left\">3.29 (.94)</td>\n<td
+        align=\"left\">.74</td>\n</tr>\n<tr>\n<td align=\"left\">Linking social capital</td>\n<td
+        align=\"left\">3.08 (.95)</td>\n<td align=\"left\">.66</td>\n</tr>\n</tbody>\n</table>\n</alternatives></table-wrap>\n</sec>\n<sec
+        id=\"sec016\">\n<title>4.2 Hypothesis and research questions</title>\n<p>H1
+        expected that experiencing hurricane stressors would be positively associated
+        with climate anxiety. This hypothesis was supported. Our results indicate
+        that with all other variables simultaneously taken into account, hurricane
+        stressors were positively associated with climate anxiety in all three regression
+        models reported in <xref ref-type=\"table\" rid=\"pmen.0000749.t001\">Table
+        1</xref> (<italic>b</italic>\u2009=\u2009.073, <italic>se</italic>\u2009=\u2009.031,
+        <italic>p</italic>\u2009&lt;\u2009.001; <italic>b</italic>\u2009=\u2009.065,
+        <italic>se</italic>\u2009=\u2009.016, <italic>p</italic>\u2009&lt;\u2009.001;
+        <italic>b</italic>\u2009=\u2009.065, <italic>se</italic>\u2009=\u2009.016,
+        <italic>p</italic>\u2009&lt;\u2009.001).</p>\n<p>RQ1 investigated how the
+        three forms of social capital\u2014bonding, bridging, and linking\u2014are
+        associated with climate anxiety. As shown in <xref ref-type=\"table\" rid=\"pmen.0000749.t002\">Table
+        2</xref>, there was a negative association between bonding social capital
+        and climate anxiety across all three regression models (<italic>b</italic>\u2009=\u2009-.178,
+        <italic>se</italic>\u2009=\u2009.032, <italic>p</italic>\u2009&lt;\u2009.001;
+        <italic>b</italic>\u2009=\u2009-.179, <italic>se</italic>\u2009=\u2009.032,
+        <italic>p</italic>\u2009&lt;\u2009.001; <italic>b</italic>\u2009=\u2009-.180,
+        <italic>se</italic>\u2009=\u2009.032, <italic>p</italic>\u2009&lt;\u2009.01).
+        However, in all three regression models, bridging (<italic>b</italic>\u2009=\u2009.220,
+        <italic>se</italic>\u2009=\u2009.036, <italic>p</italic>\u2009&lt;\u2009.001;
+        <italic>b</italic>\u2009=\u2009.217, <italic>se</italic>\u2009=\u2009.036,
+        <italic>p</italic>\u2009&lt;\u2009.001; <italic>b</italic>\u2009=\u2009.212,
+        <italic>se</italic>\u2009=\u2009.036, <italic>p</italic>\u2009&lt;\u2009.01)
+        and linking social capital (<italic>b</italic>\u2009=\u2009.229, <italic>se</italic>\u2009=\u2009.031,
+        <italic>p</italic>\u2009&lt;\u2009.001; <italic>b</italic>\u2009=\u2009.230,
+        <italic>se</italic>\u2009=\u2009.032, <italic>p</italic>\u2009&lt;\u2009.001;
+        <italic>b</italic>\u2009=\u2009.237, <italic>se</italic>\u2009=\u2009.031,
+        <italic>p</italic>\u2009&lt;\u2009.01) were found to be both positively associated
+        with climate anxiety.</p>\n<table-wrap id=\"pmen.0000749.t002\" position=\"float\"><object-id
+        pub-id-type=\"doi\">10.1371/journal.pmen.0000749.t002</object-id><label>Table
+        2</label><caption><title>Associations between hurricane stressors and social
+        capital (bonding, bridging, and linking) with climate anxiety.</title></caption>\n<alternatives><graphic
+        id=\"pmen.0000749.t002g\" mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.t002\"
+        xlink:type=\"simple\"/><table><colgroup>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n<col align=\"left\" valign=\"middle\"/>\n</colgroup>\n<thead>\n<tr>\n<th
+        align=\"left\"/>\n<th align=\"left\" colspan=\"2\">Bonding SC as<break/> <break/>Moderator</th>\n<th
+        align=\"left\" colspan=\"2\">Bridging SC as Moderator</th>\n<th align=\"left\"
+        colspan=\"2\">Linking SC as<break/> <break/>Moderator</th>\n</tr>\n<tr>\n<th
+        align=\"left\"/>\n<th align=\"left\">b</th>\n<th align=\"left\">sr\xB2 (%)</th>\n<th
+        align=\"left\">b</th>\n<th align=\"left\">sr\xB2 (%)</th>\n<th align=\"left\">b</th>\n<th
+        align=\"left\">sr\xB2 (%)</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">Age</td>\n<td
+        align=\"left\">\u2212.010 (.002)***</td>\n<td align=\"left\">1.77%</td>\n<td
+        align=\"left\">\u2212.010 (.002)***</td>\n<td align=\"left\">1.97%</td>\n<td
+        align=\"left\">\u2212.010 (.002)***</td>\n<td align=\"left\">1.98%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Sex</td>\n<td align=\"left\">\u2212.044 (.050)</td>\n<td align=\"left\">.04%</td>\n<td
+        align=\"left\">\u2212.041 (051)</td>\n<td align=\"left\">.04%</td>\n<td align=\"left\">\u2212.031
+        (.050)</td>\n<td align=\"left\">.02%</td>\n</tr>\n<tr>\n<td align=\"left\">Education</td>\n<td
+        align=\"left\">.000 (.015)</td>\n<td align=\"left\">.00%</td>\n<td align=\"left\">\u2212.001
+        (.015)</td>\n<td align=\"left\">.00%</td>\n<td align=\"left\">\u2212.002 (.015)</td>\n<td
+        align=\"left\">.00%</td>\n</tr>\n<tr>\n<td align=\"left\">Income</td>\n<td
+        align=\"left\">.055 (.012)***</td>\n<td align=\"left\">1.22%</td>\n<td align=\"left\">.056
+        (.012)***</td>\n<td align=\"left\">1.24%</td>\n<td align=\"left\">.054 (.012)***</td>\n<td
+        align=\"left\">1.18%</td>\n</tr>\n<tr>\n<td align=\"left\">Location</td>\n<td
+        align=\"left\"/>\n<td align=\"left\"/>\n<td align=\"left\"/>\n<td align=\"left\"/>\n<td
+        align=\"left\"/>\n<td align=\"left\"/>\n</tr>\n<tr>\n<td align=\"left\">\u2003Georgia</td>\n<td
+        align=\"left\">\u2212.072 (.084)</td>\n<td align=\"left\">.04%</td>\n<td align=\"left\">\u2212.060
+        (.084)</td>\n<td align=\"left\">.03%</td>\n<td align=\"left\">\u2212.062 (.084)</td>\n<td
+        align=\"left\">.03%</td>\n</tr>\n<tr>\n<td align=\"left\">\u2003North Carolina</td>\n<td
+        align=\"left\">\u2212.086 (.071)</td>\n<td align=\"left\">.08%</td>\n<td align=\"left\">\u2212.070
+        (.071)</td>\n<td align=\"left\">.05%</td>\n<td align=\"left\">\u2212.063 (.071)</td>\n<td
+        align=\"left\">.04%</td>\n</tr>\n<tr>\n<td align=\"left\">\u2003South Carolina</td>\n<td
+        align=\"left\">\u2212.251 (.076)**</td>\n<td align=\"left\">.58%</td>\n<td
+        align=\"left\">\u2212.232 (.077)**</td>\n<td align=\"left\">.50%</td>\n<td
+        align=\"left\">\u2212.228 (.076)**</td>\n<td align=\"left\">.48%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Race</td>\n<td align=\"left\"/>\n<td align=\"left\"/>\n<td
+        align=\"left\"/>\n<td align=\"left\"/>\n<td align=\"left\"/>\n<td align=\"left\"/>\n</tr>\n<tr>\n<td
+        align=\"left\">\u2003Hispanic</td>\n<td align=\"left\">.096 (.126)</td>\n<td
+        align=\"left\">.03%</td>\n<td align=\"left\">.110 (.126)</td>\n<td align=\"left\">.04%</td>\n<td
+        align=\"left\">.106 (.125)</td>\n<td align=\"left\">.04%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">\u2003Black</td>\n<td align=\"left\">.221 (.068)**</td>\n<td
+        align=\"left\">.56%</td>\n<td align=\"left\">.222 (.068)**</td>\n<td align=\"left\">.57%</td>\n<td
+        align=\"left\">.222 (.068)**</td>\n<td align=\"left\">.57%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">\u2003Asian</td>\n<td align=\"left\">.231 (.213)</td>\n<td
+        align=\"left\">.06%</td>\n<td align=\"left\">.235 (.213)</td>\n<td align=\"left\">.07%</td>\n<td
+        align=\"left\">.224 (.213)</td>\n<td align=\"left\">.06%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">\u2003Other</td>\n<td align=\"left\">.079 (.085)</td>\n<td
+        align=\"left\">.05%</td>\n<td align=\"left\">.094 (.086)</td>\n<td align=\"left\">.07%</td>\n<td
+        align=\"left\">.090 (.085)</td>\n<td align=\"left\">.06%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Political orientation (5 = liberal)</td>\n<td align=\"left\">.036
+        (.022)</td>\n<td align=\"left\">.14%</td>\n<td align=\"left\">.037 (.022)</td>\n<td
+        align=\"left\">.15%</td>\n<td align=\"left\">.039 (.022)*</td>\n<td align=\"left\">.17%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Generalized anxiety</td>\n<td align=\"left\">.178 (.031)***</td>\n<td
+        align=\"left\">1.78%</td>\n<td align=\"left\">.182 (.031)***</td>\n<td align=\"left\">1.88%</td>\n<td
+        align=\"left\">.180 (.031)***</td>\n<td align=\"left\">1.82%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Hurricane stressors</td>\n<td align=\"left\">.073 (.016)***</td>\n<td
+        align=\"left\">1.12%</td>\n<td align=\"left\">.065 (.016)**</td>\n<td align=\"left\">.88%</td>\n<td
+        align=\"left\">.065 (.016)***</td>\n<td align=\"left\">.90%</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Bonding social capital</td>\n<td align=\"left\">\u2212.178
+        (.032)***</td>\n<td align=\"left\">1.71%</td>\n<td align=\"left\">\u2212.179
+        (.032)***</td>\n<td align=\"left\">1.71%</td>\n<td align=\"left\">\u2212.180(.032)***</td>\n<td
+        align=\"left\">1.74%</td>\n</tr>\n<tr>\n<td align=\"left\">Bridging social
+        capital</td>\n<td align=\"left\">.220 (.036)***</td>\n<td align=\"left\">1.91%</td>\n<td
+        align=\"left\">.217 (.036)***</td>\n<td align=\"left\">1.91%</td>\n<td align=\"left\">.212
+        (.036)***</td>\n<td align=\"left\">1.83%</td>\n</tr>\n<tr>\n<td align=\"left\">Linking
+        social capital</td>\n<td align=\"left\">.229 (.031)***</td>\n<td align=\"left\">2.91%</td>\n<td
+        align=\"left\">.230 (.032)***</td>\n<td align=\"left\">2.91%</td>\n<td align=\"left\">.237
+        (.031)***</td>\n<td align=\"left\">3.10%</td>\n</tr>\n<tr>\n<td align=\"left\">Bonding
+        social capital \xD7 stressors</td>\n<td align=\"left\">.047 (.013)***</td>\n<td
+        align=\"left\">.72%</td>\n<td align=\"left\">\u2013</td>\n<td align=\"left\">\u2013</td>\n<td
+        align=\"left\">\u2013</td>\n<td align=\"left\">\u2013</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Bridging social capital \xD7 stressors</td>\n<td align=\"left\">\u2013</td>\n<td
+        align=\"left\">\u2013</td>\n<td align=\"left\">.053 (.013)***</td>\n<td align=\"left\">.84%</td>\n<td
+        align=\"left\">\u2013</td>\n<td align=\"left\">\u2013</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Linking social capital \xD7 stressors</td>\n<td align=\"left\">\u2013</td>\n<td
+        align=\"left\">\u2013</td>\n<td align=\"left\">\u2013</td>\n<td align=\"left\">\u2013</td>\n<td
+        align=\"left\">.062 (.014)***</td>\n<td align=\"left\"/>\n</tr>\n<tr>\n<td
+        align=\"left\">\u2003R\xB2 (%)</td>\n<td align=\"left\">29.52%</td>\n<td align=\"left\"/>\n<td
+        align=\"left\">29.64%</td>\n<td align=\"left\"/>\n<td align=\"left\">29.92%</td>\n<td
+        align=\"left\"/>\n</tr>\n</tbody>\n</table>\n</alternatives><table-wrap-foot>\n<fn
+        id=\"t002fn001\"><p><italic>N</italic>\u2009=\u20091327. * <italic>p</italic>\u2009&lt;\u2009.05,
+        ** <italic>p</italic>\u2009&lt;\u2009.01, *** <italic>p</italic>\u2009&lt;\u2009.001.
+        Outcome is climate anxiety. Entries are unstandardized regression coefficients
+        with standard errors in parentheses. The squared semipartial correlation (sr\xB2)
+        for each predictor is also reported, expressed as a percentage, and reflects
+        the unique variance accounted for by each predictor.</p></fn>\n</table-wrap-foot>\n</table-wrap>\n<p>RQ2
+        investigated whether the association between experiencing hurricane stressors
+        and climate anxiety was moderated by the three forms of social capital. First,
+        as shown in <xref ref-type=\"table\" rid=\"pmen.0000749.t002\">Table 2</xref>,
+        an interaction term between hurricane stressors and bonding social capital
+        was significant (<italic>b</italic>\u2009=\u2009.047, <italic>se</italic>\u2009=\u2009.013,
+        <italic>p</italic>\u2009&lt;\u2009.001), indicating that the association between
+        hurricane stressors and climate anxiety varied at different levels of bonding
+        social capital. As shown in <xref ref-type=\"table\" rid=\"pmen.0000749.t003\">Table
+        3</xref>, the relationship between hurricane stressors and climate anxiety
+        was significant when bonding social capital was at its mean (<italic>b</italic>\u2009=\u2009.073,
+        <italic>se</italic>\u2009=\u2009.016, <italic>p</italic>\u2009&lt;\u2009.001)
+        and 1SD above the mean (<italic>b</italic>\u2009=\u2009.119, <italic>se</italic>\u2009=\u2009.021,
+        <italic>p</italic>\u2009&lt;\u2009.001), but not at 1SD below the mean (<italic>b</italic>\u2009=\u2009.027,
+        <italic>se</italic>\u2009=\u2009.020, <italic>p</italic>\u2009=\u2009.176).
+        <xref ref-type=\"fig\" rid=\"pmen.0000749.g001\">Fig 1</xref> shows the plot
+        of this interaction effect. At low levels of hurricane stressors, participants
+        with high bonding social capital reported a relatively low level of climate
+        anxiety. However, as hurricane stressors increased, the slope for those with
+        high bonding social capital became much steeper than those with lower bonding
+        social capital.</p>\n<table-wrap id=\"pmen.0000749.t003\" position=\"float\"><object-id
+        pub-id-type=\"doi\">10.1371/journal.pmen.0000749.t003</object-id><label>Table
+        3</label><caption><title>A moderation model of bonding, bridging, and linking
+        social capital on climate change anxiety.</title></caption>\n<alternatives><graphic
+        id=\"pmen.0000749.t003g\" mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.t003\"
+        xlink:type=\"simple\"/><table><colgroup>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n<col align=\"left\" valign=\"middle\"/>\n<col
+        align=\"left\" valign=\"middle\"/>\n<col align=\"left\" valign=\"middle\"/>\n</colgroup>\n<thead>\n<tr>\n<th
+        align=\"left\"/>\n<th align=\"left\"><italic>Effect</italic></th>\n<th align=\"left\"><italic>SE</italic></th>\n<th
+        align=\"left\"><italic>t</italic></th>\n<th align=\"left\"><italic>p</italic></th>\n<th
+        align=\"left\"><italic>LLCI</italic></th>\n<th align=\"left\"><italic>ULCI</italic></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td
+        align=\"left\">Bonding SC -1 <italic>SD</italic></td>\n<td align=\"left\">.027</td>\n<td
+        align=\"left\">.020</td>\n<td align=\"left\">1.35</td>\n<td align=\"left\">.176</td>\n<td
+        align=\"left\">-.012</td>\n<td align=\"left\">.065</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Bonding SC <italic>M</italic></td>\n<td align=\"left\">.073</td>\n<td
+        align=\"left\">.016</td>\n<td align=\"left\">4.56</td>\n<td align=\"left\">.000</td>\n<td
+        align=\"left\">.041</td>\n<td align=\"left\">.104</td>\n</tr>\n<tr>\n<td align=\"left\">Bonding
+        SC\u2009+\u20091 <italic>SD</italic></td>\n<td align=\"left\">.119</td>\n<td
+        align=\"left\">.021</td>\n<td align=\"left\">5.67</td>\n<td align=\"left\">.000</td>\n<td
+        align=\"left\">.078</td>\n<td align=\"left\">.160</td>\n</tr>\n<tr>\n<td align=\"left\">Bridging
+        SC -1 <italic>SD</italic></td>\n<td align=\"left\">.015</td>\n<td align=\"left\">.021</td>\n<td
+        align=\"left\">.732</td>\n<td align=\"left\">.464</td>\n<td align=\"left\">-.026</td>\n<td
+        align=\"left\">.056</td>\n</tr>\n<tr>\n<td align=\"left\">Bridging SC <italic>M</italic></td>\n<td
+        align=\"left\">.065</td>\n<td align=\"left\">.016</td>\n<td align=\"left\">4.05</td>\n<td
+        align=\"left\">.000</td>\n<td align=\"left\">.033</td>\n<td align=\"left\">.096</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Bridging SC\u2009+\u20091 <italic>SD</italic></td>\n<td align=\"left\">.114</td>\n<td
+        align=\"left\">.020</td>\n<td align=\"left\">5.83</td>\n<td align=\"left\">.000</td>\n<td
+        align=\"left\">.075</td>\n<td align=\"left\">.152</td>\n</tr>\n<tr>\n<td align=\"left\">Linking
+        SC -1 <italic>SD</italic></td>\n<td align=\"left\">.007</td>\n<td align=\"left\">.021</td>\n<td
+        align=\"left\">.316</td>\n<td align=\"left\">.752</td>\n<td align=\"left\">-.034</td>\n<td
+        align=\"left\">.048</td>\n</tr>\n<tr>\n<td align=\"left\">Linking SC <italic>M</italic></td>\n<td
+        align=\"left\">.065</td>\n<td align=\"left\">.016</td>\n<td align=\"left\">4.10</td>\n<td
+        align=\"left\">.000</td>\n<td align=\"left\">.034</td>\n<td align=\"left\">.100</td>\n</tr>\n<tr>\n<td
+        align=\"left\">Linking SC\u2009+\u20091 <italic>SD</italic></td>\n<td align=\"left\">.123</td>\n<td
+        align=\"left\">.020</td>\n<td align=\"left\">6.22</td>\n<td align=\"left\">.000</td>\n<td
+        align=\"left\">.085</td>\n<td align=\"left\">.162</td>\n</tr>\n</tbody>\n</table>\n</alternatives><table-wrap-foot>\n<fn
+        id=\"t003fn001\"><p>Bootstrap sample size- LL\u2009=\u2009lower limit; UL\u2009=\u2009upper
+        limit; CI\u2009=\u2009bias corrected 95% bootstrap confidence interval.</p></fn>\n</table-wrap-foot>\n</table-wrap>\n<fig
+        id=\"pmen.0000749.g001\" position=\"float\"><object-id pub-id-type=\"doi\">10.1371/journal.pmen.0000749.g001</object-id><label>Fig
+        1</label><caption><title>Bonding social capital as a moderator of the relationship
+        between hurricane stressors and climate change anxiety.</title></caption>\n<graphic
+        mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.g001\"
+        xlink:type=\"simple\"/></fig>\n<p>Second, as <xref ref-type=\"table\" rid=\"pmen.0000749.t002\">Table
+        2</xref> shows, the interaction between hurricane stressors and bridging social
+        capital was significant (<italic>b</italic>\u2009=\u2009.053, se\u2009=\u2009.013,
+        <italic>p</italic>\u2009&lt;\u2009.001). Similar to what was found for bonding
+        social capital, the relationship between hurricane stressors and climate anxiety
+        was not significant when bridging social capital was at 1SD below the mean
+        (<italic>b</italic>\u2009=\u2009.015, <italic>se</italic>\u2009=\u2009.021,
+        <italic>p</italic>\u2009=\u2009.464). Yet, as <xref ref-type=\"table\" rid=\"pmen.0000749.t003\">Table
+        3</xref> indicates, this relationship became progressively stronger as levels
+        of bridging social capital increased from its mean (<italic>b</italic>\u2009=\u2009.065,
+        <italic>se</italic>\u2009=\u2009.016, <italic>p</italic>\u2009&lt;\u2009.001)
+        to 1SD above the mean (<italic>b</italic>\u2009=\u2009.114, <italic>se</italic>\u2009=\u2009.020,
+        <italic>p</italic>\u2009&lt;\u2009.001). The plot for this interaction is
+        illustrated in <xref ref-type=\"fig\" rid=\"pmen.0000749.g002\">Fig 2</xref>.
+        In contrast to the results for bonding social capital, <xref ref-type=\"fig\"
+        rid=\"pmen.0000749.g002\">Fig 2</xref> indicates that at lower levels of hurricane
+        stressors, climate anxiety was slightly higher for participants with higher
+        bridging social capital. As hurricane stressors increased, the slope of the
+        stress-anxiety relationship became steeper for participants with higher levels
+        of bridging social capital. In contrast, the slope was relatively flat for
+        those with low bridging social capital.</p>\n<fig id=\"pmen.0000749.g002\"
+        position=\"float\"><object-id pub-id-type=\"doi\">10.1371/journal.pmen.0000749.g002</object-id><label>Fig
+        2</label><caption><title>Bridging social capital as a moderator of the relationship
+        between hurricane stressors and climate change anxiety.</title></caption>\n<graphic
+        mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.g002\"
+        xlink:type=\"simple\"/></fig>\n<p>Third, the interaction between hurricane
+        stressors and linking social capital was also significant (<italic>b</italic>\u2009=\u2009.062,
+        <italic>se</italic>\u2009=\u2009.014, <italic>p</italic>\u2009&lt;\u2009.001),
+        and similar to the pattern found for both bonding and bridging social capital,
+        the relationship between hurricane stressors and climate anxiety was not significant
+        when linking social capital was at 1SD below the mean (<italic>b</italic>\u2009=\u2009.007,
+        <italic>se</italic>\u2009=\u2009.021, <italic>p</italic>\u2009=\u2009.752).
+        Yet, the relationship became stronger as levels of linking social capital
+        increased from its mean (<italic>b</italic>\u2009=\u2009.065, <italic>se</italic>\u2009=\u2009.016,
+        <italic>p</italic>\u2009&lt;\u2009.001) to 1SD above the mean (<italic>b</italic>\u2009=\u2009.123,
+        <italic>se</italic>\u2009=\u2009.020, <italic>p</italic>\u2009&lt;\u2009.001)
+        (see <xref ref-type=\"table\" rid=\"pmen.0000749.t003\">Table 3</xref> and
+        <xref ref-type=\"fig\" rid=\"pmen.0000749.g003\">Fig 3</xref>). As shown in
+        <xref ref-type=\"fig\" rid=\"pmen.0000749.g003\">Fig 3</xref>, the pattern
+        of the plot for linking social capital is similar to that for bridging social
+        capital. That is, at lower levels of hurricane stressors, climate anxiety
+        was slightly higher for participants with higher linking social capital, and
+        the slope for the relationship between hurricane stressors and climate anxiety
+        was steeper for participants with higher linking social capital.</p>\n<fig
+        id=\"pmen.0000749.g003\" position=\"float\"><object-id pub-id-type=\"doi\">10.1371/journal.pmen.0000749.g003</object-id><label>Fig
+        3</label><caption><title>Linking social capital as a moderator of the relationship
+        between hurricane stressors and climate change anxiety.</title></caption>\n<graphic
+        mimetype=\"image\" position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.g003\"
+        xlink:type=\"simple\"/></fig>\n</sec>\n<sec id=\"sec017\">\n<title>4.3 Ancillary
+        analyses: Association of covariates with climate anxiety</title>\n<p>As <xref
+        ref-type=\"table\" rid=\"pmen.0000749.t002\">Table 2</xref> shows, income
+        (b = between\u2009.054 to.056) and black race/ethnicity (b = between\u2009.221
+        to\u2009.222) were both positively associated with climate anxiety, and South
+        Carolina residence (relative to the Florida reference group) was negatively
+        associated (b = between -.251 to\u2009.228). Also, generalized anxiety as
+        a covariate was positively associated with climate change anxiety (b = between
+        -.182 to -.178).</p>\n</sec>\n</sec>\n<sec id=\"sec018\" sec-type=\"conclusions\">\n<title>5.
+        Discussion</title>\n<p>Hurricanes Helene and Milton caused widespread devastation
+        across several Southeastern states in the U.S. [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref001\">1</xref>,<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref002\">2</xref>]. The first purpose
+        of the present study was to test whether stressful experiences or stressors
+        associated with Hurricanes Helene and Milton would be positively related with
+        climate anxiety. We analyzed data from surveys conducted in the counties of
+        four U.S. states impacted by the two hurricanes. Our finding confirms that
+        hurricane stressors were positively associated with climate anxiety, supporting
+        previous research conducted by Garfin and Wong-Parodi [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref008\">8</xref>] and more broadly expanding past research
+        linking personal experiences with hurricanes to psychological distress. This
+        finding is also consistent with the stress process model [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref014\">14</xref>], which explains why stressors such
+        as hurricane-related losses and damages are associated with adverse psychological
+        outcomes. Moreover, the positive association between hurricane stressors and
+        climate anxiety aligns with the psychological mechanisms proffered by the
+        environmental identity [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref022\">22</xref>]
+        framework and the concept of ecological grief [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref023\">23</xref>],
+        which both suggest that experiences with hurricane stressors could be interpreted
+        through an ecological lens connecting immediate loss to the broader systemic
+        threat of climate change. However, we note that our surveys did not include
+        measures for environmental identity and ecological grief. Thus, future studies
+        could examine these variables as potential mechanisms that may explain the
+        association between hurricane stressors and climate anxiety. In addition,
+        climate change risk perceptions or climate change attributions are also constructs
+        that reflect cognitive appraisals of climate change as a threatening phenomenon
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref042\">42</xref>], and as such
+        are conceptually similar to climate anxiety. As our study did not assess these
+        constructs, future research could investigate how hurricane stressors may
+        be linked to such variables.</p>\n<p>The second purpose of our study was to
+        explore the relationship between social capital and climate anxiety. We examined
+        three forms of social capital: bonding, bridging, and linking. Our findings,
+        on the one hand, indicated that bonding social capital was inversely associated
+        with climate anxiety. This finding could be reflective of the \u201Cbuffering\u201D
+        or protective potential of bonding social capital and may align with the findings
+        of a previous study by Hawkins and Maurer [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref029\">29</xref>],
+        which suggested that bonding social capital, compared with bridging and linking
+        social capital, may more effectively foster immediate support after a hurricane.
+        As such, in our study, bonding social capital was negatively associated with
+        anxieties about climate change for our participants who were recovering from
+        Hurricane Helene/Milton. On the other hand, we found that both bridging and
+        linking social capital were associated with heightened climate anxiety. We
+        proffer one possible explanation for these results. Specifically, it could
+        be that participants\u2019 heterogenous social ties, facilitated by bridging
+        and linking social capital, may have comprised a large proportion of people
+        expressing worries about the climate crisis. As such, this may have increased
+        the likelihood of developing similar climate concerns. However, our surveys
+        did not contain measures assessing the proportions of people expressing worries
+        about the climate crisis within one\u2019s heterogenous networks. We thus
+        recommend future studies be conducted to measure this variable and examine
+        its potential role in explaining how bridging and linking social capital could
+        be both positively associated with climate anxiety.</p>\n<p>The third purpose
+        of our study was to explore the possibility that social capital would moderate
+        the positive relationship between hurricane stressors and climate anxiety.
+        To this end, our findings indicated that social capital did moderate the relationship
+        between hurricane stressors and climate anxiety. However, the specific moderation
+        pattern differed across bonding versus bridging and linking social capital.
+        Specifically, our results suggested that bonding social capital\u2019s protective
+        role is conditional and reverses under high stress, rather than following
+        a classic buffering pattern [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref043\">43</xref>].
+        As <xref ref-type=\"fig\" rid=\"pmen.0000749.g001\">Fig 1</xref> shows, participants
+        with high bonding social capital reported lower climate anxiety at low stressor
+        levels. A classic buffering pattern would reveal a flattening hurricane stressor-anxiety
+        slope for the high-bonding social capital group and steeper slopes for the
+        low and moderate groups. Yet, our data showed the opposite. The slope was
+        steeper for the high bonding social capital group. That is, bonding social
+        capital weakens the relationship between hurricane stressors and climate anxiety
+        only when hurricane stressors were low. As stressors accumulated, bonding
+        social capital strengthens the association between stressors and climate anxiety,
+        possibly because stress was transmitted within dense social networks [<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref031\">31</xref>]. Resources that are
+        typically protective become less effective under high stress conditions [<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref043\">43</xref>]. In the context of
+        hurricane coping and recovery, close-knit networks of family and friends often
+        provide critical support in the early stages of a disaster [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref023\">23</xref>]. However, when stressors accumulate,
+        such as when hurricanes bring prolonged, repeated disruptions, the same networks
+        may shift from being a source of support to a source of strain. For example,
+        anxiety and worry may spread more easily within tightly knit groups, creating
+        collective stress as shared resources become depleted. In addition, individuals
+        embedded in strong bonding networks may feel the pressure to reciprocate by
+        caring for others, which can amplify their own feelings of anxiety and emotional
+        fatigue.</p>\n<p>Yet our pattern of findings for bridging and linking social
+        capital suggested that they amplified the positive association between hurricanes
+        stressors and climate anxiety. This finding is in contrast with previous research
+        that indicated social capital to serve as a buffer or play a protective role
+        against anxiety following disasters [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref011\">11</xref>].
+        It is possible that higher bridging and linking social capital increases the
+        potential of being exposed to a wider span of information regarding climate
+        change, namely, those pertaining to climate threats. As we noted, past research
+        has found that exposure to information about the impacts of climate change
+        is positively associated with climate anxiety [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref016\">16</xref>].
+        One practical implication of these findings is that risk communication delivered
+        through bridging and linking networks is better designed to pair disaster
+        information with concrete efficacy and coping resources, so that heightened
+        awareness does not only translate into distress. As the association between
+        hurricane stressors and climate anxiety was strongest among individuals with
+        high linking social capital, governmental and institutional risk communicators,
+        in particular, may wish to attend to the social or emotional\u2014not only
+        the informational\u2014consequences of their messages following disaster events.</p>\n<p>Nevertheless,
+        these findings collectively contribute to the literature by suggesting that
+        the relationship between social capital and climate anxiety is more nuanced
+        and there may be different theoretical mechanisms at play when assessing the
+        role of social capital in one\u2019s disaster experience. It further underscores
+        the complexity of social capital\u2019s role in different disaster scenarios.
+        Furthermore, the just mentioned findings regarding social capital may also
+        be reflective of the cognitive and structural dimensions of social capital.
+        Its cognitive aspect focuses on trust and support perceptions, and they have
+        been consistently linked to lowered anxiety and improved mental health state.
+        However, studies have found that the structural dimension of social capital,
+        indicated by one\u2019s participation or connection to social networks, are
+        related to mental health outcomes in more ambiguous ways. For example, Wind
+        and colleagues [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref044\">44</xref>]
+        found that cognitive social capital was negatively related to mental health
+        issues following a disaster, whereas structural social capital exacerbated
+        feelings of anxiety. As the current operationalizations of social capital
+        did not distinguish the cognitive and structural dimensions, the observed
+        moderation relationship may be explained by the mixed effects of cognitive
+        versus structural aspects of social capital.</p>\n<p>Finally, although they
+        were included as covariates in our models, we again note the following findings.
+        First, the measure for generalized anxiety had a stronger association with
+        climate anxiety than hurricane stressors did. The simple explanation for this
+        is that generalized anxiety and climate anxiety are both anxiety constructs
+        and likely share underlying features, even though they remain both conceptually
+        distinct in their specific focus or content. On the other hand, hurricane
+        stressors are an external, event-based exposure variable, and as such, are
+        less proximate to an internalizing symptom measure like climate anxiety. Second,
+        income and black race/ethnicity (b around.22) were both positively associated
+        with climate anxiety. These findings respectively imply that individuals with
+        higher household incomes and those who identify as black may experience greater
+        climate anxiety. We speculate that higher-income individuals may be disproportionately
+        exposed to climate-related information, which may heighten their climate anxiety.
+        Additionally, the well-documented vulnerability of black communities to the
+        adverse effects of climate-related disasters such as hurricanes [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref045\">45</xref>] may similarly heighten their awareness
+        of and anxiety about climate change. This warrants further investigation about
+        potential racial and ethnic differences in climate anxiety. Finally, living
+        in South Carolina was negatively associated with climate anxiety. One plausible
+        explanation for this finding is the differential impact of Hurricanes Helene
+        and Milton across states. While South Carolina was affected by Hurricane Helene,
+        the storm\u2019s most severe impacts were concentrated elsewhere. Thus, it
+        could be that the South Carolina residents sampled in our study may have experienced
+        comparatively less devastation, which may in turn have produced lower levels
+        of climate anxiety. Future research could examine this explanation by including
+        state-level measures that account for differential hurricane impacts.</p>\n<sec
+        id=\"sec019\">\n<title>5.1 Limitations and future directions</title>\n<p>Although
+        our study provides interesting results regarding experiencing an environmental
+        disaster on people\u2019s information behavior strategies, it has weaknesses
+        that must be acknowledged. First, our study utilizes cross-sectional data.
+        As a result, the cross-sectional design limits causal inference about whether
+        social capital patterns preceded or resulted from hurricane exposure. Thus,
+        we recommend future research, such as experimental studies be conducted to
+        test whether in fact hurricane stressors are positively predictive of climate
+        anxiety.</p>\n<p>Second, potential discrepancies in our measures may have
+        influenced our findings. Specifically, while our primary independent variable
+        focuses on hurricane-related stressors, the corresponding measure of anxiety
+        focuses on the issue of climate change more broadly. The issue here is that
+        people may not directly associate hurricane experiences with climate change-specific
+        anxiety. To address this issue, future studies should examine general anxiety
+        tied to the specific event, to ensure a more precise match between the disaster
+        experienced and the anxiety measured.</p>\n<p>Third, regarding the measure
+        used for climate change anxiety, we acknowledge that two of the three items
+        drawn from Clayton and Karazsia\u2019s climate anxiety scale [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref009\">9</xref>] were taken from the scale\u2019s functional
+        impairment subscale, while one was drawn from the cognitive-emotional subscale.
+        It could be argued, therefore, that these items more precisely captured climate
+        change-related preoccupation or functional impairment, constructs that are
+        related to but distinct from core climate symptomology. We note, however,
+        that this limitation does not invalidate our findings, but rather contextualizes
+        the interpretation of our outcome variable. Specifically, the climate change
+        anxiety measure used in our study should be understood as reflecting climate
+        change-related cognitive preoccupation and functional impairment rather than
+        climate anxiety in its fullest sense. Ultimately, we recommend that future
+        research use the full measure of climate change anxiety, which can adequately
+        capture both dimensions of climate anxiety conceptualized by Clayton and Karazsia
+        (i.e., functional impairment and cognitive-emotional dimensions) [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref009\">9</xref>].</p>\n<p>Fourth, while the Cronbach\u2019s
+        alpha for linking social capital in our study (\u03B1\u2009=\u2009.66) fell
+        slightly below the conventional.70 threshold, this likely reflects the inherent
+        multi-dimensionality of linking social capital as a construct rather than
+        poor reliability per se. Cronbach\u2019s alpha assumes unidimensionality [<xref
+        ref-type=\"bibr\" rid=\"pmen.0000749.ref046\">46</xref>]. This is a condition
+        that works against linking social capital, which captures structurally distinct
+        ties between individuals and institutional actors [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref022\">22</xref>]. Yet we should note that the mean inter-item
+        correlation for the linking social items in our present study was.41. This
+        falls within the acceptable range recommended for multidimensional constructs
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref047\">47</xref>], thus providing
+        supplementary evidence of adequate reliability.</p>\n<p>Finally, the data
+        analyzed for this study were not representative of the population of interest.
+        Nevertheless, we believe the use of a non-probability sample is appropriate
+        given the context. Identifying a representative sample of individuals affected
+        by hurricanes poses significant challenges, particularly when many potential
+        participants are engaged in recovery efforts or may lack the time or resources
+        to participate in the current research. Thus, even though these are not representative
+        data, we believe it would be difficult to obtain this type of sample given
+        the situation after the hurricanes.</p>\n</sec>\n<sec id=\"sec020\" sec-type=\"conclusions\">\n<title>5.2
+        Conclusion</title>\n<p>Our findings help extend the stress process model and
+        social capital research by showing the more nuanced role of social capital.
+        Specifically, we extended understanding of the link between hurricane-related
+        stressors among those who have experienced major hurricanes and their levels
+        of climate change anxiety, and the role of social capital in conditioning
+        this link. We also found some evidence suggesting that bonding social capital\u2019s
+        protective role is conditional and reverses under high stress. That is, bonding
+        social capital may serve a protective role only when hurricane stressors are
+        low, but not when they are high. Furthermore, rather than acting as a protective
+        buffer, our study suggested higher levels of bridging and linking social capital
+        were associated with more climate anxiety. While these findings for social
+        capital may be viewed as more reflective of its \u201Cdark side\u201D potential
+        [<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref016\">16</xref>], it is worth
+        noting that research suggests climate anxiety is also associated with adaptive
+        coping strategies, such as increased engagement in pro-environmental behaviors
+        and other actions to address or mitigate climate change [<xref ref-type=\"bibr\"
+        rid=\"pmen.0000749.ref048\">48</xref>,<xref ref-type=\"bibr\" rid=\"pmen.0000749.ref049\">49</xref>].
+        As such, in cases where social capital strengthens the relationship between
+        hurricane stressors and climate anxiety, higher levels of climate anxiety
+        may result in adaptive climate-related actions, including greater engagement
+        in pro-environmental and climate advocacy behaviors. Since our study did not
+        assess climate anxiety\u2019s impact on behaviors, it is important for research
+        to further analyze this possibility. Practically, we should consider strengthening
+        close social support and basic coping skills before disasters occur and stress
+        escalates. Post-disaster efforts should manage information flows with clear
+        updates, specific resources, and tips to help those in need, and counter misinformation
+        to limit unnecessary anxiety.</p>\n</sec>\n</sec>\n</body>\n<back>\n<ref-list>\n<title>References</title>\n<ref
+        id=\"pmen.0000749.ref001\"><label>1</label><mixed-citation publication-type=\"other\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Cohen</surname>
+        <given-names>L</given-names></name>. Here\u2019s how Hurricane Helene brought
+        \u201Cbiblical devastation\u201D to Western North Carolina in a near \u201Cworst-case
+        scenario; <year>2024</year> [cited 2024 Oct 10]. Available from: <ext-link
+        ext-link-type=\"uri\" xlink:href=\"https://www.cbsnews.com/news/hurricane-helene-biblical-devastation-north-carolina-near-worst-case-scenario/\"
+        xlink:type=\"simple\">https://www.cbsnews.com/news/hurricane-helene-biblical-devastation-north-carolina-near-worst-case-scenario/</ext-link></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref002\"><label>2</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Wilcox</surname>
+        <given-names>C</given-names></name>, <name name-style=\"western\"><surname>Jacobs</surname>
+        <given-names>P</given-names></name>. <article-title>Hurricane-battered researchers
+        assess damage</article-title>. <source>Science</source>. <year>2024</year>;<volume>386</volume>(<issue>6720</issue>):<fpage>367</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1126/science.adu0713\"
+        xlink:type=\"simple\">10.1126/science.adu0713</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">39446958</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref003\"><label>3</label><mixed-citation
+        publication-type=\"book\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Kearbey</surname>
+        <given-names>R</given-names></name>. The Gulf of Mexico has reached alarmingly
+        high temperatures. <publisher-name>Climate Adaption Center</publisher-name>;
+        <year>2024</year>. Available from: <ext-link ext-link-type=\"uri\" xlink:href=\"https://www.theclimateadaptationcenter.org/2024/08/23/the-gulf-of-mexico-has-reached-alarmingly-high-temperatures/\"
+        xlink:type=\"simple\">https://www.theclimateadaptationcenter.org/2024/08/23/the-gulf-of-mexico-has-reached-alarmingly-high-temperatures/</ext-link></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref004\"><label>4</label><mixed-citation publication-type=\"other\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Schmall</surname>
+        <given-names>E</given-names></name>. How back-to-back hurricanes harm mental
+        health. The New York Times; <year>2024</year>. Available from: <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://www.nytimes.com/2024/10/10/well/hurricane-milton-helene-mental-health.html\"
+        xlink:type=\"simple\">https://www.nytimes.com/2024/10/10/well/hurricane-milton-helene-mental-health.html</ext-link></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref005\"><label>5</label><mixed-citation publication-type=\"other\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Sanchez</surname>
+        <given-names>R</given-names></name>. Milton and Helene are taking a toll on
+        the mental health of Floridians, leaving a trail of anxiety and frayed nerves;
+        <year>2024</year>. Available from: <ext-link ext-link-type=\"uri\" xlink:href=\"https://www.cnn.com/2024/10/13/us/hurricane-milton-helene-florida-mental-health\"
+        xlink:type=\"simple\">https://www.cnn.com/2024/10/13/us/hurricane-milton-helene-florida-mental-health</ext-link></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref006\"><label>6</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Galea</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Brewin</surname>
+        <given-names>CR</given-names></name>, <name name-style=\"western\"><surname>Gruber</surname>
+        <given-names>M</given-names></name>, <name name-style=\"western\"><surname>Jones</surname>
+        <given-names>RT</given-names></name>, <name name-style=\"western\"><surname>King</surname>
+        <given-names>DW</given-names></name>, <name name-style=\"western\"><surname>King</surname>
+        <given-names>LA</given-names></name>, <etal>et al</etal>. <article-title>Exposure
+        to hurricane-related stressors and mental illness after Hurricane Katrina</article-title>.
+        <source>Arch Gen Psychiatry</source>. <year>2007</year>;<volume>64</volume>(<issue>12</issue>):<fpage>1427</fpage>\u2013<lpage>34</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1001/archpsyc.64.12.1427\"
+        xlink:type=\"simple\">10.1001/archpsyc.64.12.1427</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">18056551</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref007\"><label>7</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Kessler</surname>
+        <given-names>RC</given-names></name>, <name name-style=\"western\"><surname>Galea</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Gruber</surname>
+        <given-names>MJ</given-names></name>, <name name-style=\"western\"><surname>Sampson</surname>
+        <given-names>NA</given-names></name>, <name name-style=\"western\"><surname>Ursano</surname>
+        <given-names>RJ</given-names></name>, <name name-style=\"western\"><surname>Wessely</surname>
+        <given-names>S</given-names></name>. <article-title>Trends in mental illness
+        and suicidality after Hurricane Katrina</article-title>. <source>Mol Psychiatry</source>.
+        <year>2008</year>;<volume>13</volume>(<issue>4</issue>):<fpage>374</fpage>\u2013<lpage>84</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1038/sj.mp.4002119\"
+        xlink:type=\"simple\">10.1038/sj.mp.4002119</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">18180768</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref008\"><label>8</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Garfin</surname>
+        <given-names>DR</given-names></name>, <name name-style=\"western\"><surname>Wong-Parodi</surname>
+        <given-names>G</given-names></name>. <article-title>Climate change anxiety,
+        hurricane exposure, and climate change actions and attitudes: Results from
+        a representative, probability-based survey of US Gulf Coast residents</article-title>.
+        <source>Lancet Planet Health</source>. <year>2024</year>;<volume>8</volume>(<issue>6</issue>):e378\u2013<lpage>90</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/S2542-5196(24)00100-1\"
+        xlink:type=\"simple\">10.1016/S2542-5196(24)00100-1</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">38849180</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref009\"><label>9</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Clayton</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Karazsia</surname>
+        <given-names>BT</given-names></name>. <article-title>Development and validation
+        of a measure of climate change anxiety</article-title>. <source>J Environ
+        Psychol</source>. <year>2020</year>;<volume>69</volume>:<fpage>101434</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.jenvp.2020.101434\"
+        xlink:type=\"simple\">10.1016/j.jenvp.2020.101434</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref010\"><label>10</label><mixed-citation publication-type=\"book\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Putnam</surname>
+        <given-names>R</given-names></name>. <source>Bowling alone: The collapse and
+        revival of American community</source>. <publisher-loc>New York (NY)</publisher-loc>:
+        <publisher-name>Simon and Schuster</publisher-name>; <year>2000</year>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref011\"><label>11</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Iwasaki</surname>
+        <given-names>K</given-names></name>, <name name-style=\"western\"><surname>Sawada</surname>
+        <given-names>Y</given-names></name>, <name name-style=\"western\"><surname>Aldrich</surname>
+        <given-names>DP</given-names></name>. <article-title>Social capital as a shield
+        against anxiety among displaced residents from Fukushima</article-title>.
+        <source>Nat Hazards</source>. <year>2017</year>;<volume>89</volume>(<issue>1</issue>):<fpage>405</fpage>\u2013<lpage>21</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1007/s11069-017-2971-7\"
+        xlink:type=\"simple\">10.1007/s11069-017-2971-7</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref012\"><label>12</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Adger</surname>
+        <given-names>WN</given-names></name>. <article-title>Social capital, collective
+        action, and adaptation to climate change</article-title>. <source>Econ Geogr</source>.
+        <year>2003</year>;<volume>79</volume>:<fpage>387</fpage>\u2013<lpage>404</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref013\"><label>13</label><mixed-citation publication-type=\"book\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Aldrich</surname>
+        <given-names>DP</given-names></name>. <source>Building resilience: Social
+        capital in post-disaster recovery</source>. <publisher-loc>Chicago</publisher-loc>:
+        <publisher-name>University of Chicago Press</publisher-name>; <year>2012</year>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref014\"><label>14</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Pearlin</surname>
+        <given-names>LI</given-names></name>. <article-title>The sociological study
+        of stress</article-title>. <source>J Health Soc Behav</source>. <year>1989</year>;<volume>30</volume>(<issue>3</issue>):<fpage>241</fpage>\u2013<lpage>56</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.2307/2136956\"
+        xlink:type=\"simple\">10.2307/2136956</ext-link></comment> <object-id pub-id-type=\"pmid\">2674272</object-id></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref015\"><label>15</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Lowe</surname>
+        <given-names>SR</given-names></name>, <name name-style=\"western\"><surname>Joshi</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Pietrzak</surname>
+        <given-names>RH</given-names></name>, <name name-style=\"western\"><surname>Galea</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Cerd\xE1</surname>
+        <given-names>M</given-names></name>. <article-title>Mental health and general
+        wellness in the aftermath of Hurricane Ike</article-title>. <source>Soc Sci
+        Med</source>. <year>2015</year>;<volume>124</volume>:<fpage>162</fpage>\u2013<lpage>70</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.socscimed.2014.11.032\"
+        xlink:type=\"simple\">10.1016/j.socscimed.2014.11.032</ext-link></comment>
+        <object-id pub-id-type=\"pmid\">25461873</object-id></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref016\"><label>16</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Ogunbode</surname>
+        <given-names>CA</given-names></name>, <name name-style=\"western\"><surname>Doran</surname>
+        <given-names>R</given-names></name>, <name name-style=\"western\"><surname>Hanss</surname>
+        <given-names>D</given-names></name>, <name name-style=\"western\"><surname>Ojala</surname>
+        <given-names>M</given-names></name>, <name name-style=\"western\"><surname>Salmela-Aro</surname>
+        <given-names>K</given-names></name>, <name name-style=\"western\"><surname>van
+        den Broek</surname> <given-names>KL</given-names></name>, <etal>et al</etal>.
+        <article-title>Climate anxiety, wellbeing and pro-environmental action: Correlates
+        of negative emotional responses to climate change in 32 countries</article-title>.
+        <source>J Environ Psychol</source>. <year>2022</year>;<volume>84</volume>:<fpage>101887</fpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref017\"><label>17</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Asgarizadeh</surname>
+        <given-names>Z</given-names></name>, <name name-style=\"western\"><surname>Gifford</surname>
+        <given-names>R</given-names></name>, <name name-style=\"western\"><surname>Colborne</surname>
+        <given-names>L</given-names></name>. <article-title>Predicting climate change
+        anxiety</article-title>. <source>J Environ Psychol</source>. <year>2023</year>;<volume>90</volume>:<fpage>1</fpage>\u2013<lpage>10</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.jenvp.2023.102087\"
+        xlink:type=\"simple\">10.1016/j.jenvp.2023.102087</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref018\"><label>18</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Wang</surname>
+        <given-names>Z</given-names></name>, <name name-style=\"western\"><surname>Wu</surname>
+        <given-names>X</given-names></name>, <name name-style=\"western\"><surname>Dai</surname>
+        <given-names>W</given-names></name>, <name name-style=\"western\"><surname>Kaminga</surname>
+        <given-names>AC</given-names></name>, <name name-style=\"western\"><surname>Wu</surname>
+        <given-names>X</given-names></name>, <name name-style=\"western\"><surname>Pan</surname>
+        <given-names>X</given-names></name>, <etal>et al</etal>. <article-title>The
+        prevalence of posttraumatic stress disorder among survivors after a typhoon
+        or hurricane: A systematic review and meta-analysis</article-title>. <source>Disaster
+        Med Public Health Prep</source>. <year>2019</year>;<volume>13</volume>(5\u20136):<fpage>1065</fpage>\u2013<lpage>73</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1017/dmp.2019.26\"
+        xlink:type=\"simple\">10.1017/dmp.2019.26</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">31204633</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref019\"><label>19</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Herbst</surname>
+        <given-names>K</given-names></name>, <name name-style=\"western\"><surname>Malmin</surname>
+        <given-names>NP</given-names></name>, <name name-style=\"western\"><surname>Paul</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Williamson</surname>
+        <given-names>T</given-names></name>, <name name-style=\"western\"><surname>Sugg</surname>
+        <given-names>MM</given-names></name>, <name name-style=\"western\"><surname>Schreck</surname>
+        <given-names>CJ</given-names></name>, <etal>et al</etal>. <article-title>Examining
+        recurrent hurricane exposure and psychiatric morbidity in Medicaid-insured
+        pregnant populations</article-title>. <source>PLOS Ment Health</source>. <year>2024</year>;<volume>1</volume>(<issue>1</issue>):e0000040.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1371/journal.pmen.0000040\"
+        xlink:type=\"simple\">10.1371/journal.pmen.0000040</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">41661697</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref020\"><label>20</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Pietrzak</surname>
+        <given-names>RH</given-names></name>, <name name-style=\"western\"><surname>Tracy</surname>
+        <given-names>M</given-names></name>, <name name-style=\"western\"><surname>Galea</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Kilpatrick</surname>
+        <given-names>DG</given-names></name>, <name name-style=\"western\"><surname>Ruggiero</surname>
+        <given-names>KJ</given-names></name>, <name name-style=\"western\"><surname>Hamblen</surname>
+        <given-names>JL</given-names></name>, <etal>et al</etal>. <article-title>Resilience
+        in the face of disaster: Prevalence and longitudinal course of mental disorders
+        following hurricane Ike</article-title>. <source>PLoS One</source>. <year>2012</year>;<volume>7</volume>(<issue>6</issue>):e38964.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1371/journal.pone.0038964\"
+        xlink:type=\"simple\">10.1371/journal.pone.0038964</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">22761716</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref021\"><label>21</label><mixed-citation
+        publication-type=\"book\" xlink:type=\"simple\"><collab>American Psychiatric
+        Association</collab>. <source>Diagnostic and statistical manual of mental
+        disorders</source>. <edition designator=\"5\">5th ed.</edition>, text rev.
+        ed. <publisher-loc>Washington, DC</publisher-loc>: <publisher-name>American
+        Psychiatric Association Publishing</publisher-name>; <year>2022</year>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref022\"><label>22</label><mixed-citation publication-type=\"other\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Clayton</surname>
+        <given-names>S</given-names></name>. <article-title>Environmental identity:
+        A conceptual and an operational definition.</article-title> In: <source>Identity
+        and the natural environment: The psychological significance of nature</source>;
+        <year>2003</year>. p. <fpage>45</fpage>\u2013<lpage>65</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref023\"><label>23</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Cunsolo</surname>
+        <given-names>A</given-names></name>, <name name-style=\"western\"><surname>Ellis</surname>
+        <given-names>NR</given-names></name>. <article-title>Ecological grief as a
+        mental health response to climate change-related loss</article-title>. <source>Nat
+        Clim Change</source>. <year>2018</year>;<volume>8</volume>(<issue>4</issue>):<fpage>275</fpage>\u2013<lpage>81</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1038/s41558-018-0092-2\"
+        xlink:type=\"simple\">10.1038/s41558-018-0092-2</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref024\"><label>24</label><mixed-citation publication-type=\"book\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Clayton</surname>
+        <given-names>S.</given-names></name> <article-title>Environment and identity.</article-title>
+        In: <name name-style=\"western\"><surname>Clayton</surname> <given-names>S</given-names></name>,
+        editor. <source>Oxford handbook of conservation and environmental psychology</source>.
+        <publisher-loc>New York</publisher-loc>: <publisher-name>Oxford University
+        Press</publisher-name>; <year>2012</year>. p. <fpage>164</fpage>\u2013<lpage>80</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref025\"><label>25</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Pinho</surname>
+        <given-names>M</given-names></name>. <article-title>The role of parental identity
+        in experiencing climate change anxiety and pro-environmental behaviors</article-title>.
+        <source>Front Psychol</source>. <year>2025</year>;<volume>16</volume>:<fpage>1579893</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.3389/fpsyg.2025.1579893\"
+        xlink:type=\"simple\">10.3389/fpsyg.2025.1579893</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">40201753</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref026\"><label>26</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Pihkala</surname>
+        <given-names>P</given-names></name>. <article-title>Eco-anxiety and environmental
+        education</article-title>. <source>Sustainability</source>. <year>2020</year>;<volume>12</volume>(<issue>23</issue>):<fpage>10149</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.3390/su122310149\"
+        xlink:type=\"simple\">10.3390/su122310149</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref027\"><label>27</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Beaudoin</surname>
+        <given-names>CE</given-names></name>, <name name-style=\"western\"><surname>Thorson</surname>
+        <given-names>E</given-names></name>. <article-title>Social capital in rural
+        and urban communities: Testing differences in media effects and models</article-title>.
+        <source>J Mass Commun Q</source>. <year>2004</year>;<volume>81</volume>(<issue>2</issue>):<fpage>378</fpage>\u2013<lpage>99</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1177/107769900408100210\"
+        xlink:type=\"simple\">10.1177/107769900408100210</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref028\"><label>28</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Poortinga</surname>
+        <given-names>W</given-names></name>. <article-title>Community resilience and
+        health: The role of bonding, bridging, and linking aspects of social capital</article-title>.
+        <source>Health Place</source>. <year>2012</year>;<volume>18</volume>(<issue>2</issue>):<fpage>286</fpage>\u2013<lpage>95</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.healthplace.2011.09.017\"
+        xlink:type=\"simple\">10.1016/j.healthplace.2011.09.017</ext-link></comment>
+        <object-id pub-id-type=\"pmid\">22037322</object-id></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref029\"><label>29</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Hawkins</surname>
+        <given-names>RL</given-names></name>, <name name-style=\"western\"><surname>Maurer</surname>
+        <given-names>K</given-names></name>. <article-title>Bonding, bridging and
+        linking: How social capital operated in New Orleans following Hurricane Katrina</article-title>.
+        <source>Br J Soc Work</source>. <year>2009</year>;<volume>40</volume>(<issue>6</issue>):<fpage>1777</fpage>\u2013<lpage>93</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1093/bjsw/bcp087\"
+        xlink:type=\"simple\">10.1093/bjsw/bcp087</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref030\"><label>30</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Portes</surname>
+        <given-names>A</given-names></name>. <article-title>Social capital: Its origins
+        and applications in modern society</article-title>. <source>Annu Rev Sociol</source>.
+        <year>1998</year>;<volume>24</volume>:<fpage>1</fpage>\u2013<lpage>24</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref031\"><label>31</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Kawachi</surname>
+        <given-names>I</given-names></name>, <name name-style=\"western\"><surname>Berkman</surname>
+        <given-names>LF</given-names></name>. <article-title>Social ties and mental
+        health</article-title>. <source>J Urban Health</source>. <year>2001</year>;<volume>78</volume>(<issue>3</issue>):<fpage>458</fpage>\u2013<lpage>67</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1093/jurban/78.3.458\"
+        xlink:type=\"simple\">10.1093/jurban/78.3.458</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">11564849</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref032\"><label>32</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>MacGillivray</surname>
+        <given-names>BH</given-names></name>. <article-title>Beyond social capital:
+        The norms, belief systems, and agency embedded in social networks shape resilience
+        to climatic and geophysical hazards</article-title>. <source>Environ Sci Policy</source>.
+        <year>2018</year>;<volume>89</volume>:<fpage>116</fpage>\u2013<lpage>25</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.envsci.2018.07.014\"
+        xlink:type=\"simple\">10.1016/j.envsci.2018.07.014</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref033\"><label>33</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Villalonga-Olives</surname>
+        <given-names>E</given-names></name>, <name name-style=\"western\"><surname>Kawachi</surname>
+        <given-names>I</given-names></name>. <article-title>The dark side of social
+        capital: A systematic review of the negative health effects of social capital</article-title>.
+        <source>Soc Sci Med</source>. <year>2017</year>;<volume>194</volume>:<fpage>105</fpage>\u2013<lpage>27</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.socscimed.2017.10.020\"
+        xlink:type=\"simple\">10.1016/j.socscimed.2017.10.020</ext-link></comment>
+        <object-id pub-id-type=\"pmid\">29100136</object-id></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref034\"><label>34</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Flores</surname>
+        <given-names>EC</given-names></name>, <name name-style=\"western\"><surname>Fuhr</surname>
+        <given-names>DC</given-names></name>, <name name-style=\"western\"><surname>Bayer</surname>
+        <given-names>AM</given-names></name>, <name name-style=\"western\"><surname>Lescano</surname>
+        <given-names>AG</given-names></name>, <name name-style=\"western\"><surname>Thorogood</surname>
+        <given-names>N</given-names></name>, <name name-style=\"western\"><surname>Simms</surname>
+        <given-names>V</given-names></name>. <article-title>Mental health impact of
+        social capital interventions: A systematic review</article-title>. <source>Soc
+        Psychiatry Psychiatr Epidemiol</source>. <year>2018</year>;<volume>53</volume>(<issue>2</issue>):<fpage>107</fpage>\u2013<lpage>19</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1007/s00127-017-1469-7\"
+        xlink:type=\"simple\">10.1007/s00127-017-1469-7</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">29234826</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref035\"><label>35</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Song</surname>
+        <given-names>L</given-names></name>. <article-title>Social capital and psychological
+        distress</article-title>. <source>J Health Soc Behav</source>. <year>2011</year>;<volume>52</volume>(<issue>4</issue>):<fpage>478</fpage>\u2013<lpage>92</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1177/0022146511411921\"
+        xlink:type=\"simple\">10.1177/0022146511411921</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">22021655</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref036\"><label>36</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Wang</surname>
+        <given-names>D</given-names></name>. <article-title>Effects of social capital
+        on mental health of disaster victims: Evidence from the Wenchuan earthquake</article-title>.
+        <source>Int J Disaster Risk Reduct</source>. <year>2022</year>;<volume>83</volume>:<fpage>103386</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.ijdrr.2022.103386\"
+        xlink:type=\"simple\">10.1016/j.ijdrr.2022.103386</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref037\"><label>37</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Chen</surname>
+        <given-names>X</given-names></name>, <name name-style=\"western\"><surname>Stanton</surname>
+        <given-names>B</given-names></name>, <name name-style=\"western\"><surname>Gong</surname>
+        <given-names>J</given-names></name>, <name name-style=\"western\"><surname>Fang</surname>
+        <given-names>X</given-names></name>, <name name-style=\"western\"><surname>Li</surname>
+        <given-names>X</given-names></name>. <article-title>Personal Social Capital
+        Scale: An instrument for health and behavioral research</article-title>. <source>Health
+        Educ Res</source>. <year>2009</year>;<volume>24</volume>(<issue>2</issue>):<fpage>306</fpage>\u2013<lpage>17</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1093/her/cyn020\"
+        xlink:type=\"simple\">10.1093/her/cyn020</ext-link></comment> <object-id pub-id-type=\"pmid\">18469318</object-id></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref038\"><label>38</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Williams</surname>
+        <given-names>D</given-names></name>. <article-title>On and off the \u2018Net:
+        Scales for social capital in an online era</article-title>. <source>J Comput
+        Mediat Commun</source>. <year>2006</year>;<volume>11</volume>(<issue>2</issue>):<fpage>593</fpage>\u2013<lpage>628</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref039\"><label>39</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Cotten</surname>
+        <given-names>SR</given-names></name>, <name name-style=\"western\"><surname>Schuster</surname>
+        <given-names>AM</given-names></name>, <name name-style=\"western\"><surname>Seifert</surname>
+        <given-names>A</given-names></name>. <article-title>Social media use and well-being
+        among older adults</article-title>. <source>Curr Opin Psychol</source>. <year>2022</year>;<volume>45</volume>:<fpage>101293</fpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.copsyc.2021.12.005\"
+        xlink:type=\"simple\">10.1016/j.copsyc.2021.12.005</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">35065352</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref040\"><label>40</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Spitzer</surname>
+        <given-names>RL</given-names></name>, <name name-style=\"western\"><surname>Kroenke</surname>
+        <given-names>K</given-names></name>, <name name-style=\"western\"><surname>Williams</surname>
+        <given-names>JBW</given-names></name>, <name name-style=\"western\"><surname>L\xF6we</surname>
+        <given-names>B</given-names></name>. <article-title>A brief measure for assessing
+        generalized anxiety disorder: The GAD-7</article-title>. <source>Arch Intern
+        Med</source>. <year>2006</year>;<volume>166</volume>(<issue>10</issue>):<fpage>1092</fpage>\u2013<lpage>7</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1001/archinte.166.10.1092\"
+        xlink:type=\"simple\">10.1001/archinte.166.10.1092</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">16717171</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref041\"><label>41</label><mixed-citation
+        publication-type=\"book\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Hayes</surname>
+        <given-names>AF</given-names></name>. <source>Introduction to mediation, moderation,
+        and conditional process analysis: A regression-based approach</source>. <publisher-name>Guilford
+        Press</publisher-name>; <year>2013</year>.</mixed-citation></ref>\n<ref id=\"pmen.0000749.ref042\"><label>42</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Ogunbode</surname>
+        <given-names>CA</given-names></name>, <name name-style=\"western\"><surname>Demski</surname>
+        <given-names>C</given-names></name>, <name name-style=\"western\"><surname>Capstick</surname>
+        <given-names>SB</given-names></name>, <name name-style=\"western\"><surname>Sposato</surname>
+        <given-names>RG</given-names></name>. <article-title>Attribution matters:
+        Revisiting the link between extreme weather experience and climate change
+        mitigation responses</article-title>. <source>Glob Environ Change</source>.
+        <year>2019</year>;<volume>54</volume>:<fpage>31</fpage>\u2013<lpage>9</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1016/j.gloenvcha.2018.11.005\"
+        xlink:type=\"simple\">10.1016/j.gloenvcha.2018.11.005</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref043\"><label>43</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Salzinger</surname>
+        <given-names>S</given-names></name>, <name name-style=\"western\"><surname>Rosario</surname>
+        <given-names>M</given-names></name>, <name name-style=\"western\"><surname>Feldman</surname>
+        <given-names>RS</given-names></name>, <name name-style=\"western\"><surname>Ng-Mak</surname>
+        <given-names>DS</given-names></name>. <article-title>Role of parent and peer
+        relationships and individual characteristics in middle school children\u2019s
+        behavioral outcomes in the face of community violence</article-title>. <source>J
+        Res Adolesc</source>. <year>2011</year>;<volume>21</volume>(<issue>2</issue>):<fpage>395</fpage>\u2013<lpage>407</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1111/j.1532-7795.2010.00677.x\"
+        xlink:type=\"simple\">10.1111/j.1532-7795.2010.00677.x</ext-link></comment>
+        <object-id pub-id-type=\"pmid\">21643493</object-id></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref044\"><label>44</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Wind</surname>
+        <given-names>TR</given-names></name>, <name name-style=\"western\"><surname>Fordham</surname>
+        <given-names>M</given-names></name>, <name name-style=\"western\"><surname>Komproe</surname>
+        <given-names>IH</given-names></name>. <article-title>Social capital and post-disaster
+        mental health</article-title>. <source>Glob Health Action</source>. <year>2011</year>;<volume>4</volume>:10.3402/gha.v4i0.6351.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.3402/gha.v4i0.6351\"
+        xlink:type=\"simple\">10.3402/gha.v4i0.6351</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">21695072</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref045\"><label>45</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Berberian</surname>
+        <given-names>AG</given-names></name>, <name name-style=\"western\"><surname>Gonzalez</surname>
+        <given-names>DJX</given-names></name>, <name name-style=\"western\"><surname>Cushing</surname>
+        <given-names>LJ</given-names></name>. <article-title>Racial disparities in
+        climate change-related health effects in the United States</article-title>.
+        <source>Curr Environ Health Rep</source>. <year>2022</year>;<volume>9</volume>(<issue>3</issue>):<fpage>451</fpage>\u2013<lpage>64</lpage>.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1007/s40572-022-00360-w\"
+        xlink:type=\"simple\">10.1007/s40572-022-00360-w</ext-link></comment> <object-id
+        pub-id-type=\"pmid\">35633370</object-id></mixed-citation></ref>\n<ref id=\"pmen.0000749.ref046\"><label>46</label><mixed-citation
+        publication-type=\"journal\" xlink:type=\"simple\"><name name-style=\"western\"><surname>Cortina</surname>
+        <given-names>JM</given-names></name>. <article-title>What is coefficient alpha?
+        An examination of theory and applications</article-title>. <source>J Appl
+        Psychol</source>. <year>1993</year>;<volume>78</volume>(<issue>1</issue>):<fpage>98</fpage>\u2013<lpage>104</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref047\"><label>47</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Briggs</surname>
+        <given-names>SR</given-names></name>, <name name-style=\"western\"><surname>Cheek</surname>
+        <given-names>JM</given-names></name>. <article-title>The role of factor analysis
+        in the development and evaluation of personality scales</article-title>. <source>J
+        Pers</source>. <year>1986</year>;<volume>54</volume>(<issue>1</issue>):<fpage>106</fpage>\u2013<lpage>48</lpage>.</mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref048\"><label>48</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Crandon</surname>
+        <given-names>TJ</given-names></name>, <name name-style=\"western\"><surname>Scott</surname>
+        <given-names>JG</given-names></name>, <name name-style=\"western\"><surname>Charlson</surname>
+        <given-names>FJ</given-names></name>, <name name-style=\"western\"><surname>Thomas</surname>
+        <given-names>HJ</given-names></name>. <article-title>A theoretical model of
+        climate change anxiety and coping</article-title>. <source>Discov Psychol</source>.
+        <year>2024</year>;<volume>4</volume>. <comment>doi: <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://doi.org/10.1007/s44202-024-00212-8\" xlink:type=\"simple\">10.1007/s44202-024-00212-8</ext-link></comment></mixed-citation></ref>\n<ref
+        id=\"pmen.0000749.ref049\"><label>49</label><mixed-citation publication-type=\"journal\"
+        xlink:type=\"simple\"><name name-style=\"western\"><surname>Kricorian</surname>
+        <given-names>K</given-names></name>, <name name-style=\"western\"><surname>Kricorian</surname>
+        <given-names>C</given-names></name>, <name name-style=\"western\"><surname>Turner</surname>
+        <given-names>K</given-names></name>. <article-title>Predictors and correlates
+        of self-reported climate anxiety in the United States</article-title>. <source>PLOS
+        Clim</source>. <year>2025</year>;<volume>4</volume>(<issue>7</issue>):e0000534.
+        <comment>doi: <ext-link ext-link-type=\"uri\" xlink:href=\"https://doi.org/10.1371/journal.pclm.0000534\"
+        xlink:type=\"simple\">10.1371/journal.pclm.0000534</ext-link></comment></mixed-citation></ref>\n</ref-list>\n</back>\n<sub-article
+        article-type=\"aggregated-review-documents\" id=\"pmen.0000749.r001\" specific-use=\"decision-letter\">\n<front-stub>\n<article-id
+        pub-id-type=\"doi\">10.1371/journal.pmen.0000749.r001</article-id>\n<title-group>\n<article-title>Decision
+        Letter 0</article-title>\n</title-group>\n<contrib-group>\n<contrib contrib-type=\"author\">\n<name
+        name-style=\"western\"><surname>Reyes</surname>\n<given-names>Marc Eric</given-names>\n</name>\n<role>Academic
+        Editor</role>\n</contrib>\n</contrib-group>\n<permissions>\n<copyright-year>2026</copyright-year>\n<copyright-holder>Marc
+        Eric Reyes</copyright-holder>\n<license xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">\n<license-p>This is an open access article distributed
+        under the terms of the <ext-link ext-link-type=\"uri\" xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">Creative Commons Attribution License</ext-link>, which
+        permits unrestricted use, distribution, and reproduction in any medium, provided
+        the original author and source are credited.</license-p></license>\n</permissions>\n<related-object
+        document-id=\"10.1371/journal.pmen.0000749\" document-id-type=\"doi\" document-type=\"article\"
+        id=\"rel-obj002\" link-type=\"peer-reviewed-article\"/>\n<custom-meta-group>\n<custom-meta>\n<meta-name>Submission
+        Version</meta-name>\n<meta-value>0</meta-value>\n</custom-meta>\n</custom-meta-group>\n</front-stub>\n<body>\n<p><named-content
+        content-type=\"letter-date\">24 Mar 2026</named-content></p>\n<p>PMEN-D-25-00562</p>\n<p>Associations
+        Between Hurricane Stressors, Social Capital, and Climate Anxiety Among Individuals
+        Who Experienced Hurricanes Helene and Milton</p>\n<p>PLOS Mental Health</p>\n<p>Dear
+        Dr. Dalisay,</p>\n<p>Thank you for submitting your manuscript to PLOS Mental
+        Health. After careful consideration, we feel that it has merit but does not
+        fully meet PLOS Mental Health\u2019s publication criteria as it currently
+        stands. Therefore, we invite you to submit a revised version of the manuscript
+        that addresses the points raised during the review process.</p>\n<p>Please
+        submit your revised manuscript by May 08 2026 11:59PM. If you will need more
+        time than this to complete your revisions, please reply to this message or
+        contact the journal office at <email xlink:type=\"simple\">mentalhealth@plos.org</email>.
+        When you're ready to submit your revision, log on to <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://www.editorialmanager.com/pmen/\" xlink:type=\"simple\">https://www.editorialmanager.com/pmen/</ext-link>
+        and select the 'Submissions Needing Revision' folder to locate your manuscript
+        file.</p>\n<p>Please include the following items when submitting your revised
+        manuscript:</p>\n<list list-type=\"bullet\">\n<list-item><p>A letter that
+        responds to each point raised by the editor and reviewer(s). You should upload
+        this letter as a separate file labeled 'Response to Reviewers'.</p></list-item>\n<list-item><p>A
+        marked-up copy of your manuscript that highlights changes made to the original
+        version. You should upload this as a separate file labeled 'Revised Manuscript
+        with Track Changes'.</p></list-item>\n<list-item><p>An unmarked version of
+        your revised paper without tracked changes. You should upload this as a separate
+        file labeled 'Manuscript'.</p></list-item>\n</list>\n<p>Guidelines for resubmitting
+        your figure files are available below the reviewer comments at the end of
+        this letter.</p>\n<p>We look forward to receiving your revised manuscript.</p>\n<p>Kind
+        regards,</p>\n<p>Marc Eric Santos Reyes</p>\n<p>Academic Editor</p>\n<p>PLOS
+        Mental Health</p>\n<p>Journal Requirements:</p>\n<p>1. We have noticed that
+        you have uploaded Supporting Information files, but you have not included
+        a list of legends. Please add a full list of legends for your Supporting Information
+        files after the references list.</p>\n<p>If the reviewer comments include
+        a recommendation to cite specific previously published works, please review
+        and evaluate these publications to determine whether they are relevant and
+        should be cited. There is no requirement to cite these works unless the editor
+        has indicated otherwise.</p>\n<p>Additional Editor Comments (if provided):</p>\n<p>[Note:
+        HTML markup is below. Please do not edit.]</p>\n<p>Reviewers' comments:</p>\n<p>Reviewer's
+        Responses to Questions</p>\n<p><bold>Comments to the Author</bold></p>\n<p>1.
+        Does this manuscript meet PLOS Mental Health\u2019s <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://journals.plos.org/mentalhealth/s/criteria-for-publication\"
+        xlink:type=\"simple\">publication criteria</ext-link>?&gt;</p>\n<p>Reviewer
+        #1:\_Yes</p>\n<p>Reviewer #2:\_Partly</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p>2.
+        Has the statistical analysis been performed appropriately and rigorously?--&gt;?&gt;</p>\n<p>Reviewer
+        #1:\_Yes</p>\n<p>Reviewer #2:\_Yes</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p>3.
+        Have the authors made all data underlying the findings in their manuscript
+        fully available (please refer to the Data Availability Statement at the start
+        of the manuscript PDF file)??&gt;</p>\n<p>The <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://journals.plos.org/mentalhealth/s/data-availability\"
+        xlink:type=\"simple\">PLOS Data policy</ext-link></p>\n<p>Reviewer #1:\_Yes</p>\n<p>Reviewer
+        #2:\_Yes</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p>4. Is the manuscript
+        presented in an intelligible fashion and written in standard English??&gt;</p>\n<p>Reviewer
+        #1:\_Yes</p>\n<p>Reviewer #2:\_Yes</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p>Reviewer
+        #1:\_The manuscript is well aligned with the scope of the journal. It addresses
+        mental health and well-being in the context of climate-related disasters and
+        examines psychosocial resources (social capital) as both risk and protective
+        factors. The focus on climate anxiety, disaster exposure, and social capital
+        directly fits areas such as environmental impacts on mental health, socio-economic
+        aspects, and well-being. Overall, the data support the main conclusions, and
+        the authors are largely careful not to overstate their findings.</p>\n<p>That
+        said, several revisions are recommended to improve clarity, coherence, and
+        interpretability.</p>\n<p>1. The cross-sectional design precludes any causal
+        inference. While the authors generally avoid causal language, some interpretations
+        (e.g., buffering versus amplifying effects) could be more cautiously framed
+        as conditional associations rather than effects.</p>\n<p>2. Some reliability
+        coefficients, particularly for linking social capital (\u03B1 = .66), are
+        marginal. While not unacceptable, this limitation should be acknowledged when
+        interpreting findings involving this construct.</p>\n<p>3. The variable climate
+        change anxiety should be differenciated from the psychological construct anxiety,
+        it is not well meassured for some of the conclusions.</p>\n<p>4. Table 1 introduces
+        the variable Disaster Critical Thinking; however, this construct is not sufficiently
+        described or theoretically framed in the main text. There is no clear definition,
+        conceptual background, or justification for its inclusion provided in the
+        introduction or methods sections. As a result, readers are left without an
+        understanding of how Disaster Critical Thinking is conceptualized, how it
+        differs from related constructs (e.g., risk perception, disaster preparedness,
+        cognitive appraisal), or why it is relevant to climate anxiety within the
+        proposed theoretical framework. To improve clarity and interpretability, the
+        authors should: Explicitly define Disaster Critical Thinking in the text.
+        Explain its theoretical grounding and relevance to disaster-related mental
+        health outcomes. Describe how it was operationalized and measured before presenting
+        it in Table 1.</p>\n<p>5. Figures 1, 2, and 3 present interaction effects
+        between hurricane stressors and different forms of social capital. While the
+        figures are visually clear, a legend or description of the figures are needed
+        to adequately explain the meaning of the colored lines displayed in each figure.
+        Specifically, the text does not explicitly state which colors correspond to
+        low, mean, or high levels (e.g., \u22121 SD, mean, +1 SD) of the moderator
+        variables.</p>\n<p>Reviewer #2:\_Abstract</p>\n<p>The abstract reads as though
+        bonding capital is protective, when in fact its protective role is conditional
+        and reverses under high stress.</p>\n<p>Introduction</p>\n<p>The authors should
+        more explicitly explain the cognitive pathway by which a hurricane experience
+        activates concern about climate change rather than generalized distress.</p>\n<p>Methods</p>\n<p>-
+        The authors themselves acknowledge in the limitations section that hurricane
+        stressors and climate change anxiety may not conceptually align well. This
+        is not just a limitation, rather it poses a validity issue. The authors should
+        either provide stronger theoretical justification for why hurricane exposure
+        would activate climate-specific anxiety rather than general anxiety, or they
+        should have added a general anxiety measure as a comparison outcome.</p>\n<p>-
+        The alpha of linking social capital is below conventional .70 threshold. The
+        authors need to justify this.</p>\n<p>Results</p>\n<p>- There's a logical
+        inconsistency in the final paragraph regarding which type of social capital
+        is being discussed (Line 324 &amp; 325). Please correctly explain.</p>\n<p>-
+        From table 3 we can see that even at 1 SD below the mean on bonding capital,
+        the hurricane stressor\u2013anxiety relationship remains positive and significant.
+        This means bonding capital does not truly buffer, it only slows the strengthening
+        of the relationship. The interpretation should be revised accordingly.</p>\n<p>Other
+        issues</p>\n<p>- The paper refers to Figure 4 on line 319 but only Figures
+        1, 2 &amp; 3 appears in the manuscript.</p>\n<p>- Table 1 includes Disaster
+        critical thinking (M = 3.61, \u03B1 = .86) which is never mentioned in the
+        Methods or Results sections. This variable should either be explained or removed.</p>\n<p>Reviewer
+        #3:\_Major Strengths:</p>\n<p>1. The study is timely and relevant.</p>\n<p>2.
+        There is a large sample size.</p>\n<p>3. There is a strong conceptual contribution,
+        showing that social capital is not always protective.</p>\n<p>Major Weaknesses:</p>\n<p>1.
+        There might be conceptual mismatch. There might be underlying concepts behind
+        hurricane stressors to suggest that it might be relate to climate change anxiety.
+        Further, hurricane stressors does not automatically suggest that they are
+        thinking about climate change. For climate change anxiety to arise, they must
+        attribute it to climate change. Some people may attribute hurricanes to disasters
+        rather than climate change. Perhaps, this could be added to limitations as
+        well. Further studies may include climate risk perception or climate change
+        attribution.</p>\n<p>2. The theoretical grounding is stress process model,
+        when thinking about CCA, better explanations of theories includes Environmental
+        Identity and other ecological grief models.</p>\n<p>3. Only three items were
+        used from Clayton's CCA scale. The original scale has multiple dimensions,
+        the chosen items may just indicate rumination not really anxiety, particularly
+        CCA.</p>\n<p>4. Moderating results is interesting but can you explain the
+        implications in more detail.</p>\n<p>**********</p>\n<p><ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://journals.plos.org/mentalthealth/s/editorial-and-peer-review-process#loc-peer-review-history\"
+        xlink:type=\"simple\">what does this mean?</ext-link>). If published, this
+        will include your full peer review and any attached files.</p>\n<p><bold>Do
+        you want your identity to be public for this peer review?</bold>\_\_If you
+        choose \u201Cno\u201D, your identity will remain anonymous but your review
+        may still be made public.</p>\n<p>For information about this choice, including
+        consent withdrawal, please see our <ext-link ext-link-type=\"uri\" xlink:href=\"https://www.plos.org/privacy-policy\"
+        xlink:type=\"simple\">Privacy Policy</ext-link></p>\n<p>Reviewer #1:\_<bold>Yes:</bold>\_\_Ruth
+        Natalia Suarez Florez</p>\n<p>Reviewer #2:\_No</p>\n<p>Reviewer #3:\_No</p>\n<p>**********</p>\n<p>[NOTE:
+        If reviewer comments were submitted as an attachment file, they will be attached
+        to this email and accessible via the submission site. Please log into your
+        account, locate the manuscript record, and check for the action link \"View
+        Attachments\". If this link does not appear, there are no attachment files.]</p>\n</body>\n</sub-article>\n<sub-article
+        article-type=\"author-comment\" id=\"pmen.0000749.r002\">\n<front-stub>\n<article-id
+        pub-id-type=\"doi\">10.1371/journal.pmen.0000749.r002</article-id>\n<title-group>\n<article-title>Author
+        response to Decision Letter 1</article-title>\n</title-group>\n<related-object
+        document-id=\"10.1371/journal.pmen.0000749\" document-id-type=\"doi\" document-type=\"peer-reviewed-article\"
+        id=\"rel-obj003\" link-type=\"rebutted-decision-letter\" object-id=\"10.1371/journal.pmen.0000749.r001\"
+        object-id-type=\"doi\" object-type=\"decision-letter\"/>\n<custom-meta-group>\n<custom-meta>\n<meta-name>Submission
+        Version</meta-name>\n<meta-value>1</meta-value>\n</custom-meta>\n</custom-meta-group>\n</front-stub>\n<body>\n<p><named-content
+        content-type=\"author-response-date\">19 Jun 2026</named-content></p>\n<supplementary-material
+        id=\"pmen.0000749.s002\" mimetype=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\"
+        position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.s002\"
+        xlink:type=\"simple\">\n<label>Attachment</label>\n<caption>\n<p>Submitted
+        filename: <named-content content-type=\"submitted-filename\">R&amp;R.Climate
+        Anxiety.Responses to Reviewers.docx</named-content></p>\n</caption>\n</supplementary-material>\n</body>\n</sub-article>\n<sub-article
+        article-type=\"aggregated-review-documents\" id=\"pmen.0000749.r003\" specific-use=\"decision-letter\">\n<front-stub>\n<article-id
+        pub-id-type=\"doi\">10.1371/journal.pmen.0000749.r003</article-id>\n<title-group>\n<article-title>Decision
+        Letter 1</article-title>\n</title-group>\n<contrib-group>\n<contrib contrib-type=\"author\">\n<name
+        name-style=\"western\"><surname>Reyes</surname>\n<given-names>Marc Eric</given-names>\n</name>\n<role>Academic
+        Editor</role>\n</contrib>\n</contrib-group>\n<permissions>\n<copyright-year>2026</copyright-year>\n<copyright-holder>Marc
+        Eric Reyes</copyright-holder>\n<license xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">\n<license-p>This is an open access article distributed
+        under the terms of the <ext-link ext-link-type=\"uri\" xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">Creative Commons Attribution License</ext-link>, which
+        permits unrestricted use, distribution, and reproduction in any medium, provided
+        the original author and source are credited.</license-p></license>\n</permissions>\n<related-object
+        document-id=\"10.1371/journal.pmen.0000749\" document-id-type=\"doi\" document-type=\"article\"
+        id=\"rel-obj004\" link-type=\"peer-reviewed-article\"/>\n<custom-meta-group>\n<custom-meta>\n<meta-name>Submission
+        Version</meta-name>\n<meta-value>1</meta-value>\n</custom-meta>\n</custom-meta-group>\n</front-stub>\n<body>\n<p><named-content
+        content-type=\"letter-date\">24 Aug 2026</named-content></p>\n<p>PMEN-D-25-00562R1</p>\n<p>Associations
+        Between Hurricane Stressors, Social Capital, and Climate Anxiety Among Individuals
+        Who Experienced Hurricanes Helene and Milton</p>\n<p>PLOS Mental Health</p>\n<p>Dear
+        Dr. Dalisay,</p>\n<p>Thank you for submitting your manuscript to PLOS Mental
+        Health. After careful consideration, we feel that it has merit but does not
+        fully meet PLOS Mental Health\u2019s publication criteria as it currently
+        stands. Therefore, we invite you to submit a revised version of the manuscript
+        that addresses the points raised during the review process.</p>\n<p>Please
+        submit your revised manuscript by Sep 23 2026 11:59PM. If you will need more
+        time than this to complete your revisions, please reply to this message or
+        contact the journal office at <email xlink:type=\"simple\">mentalhealth@plos.org</email>.
+        When you're ready to submit your revision, log on to <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://www.editorialmanager.com/pmen/\" xlink:type=\"simple\">https://www.editorialmanager.com/pmen/</ext-link>
+        and select the 'Submissions Needing Revision' folder to locate your manuscript
+        file.</p>\n<p>Please include the following items when submitting your revised
+        manuscript:</p>\n<list list-type=\"bullet\">\n<list-item><p>A letter that
+        responds to each point raised by the editor and reviewer(s). You should upload
+        this letter as a separate file labeled 'Response to Reviewers'.</p></list-item>\n<list-item><p>A
+        marked-up copy of your manuscript that highlights changes made to the original
+        version. You should upload this as a separate file labeled 'Revised Manuscript
+        with Track Changes'.</p></list-item>\n<list-item><p>An unmarked version of
+        your revised paper without tracked changes. You should upload this as a separate
+        file labeled 'Manuscript'.</p></list-item>\n</list>\n<p>Guidelines for resubmitting
+        your figure files are available below the reviewer comments at the end of
+        this letter.</p>\n<p>As the corresponding author, your ORCID iD is verified
+        in the submission system and will appear in the published article. PLOS supports
+        the use of ORCID, and we encourage all coauthors to register for an ORCID
+        iD and use it as well. Please encourage your coauthors to verify their ORCID
+        iD within the submission system before final acceptance, as unverified ORCID
+        iDs will not appear in the published article. <italic>Only</italic>\_\_the
+        individual author can complete the verification step; PLOS staff <italic>cannot</italic>\_\_verify
+        ORCID iDs on behalf of authors.</p>\n<p>We look forward to receiving your
+        revised manuscript.</p>\n<p>Kind regards,</p>\n<p>Marc Eric Santos Reyes</p>\n<p>Academic
+        Editor</p>\n<p>PLOS Mental Health</p>\n<p><bold>Journal Requirements</bold>\_:</p>\n<p>If
+        the reviewer comments include a recommendation to cite specific previously
+        published works, please review and evaluate these publications to determine
+        whether they are relevant and should be cited. There is no requirement to
+        cite these works unless the editor has indicated otherwise.</p>\n<p>Please
+        review your reference list to ensure that it is complete and correct. If you
+        have cited papers that have been retracted, please include the rationale for
+        doing so in the manuscript text, or remove these references and replace them
+        with relevant current references. Any changes to the reference list should
+        be mentioned in the rebuttal letter that accompanies your revised manuscript.
+        If you need to cite a retracted article, indicate the article\u2019s retracted
+        status in the References list and also include a citation and full reference
+        for the retraction notice.</p>\n<p><bold>Additional Editor Comments (if provided):</bold></p>\n<p>[Note:
+        HTML markup is below. Please do not edit.]</p>\n<p>Reviewers' comments:</p>\n<p>Reviewer's
+        Responses to Questions</p>\n<p><bold>Comments to the Author</bold></p>\n<p>Reviewer
+        #1:\_All comments have been addressed</p>\n<p>Reviewer #2:\_All comments have
+        been addressed</p>\n<p>Reviewer #3:\_All comments have been addressed</p>\n<p>**********</p>\n<p><ext-link
+        ext-link-type=\"uri\" xlink:href=\"https://journals.plos.org/mentalhealth/s/criteria-for-publication\"
+        xlink:type=\"simple\">publication criteria</ext-link>?&gt;</p>\n<p>Reviewer
+        #1:\_Yes</p>\n<p>Reviewer #2:\_Yes</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p>3.
+        Has the statistical analysis been performed appropriately and rigorously?--&gt;?&gt;</p>\n<p>Reviewer
+        #1:\_Yes</p>\n<p>Reviewer #2:\_Yes</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p>4.
+        Have the authors made all data underlying the findings in their manuscript
+        fully available (please refer to the Data Availability Statement at the start
+        of the manuscript PDF file)??&gt;</p>\n<p>The <ext-link ext-link-type=\"uri\"
+        xlink:href=\"https://journals.plos.org/mentalhealth/s/data-availability\"
+        xlink:type=\"simple\">PLOS Data policy</ext-link></p>\n<p>Reviewer #1:\_Yes</p>\n<p>Reviewer
+        #2:\_Yes</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p>5. Is the manuscript
+        presented in an intelligible fashion and written in standard English??&gt;</p>\n<p>Reviewer
+        #1:\_Yes</p>\n<p>Reviewer #2:\_Yes</p>\n<p>Reviewer #3:\_Yes</p>\n<p>**********</p>\n<p><bold>Reviewer
+        #1:</bold>\_\_Thank you for your careful revision of the manuscript. The revised
+        version successfully addresses the reviewers' comments and demonstrates substantial
+        improvements in clarity, coherence, and overall presentation. The study is
+        well aligned with the scope of the journal, addressing an important and timely
+        topic in mental health with a more clear theoretical framework, appropriate
+        methodology, and conclusions that are well supported by the data. These revisions
+        have significantly strengthened the manuscript, and I believe it is now suitable
+        for publication and will make a valuable contribution to the literature on
+        climate-related mental health and disaster recovery.</p>\n<p><bold>Reviewer
+        #2:</bold>\_\_This is a substantive effort to address prior concerns.</p>\n<p>Here
+        are my comments:</p>\n<p>Abstract</p>\n<p>Add one clause noting that associations
+        held after controlling for GAD-7 as it was one of the largest and most robust
+        predictors of the model to help readers easily understand the findings.</p>\n<p>Introduction
+        &amp; Literature Review</p>\n<p>These sections read well, no major concern
+        from my side.</p>\n<p>Materials and Methods</p>\n<p>Only 4 of the 7 standard
+        GAD-7 items were used, and no rationale or reliability statistic is reported.
+        Given how influential GAD-7 in Table 2, this omission is now more consequential.
+        Report reliability for the 4-item measure and briefly justify the subset.</p>\n<p>With
+        GAD-7 and climate anxiety both measured, reporting their bivariate correlation
+        becomes essential. If that correlation is high, it raises a multicollinearity/construct-overlap
+        question.</p>\n<p>Results</p>\n<p>Income (b around .054\u2013.056) and Black
+        race/ethnicity (b around .22) are both significant positive predictors of
+        climate anxiety, and South Carolina residence is a significant negative predictor
+        (b around -.23 to -.25) relative to the Florida reference group. None of these
+        is mentioned anywhere in Results or Discussion.</p>\n<p>The GAD-7's own effect
+        size is large across all three models is more than double the effect size
+        of hurricane stressor. This deserves explicit reporting and interpretation
+        in Results.</p>\n<p>Table 2 reports R\xB2 for the three models but there is
+        no \u0394R\xB2 comparing models with vs. without the GAD-7. A reader cannot
+        tell how much unique variance generalized anxiety accounts for versus the
+        focal predictors. Report \u0394R\xB2 (or a hierarchical entry step) for the
+        GAD-7 covariate specifically.</p>\n<p>Discussion</p>\n<p>GAD-7, Income, Racial
+        disparity, State-level effect all of them need to be explicitly address in
+        the Discussion section.</p>\n<p><bold>Reviewer #3:</bold>\_\_Congratulations!</p>\n<p>**********</p>\n<p><ext-link
+        ext-link-type=\"uri\" xlink:href=\"https://journals.plos.org/mentalhealth/s/editorial-and-peer-review-process#loc-peer-review-history\"
+        xlink:type=\"simple\">what does this mean?</ext-link>). If published, this
+        will include your full peer review and any attached files.</p>\n<p><bold>Do
+        you want your identity to be public for this peer review?</bold>\_\_If you
+        choose \u201Cno\u201D, your identity will remain anonymous but your review
+        may still be made public.</p>\n<p>For information about this choice, including
+        consent withdrawal, please see our <ext-link ext-link-type=\"uri\" xlink:href=\"https://www.plos.org/privacy-policy\"
+        xlink:type=\"simple\">Privacy Policy</ext-link></p>\n<p>Reviewer #1:\_<bold>Yes:</bold>\_\_Ruth
+        Natalia Su\xE1rez Fl\xF3rez</p>\n<p>Reviewer #2:\_<bold>Yes:</bold>\_\_Mahady
+        Hasan Asif</p>\n<p>Reviewer #3:\_<bold>Yes:</bold>\_\_Alvin Joseph Mapoy</p>\n<p>**********</p>\n<p>[NOTE:
+        If reviewer comments were submitted as an attachment file, they will be attached
+        to this email and accessible via the submission site. Please log into your
+        account, locate the manuscript record, and check for the action link \"View
+        Attachments\". If this link does not appear, there are no attachment files.]</p>\n<p><bold>Figure
+        Resubmissions</bold>\_:</p>\n</body>\n</sub-article>\n<sub-article article-type=\"author-comment\"
+        id=\"pmen.0000749.r004\">\n<front-stub>\n<article-id pub-id-type=\"doi\">10.1371/journal.pmen.0000749.r004</article-id>\n<title-group>\n<article-title>Author
+        response to Decision Letter 2</article-title>\n</title-group>\n<related-object
+        document-id=\"10.1371/journal.pmen.0000749\" document-id-type=\"doi\" document-type=\"peer-reviewed-article\"
+        id=\"rel-obj005\" link-type=\"rebutted-decision-letter\" object-id=\"10.1371/journal.pmen.0000749.r003\"
+        object-id-type=\"doi\" object-type=\"decision-letter\"/>\n<custom-meta-group>\n<custom-meta>\n<meta-name>Submission
+        Version</meta-name>\n<meta-value>2</meta-value>\n</custom-meta>\n</custom-meta-group>\n</front-stub>\n<body>\n<p><named-content
+        content-type=\"author-response-date\">11 Sep 2026</named-content></p>\n<supplementary-material
+        id=\"pmen.0000749.s003\" mimetype=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\"
+        position=\"float\" xlink:href=\"info:doi/10.1371/journal.pmen.0000749.s003\"
+        xlink:type=\"simple\">\n<label>Attachment</label>\n<caption>\n<p>Submitted
+        filename: <named-content content-type=\"submitted-filename\">R&amp;R.Responses
+        to Reviewers.docx</named-content></p>\n</caption>\n</supplementary-material>\n</body>\n</sub-article>\n<sub-article
+        article-type=\"editor-report\" id=\"pmen.0000749.r005\" specific-use=\"decision-letter\">\n<front-stub>\n<article-id
+        pub-id-type=\"doi\">10.1371/journal.pmen.0000749.r005</article-id>\n<title-group>\n<article-title>Decision
+        Letter 2</article-title>\n</title-group>\n<contrib-group>\n<contrib contrib-type=\"author\">\n<name
+        name-style=\"western\"><surname>Reyes</surname>\n<given-names>Marc Eric</given-names>\n</name>\n<role>Academic
+        Editor</role>\n</contrib>\n</contrib-group>\n<permissions>\n<copyright-year>2026</copyright-year>\n<copyright-holder>Marc
+        Eric Reyes</copyright-holder>\n<license xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">\n<license-p>This is an open access article distributed
+        under the terms of the <ext-link ext-link-type=\"uri\" xlink:href=\"http://creativecommons.org/licenses/by/4.0/\"
+        xlink:type=\"simple\">Creative Commons Attribution License</ext-link>, which
+        permits unrestricted use, distribution, and reproduction in any medium, provided
+        the original author and source are credited.</license-p></license>\n</permissions>\n<related-object
+        document-id=\"10.1371/journal.pmen.0000749\" document-id-type=\"doi\" document-type=\"article\"
+        id=\"rel-obj006\" link-type=\"peer-reviewed-article\"/>\n<custom-meta-group>\n<custom-meta>\n<meta-name>Submission
+        Version</meta-name>\n<meta-value>2</meta-value>\n</custom-meta>\n</custom-meta-group>\n</front-stub>\n<body>\n<p><named-content
+        content-type=\"letter-date\">24 Sep 2026</named-content></p>\n<p>Associations
+        Between Hurricane Stressors, Social Capital, and Climate Anxiety Among Individuals
+        Who Experienced Hurricanes Helene and Milton</p>\n<p>PMEN-D-25-00562R2</p>\n<p>Dear
+        Dr. Dalisay,</p>\n<p>We are pleased to inform you that your manuscript 'Associations
+        Between Hurricane Stressors, Social Capital, and Climate Anxiety Among Individuals
+        Who Experienced Hurricanes Helene and Milton' has been provisionally accepted
+        for publication in PLOS Mental Health.</p>\n<p>Before your manuscript can
+        be formally accepted you will need to complete some formatting changes, which
+        you will receive in a follow up email. A member of our team will be in touch
+        with a set of requests.</p>\n<p>Please note that your manuscript will not
+        be scheduled for publication until you have made the required changes, so
+        a swift response is appreciated.</p>\n<p>IMPORTANT: The editorial review process
+        is now complete. PLOS will only permit corrections to spelling, formatting
+        or significant scientific errors from this point onwards. Requests for major
+        changes, or any which affect the scientific understanding of your work, will
+        cause delays to the publication date of your manuscript.</p>\n<p>If your institution
+        or institutions have a press office, please notify them about your upcoming
+        paper to help maximize its impact. If they'll be preparing press materials,
+        please inform our press team as soon as possible -- no later than 48 hours
+        after receiving the formal acceptance. Your manuscript will remain under strict
+        press embargo until 2 pm Eastern Time on the date of publication. For more
+        information, please contact <email xlink:type=\"simple\">mentalhealth@plos.org</email>.</p>\n<p>Thank
+        you again for supporting Open Access publishing; we are looking forward to
+        publishing your work in PLOS Mental Health.</p>\n<p>Best regards,</p>\n<p>Marc
+        Eric Santos Reyes</p>\n<p>Academic Editor</p>\n<p>PLOS Mental Health</p>\n<p>***********************************************************</p>\n<p>Reviewer
+        Comments (if any, and for reference):</p>\n</body>\n</sub-article>\n</article>"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private, max-age=0
+      Content-Disposition:
+      - attachment; filename=journal.pmen.0000749.xml
+      Content-Length:
+      - '150088'
+      Content-Type:
+      - application/xml
+      Date:
+      - Wed, 14 Oct 2026 17:36:09 GMT
+      ETag:
+      - '"fe359e6ab0b8a784ffff22fa6fe9a160"'
+      Expires:
+      - Wed, 14 Oct 2026 17:36:09 GMT
+      Last-Modified:
+      - Tue, 13 Oct 2026 17:33:06 GMT
+      Server:
+      - UploadServer
+      X-GUploader-UploadID:
+      - AP6rU80Z1vsE_e5jZUEQufHVJuv37InqxLtStowNtT3U75uG-ar9B8fNFOAxfPttHjpBdVdwJlzjJiIxmkTNlQ
+      x-goog-generation:
+      - '1791912786350457'
+      x-goog-hash:
+      - crc32c=INZXLQ==
+      - md5=/jWearC4p4T//yL6b+mhYA==
+      x-goog-metageneration:
+      - '1'
+      x-goog-storage-class:
+      - STANDARD
+      x-goog-stored-content-encoding:
+      - identity
+      x-goog-stored-content-length:
+      - '150088'
     status:
       code: 200
       message: OK
