@@ -20,6 +20,23 @@ def _scrub_api_keys(response):
     return response
 
 
+# The URI of every request a cassette was asked for, served or refused. A
+# refused request raises inside the code under test, where a broad except can
+# swallow it, so play_counts alone can't show that it was never made.
+_ATTEMPTED_URLS = []
+
+
+def _record_attempt(request):
+    _ATTEMPTED_URLS.append(request.uri)
+    return request
+
+
+@pytest.fixture
+def attempted_urls():
+    _ATTEMPTED_URLS.clear()
+    return _ATTEMPTED_URLS
+
+
 @pytest.fixture(scope="module")
 def vcr_config():
     # Cassettes recorded with PUBMED_API_KEY set must not store the key, and
@@ -29,4 +46,5 @@ def vcr_config():
         "filter_query_parameters": ["api_key"],
         "decode_compressed_response": True,
         "before_record_response": _scrub_api_keys,
+        "before_record_request": _record_attempt,
     }

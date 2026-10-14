@@ -278,29 +278,6 @@ PLOS_JOURNAL_SITES = {
 }
 
 
-def _is_pubmed_landing_page(url):
-    """ True for the PubMed abstract page, which is what we open when an
-    article has no LinkOut record. It is not full text. """
-
-    return re.match(r'https?://pubmed\.ncbi\.nlm\.nih\.gov/\d+/?$', url or '') is not None
-
-
-def _extract_citation_doi(html):
-    """ Pull the DOI out of a page's citation_doi meta tag. """
-
-    if not html:
-        return None
-
-    for tag in re.findall(r'(?is)<meta\b[^>]*>', html):
-        if not re.search(r'''(?i)name\s*=\s*["']?citation_doi["']?''', tag):
-            continue
-        match = re.search(r'''(?i)content\s*=\s*["']([^"']+)["']''', tag)
-        if match:
-            return match.group(1).strip()
-
-    return None
-
-
 def _plos_doi_from_url(url):
     """ Pull the DOI out of a journals.plos.org article URL, if it is one. """
 
@@ -589,17 +566,43 @@ class Scraper:
         return [(obj.get('provider', {}).get('nameabbr'), obj['url']['value']) for obj in objurls]
 
     @staticmethod
-    def _prlinks_target(pmid, providers):
+    def _prlinks_target(providers):
         """ The page that elink's cmd=prlinks&retmode=ref redirects to: the
-        first LinkOut provider that isn't PMC, else PMC, else the PubMed
-        abstract page. """
+        first LinkOut provider that isn't PMC, else PMC. """
 
         for name, url in providers:
             if name != 'PMC':
                 return url
-        if providers:
-            return providers[0][1]
-        return f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+        return providers[0][1]
+
+    def _plos_url_without_linkout(self, pmid):
+        """ The doi.org URL of a PLoS article that has no LinkOut record, from
+        its keyed esummary, or None (logged) for any other article. """
+
+        try:
+            response = self._client.get(
+                'esummary',
+                params={'db': 'pubmed', 'id': pmid, 'retmode': 'json'},
+                return_content=False,
+            )
+            summary = response.json()['result'][str(pmid)]
+            # An unknown PMID comes back as HTTP 200 with only an error.
+            if 'error' in summary:
+                raise ValueError(summary['error'])
+            doi = next((a['value'] for a in summary['articleids'] if a['idtype'] == 'doi'), None)
+        except Exception as e:
+            logger.error(f"E-utilities summary failed for PMID {pmid}: {self._without_api_key(e)}")
+            return None
+
+        # The caller's journal can be a label of its own, and PLOS_JOURNAL_SITES
+        # doesn't list every PLOS title. Every PLOS journal DOI has this prefix.
+        if doi is None or not doi.startswith('10.1371/journal.'):
+            logger.info("\tNo LinkOut record for PMID %s and not a PLoS article. Skipping...", pmid)
+            return None
+        # doi.org lands on the journals.plos.org article page, as LinkOut does.
+        # The manuscript URL is a download, which the browser saves to disk
+        # instead of loading.
+        return f"https://doi.org/{doi}"
 
     def _without_api_key(self, text):
         # requests puts the full query string, key included, in its errors.
@@ -645,7 +648,15 @@ class Scraper:
                 )
                 return
 
-        url = self._prlinks_target(pmid, providers)
+        if providers:
+            url = self._prlinks_target(providers)
+        else:
+            # Without LinkOut, prlinks lands on the PubMed abstract page. That
+            # is never full text, and NCBI blocks scripts that browse PubMed,
+            # so only a PLoS article, addressed by its DOI, is opened.
+            url = self._plos_url_without_linkout(pmid)
+            if url is None:
+                return None
         logger.info(url)
         return self.get_html(
             url,
@@ -666,11 +677,6 @@ class Scraper:
         try:
             if j in PLOS_JOURNAL_SITES:
                 doi = _plos_doi_from_url(url)
-                if doi is None and _is_pubmed_landing_page(url):
-                    # E-utilities had no LinkOut for this article, so we
-                    # opened the PubMed abstract page. Its citation_doi
-                    # meta tag is enough to address the full text ourselves.
-                    doi = _extract_citation_doi(html)
                 if doi is None:
                     return url
                 # The legacy 'asset?id=<doi>.XML' endpoint still works, but only

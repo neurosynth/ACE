@@ -192,7 +192,7 @@ def test_database_processing_stream(db, test_data_path):
 
 
 @pytest.mark.vcr(record_mode="once")
-def test_journal_scraping(test_data_path, source_manager):
+def test_journal_scraping(test_data_path, source_manager, attempted_urls):
     scrape_path = join(test_data_path, 'scrape_test')
     # Start clean: index_pmids makes the scraper skip anything already on disk,
     # so articles left behind by an earlier failed run would send it past the
@@ -220,8 +220,9 @@ def test_journal_scraping(test_data_path, source_manager):
         shutil.rmtree(scrape_path, ignore_errors=True)
 
     assert len(names) == 2
-    # Each file must be the PLoS NLM XML, not the PubMed abstract page we get
-    # bounced to when E-utilities has no LinkOut record for an article.
+    assert not [url for url in attempted_urls if 'pubmed.ncbi.nlm.nih.gov' in url]
+    # Each file must be the PLoS NLM XML. Neither article had a LinkOut record
+    # when this was recorded, so both are addressed by their esummary DOI.
     for name, doc in zip(names, docs):
         assert '<article' in doc, name
         assert 'pubmed.ncbi.nlm.nih.gov' not in doc, name
@@ -650,22 +651,6 @@ def test_validate_scrape_allows_embedded_recaptcha_widget(test_weird_data_path):
     assert scrape._validate_scrape(html) is True
 
 
-def test_plos_substitute_url_from_pubmed_landing_page(test_weird_data_path, tmp_path):
-    # When E-utilities has no LinkOut record, prlinks drops us on the PubMed
-    # abstract page. The DOI in its citation_doi meta tag is enough to address
-    # the PLoS full text ourselves.
-    html = open(join(test_weird_data_path, "38814901_pubmed_recaptcha_widget.html")).read()
-    scraper = scrape.Scraper(str(tmp_path))
-
-    url = scraper.check_for_substitute_url(
-        "https://pubmed.ncbi.nlm.nih.gov/38814901/", html, "PLoS ONE")
-
-    assert url == (
-        "https://journals.plos.org/plosone/article/file"
-        "?id=10.1371/journal.pone.0303969&type=manuscript"
-    )
-
-
 def test_plos_substitute_url_from_publisher_page(tmp_path):
     scraper = scrape.Scraper(str(tmp_path))
 
@@ -681,10 +666,9 @@ def test_plos_substitute_url_from_publisher_page(tmp_path):
 
 def test_plos_substitute_url_covers_sibling_journals(tmp_path):
     scraper = scrape.Scraper(str(tmp_path))
-    html = '<meta name="citation_doi" content="10.1371/journal.pbio.3000001">'
 
     url = scraper.check_for_substitute_url(
-        "https://pubmed.ncbi.nlm.nih.gov/12345678/", html, "PLoS Biology")
+        "https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3000001", "", "PLoS Biology")
 
     assert url.startswith("https://journals.plos.org/plosbiology/article/file")
 
@@ -777,6 +761,8 @@ CASSETTES = join(dirname(__file__), 'cassettes', 'test_ace')
 PROVIDER_CASSETTE = join(CASSETTES, 'test_get_html_by_pmid_opens_the_provider_url_from_the_keyed_lookup.yaml')
 PREFERS_PMC_CASSETTE = join(CASSETTES, 'test_get_html_by_pmid_prefers_pmc.yaml')
 PMCID_LOOKUP_400_CASSETTE = join(CASSETTES, 'test_pmcid_lookup_failure_is_logged_without_the_api_key.yaml')
+NO_LINKOUT_CASSETTE = join(CASSETTES, 'test_get_html_by_pmid_without_linkout_opens_nothing_for_other_journals[book-chapter].yaml')
+ESUMMARY = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={}&retmode=json'
 
 
 def _played_urls(cassette):
@@ -812,18 +798,91 @@ def test_get_html_by_pmid_opens_the_provider_url_from_the_keyed_lookup(vcr, tmp_
 
 
 @pytest.mark.vcr(record_mode="once")
-def test_get_html_by_pmid_without_linkout_opens_the_pubmed_page(vcr, tmp_path):
-    # With no LinkOut record prlinks lands on the PubMed abstract page. In
-    # requests mode PubMed answers with its proof-of-work challenge page, so
-    # only the URL we opened is checked.
+@pytest.mark.parametrize('pmid, doi, article_page', [
+    ('42868208', '10.1371/journal.pone.0360047', 'https://journals.plos.org/plosone/article?id='),
+    # Not in PLOS_JOURNAL_SITES.
+    ('42868163', '10.1371/journal.pmen.0000749', 'https://journals.plos.org/mentalhealth/article?id='),
+], ids=['plos-one', 'plos-mental-health'])
+def test_get_html_by_pmid_without_linkout_opens_the_plos_article_by_doi(
+        vcr, tmp_path, attempted_urls, pmid, doi, article_page):
+    # Freshly indexed PLoS articles have no LinkOut record yet. The journal
+    # passed in is a placeholder, so PubMed's esummary has to say it is PLoS.
     scraper = scrape.Scraper(str(tmp_path))
 
-    scraper.get_html_by_pmid('28520367', 'Other journal', mode='requests')
+    html = scraper.get_html_by_pmid(pmid, 'Other journal', mode='requests')
 
-    assert _played_urls(vcr) == [
-        ELINK_PRLINKS.format('28520367'),
-        'https://pubmed.ncbi.nlm.nih.gov/28520367/',
-    ]
+    played = _played_urls(vcr)
+    assert vcr.all_played
+    assert set(attempted_urls) == set(played)
+    assert played[:3] == [ELINK_PRLINKS.format(pmid), ESUMMARY.format(pmid), f'https://doi.org/{doi}']
+    assert played[-1].startswith(article_page)
+    assert not [url for url in played if 'pubmed.ncbi.nlm.nih.gov' in url]
+    assert f'<meta name="citation_doi" content="{doi}"' in html
+    assert scrape._validate_scrape(html)
+
+
+@pytest.mark.vcr(record_mode="once")
+@pytest.mark.parametrize('pmid', ['28520367', '42869849'], ids=['book-chapter', 'article-with-a-doi'])
+def test_get_html_by_pmid_without_linkout_opens_nothing_for_other_journals(
+        vcr, tmp_path, caplog, attempted_urls, pmid):
+    # The journal passed in says PLoS; PubMed's esummary says otherwise. The
+    # chapter has no DOI at all.
+    scraper = scrape.Scraper(str(tmp_path))
+
+    with caplog.at_level('INFO', logger='ace.scrape'):
+        html = scraper.get_html_by_pmid(pmid, 'PLoS ONE', mode='requests')
+
+    assert html is None
+    assert vcr.all_played
+    assert _played_urls(vcr) == [ELINK_PRLINKS.format(pmid), ESUMMARY.format(pmid)]
+    assert set(attempted_urls) == set(_played_urls(vcr))
+    assert f'No LinkOut record for PMID {pmid} and not a PLoS article' in caplog.text
+    assert 'ERROR' not in caplog.text
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_get_html_by_pmid_logs_an_esummary_error_reply_as_a_failed_lookup(vcr, tmp_path, caplog, attempted_urls):
+    # NCBI answers an unknown PMID with HTTP 200 and a per-UID error instead
+    # of a summary. That is a failed lookup, not an article that isn't PLoS.
+    scraper = scrape.Scraper(str(tmp_path))
+
+    with caplog.at_level('INFO', logger='ace.scrape'):
+        html = scraper.get_html_by_pmid('99999999', 'Other journal', mode='requests')
+
+    assert html is None
+    assert vcr.all_played
+    assert _played_urls(vcr) == [ELINK_PRLINKS.format('99999999'), ESUMMARY.format('99999999')]
+    assert set(attempted_urls) == set(_played_urls(vcr))
+    assert 'E-utilities summary failed for PMID 99999999: cannot get document summary' in caplog.text
+    assert 'Skipping' not in caplog.text
+
+
+@pytest.mark.vcr(NO_LINKOUT_CASSETTE, record_mode="none")
+def test_process_article_without_linkout_reports_an_invalid_article(vcr, tmp_path, attempted_urls):
+    scraper = scrape.Scraper(str(tmp_path))
+
+    filename, valid = scraper.process_article('28520367', 'Other journal', mode='requests')
+
+    assert valid is None
+    assert not filename.exists()
+    assert vcr.all_played
+    assert set(attempted_urls) == set(_played_urls(vcr))
+
+
+@pytest.mark.vcr(record_mode="once")
+def test_plos_summary_failure_is_logged_without_the_api_key(vcr, tmp_path, caplog, attempted_urls):
+    scraper = _without_retry_backoff(scrape.Scraper(str(tmp_path), api_key=FAKE_API_KEY))
+
+    with caplog.at_level('INFO', logger='ace.scrape'):
+        url = scraper._plos_url_without_linkout('42868208')
+
+    assert url is None
+    assert vcr.all_played
+    assert set(attempted_urls) == {ESUMMARY.format('42868208')}
+    assert 'E-utilities summary failed for PMID 42868208' in caplog.text
+    assert 'Skipping' not in caplog.text
+    assert '<api_key>' in caplog.text
+    assert FAKE_API_KEY not in caplog.text
 
 
 @pytest.mark.vcr(record_mode="once")
