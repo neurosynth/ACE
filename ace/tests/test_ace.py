@@ -651,8 +651,8 @@ def test_validate_scrape_allows_embedded_recaptcha_widget(test_weird_data_path):
     assert scrape._validate_scrape(html) is True
 
 
-def test_plos_manuscript_url_from_the_article_page():
-    assert scrape._plos_manuscript_url(
+def test_xml_url_of_a_plos_article_is_its_manuscript():
+    assert scrape._xml_url(
         "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0303969"
     ) == (
         "https://journals.plos.org/plosone/article/file"
@@ -660,15 +660,15 @@ def test_plos_manuscript_url_from_the_article_page():
     )
 
 
-def test_plos_manuscript_url_takes_the_site_slug_from_the_url():
+def test_xml_url_takes_the_plos_site_slug_from_the_url():
     # A journal that is not in any name map still gets its own site.
-    url = scrape._plos_manuscript_url(
+    url = scrape._xml_url(
         "https://journals.plos.org/mentalhealth/article?id=10.1371/journal.pmen.0000749")
     assert url.startswith("https://journals.plos.org/mentalhealth/article/file?id=10.1371/journal.pmen.0000749")
 
 
-def test_plos_manuscript_url_is_none_off_plos():
-    assert scrape._plos_manuscript_url("https://pubmed.ncbi.nlm.nih.gov/12345678/") is None
+def test_xml_url_is_none_for_other_publishers():
+    assert scrape._xml_url("https://pubmed.ncbi.nlm.nih.gov/12345678/") is None
 
 
 def test_check_for_substitute_url_leaves_a_plos_article_alone(tmp_path):
@@ -684,13 +684,18 @@ def test_check_for_substitute_url_leaves_a_plos_article_alone(tmp_path):
      "https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/xml/nlm"),
     ("https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/abstract/",
      "https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/xml/nlm"),
-    ("https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073",
-     "https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073"),
+    ("https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073", None),
 ])
-def test_check_for_substitute_url_rewrites_frontiers_to_nlm_xml(tmp_path, url, expected):
+def test_xml_url_of_a_frontiers_article_is_its_nlm_xml(url, expected):
     # A literal backslash in the replacement made the old rewrite a 404.
+    assert scrape._xml_url(url) == expected
+
+
+def test_check_for_substitute_url_leaves_a_frontiers_article_alone(tmp_path):
+    # A browser wraps the XML in its viewer, so browser mode reads the HTML page.
     scraper = scrape.Scraper(str(tmp_path))
-    assert scraper.check_for_substitute_url(url) == expected
+    page = "https://www.frontiersin.org/articles/10.3389/fnhum.2014.01073/full"
+    assert scraper.check_for_substitute_url(page) == page
 
 
 def test_validate_scrape_flags_contentless_recaptcha_page():

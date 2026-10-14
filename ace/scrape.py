@@ -270,16 +270,20 @@ MIN_VISIBLE_CHARS = 1000
 PLOS_ARTICLE_URL = re.compile(r'^https?://journals\.plos\.org/([^/?#]+)/article\?id=([^&#]+)')
 
 
-def _plos_manuscript_url(url):
-    """ The NLM XML of a journals.plos.org article, or None if url isn't one.
-    Only a plain HTTP fetch can use this: a browser saves the manuscript
-    download to disk instead of loading it. """
+def _xml_url(url):
+    """ The publisher's NLM XML for an article page (journals.plos.org or
+    frontiersin.org), or None. Only a plain HTTP fetch can use it: a browser
+    downloads the PLoS manuscript and wraps Frontiers XML in its viewer. """
 
     match = PLOS_ARTICLE_URL.match(url or '')
-    if match is None:
-        return None
-    slug, doi = match.groups()
-    return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (slug, doi)
+    if match is not None:
+        slug, doi = match.groups()
+        return 'https://journals.plos.org/%s/article/file?id=%s&type=manuscript' % (slug, doi)
+    if 'frontiersin.org' in (url or ''):
+        xml = re.sub(r'/(full|abstract)/*$', r'/xml/nlm', url)
+        if xml != url:
+            return xml
+    return None
 
 
 def _visible_text(html):
@@ -371,106 +375,108 @@ class Scraper:
             return None
 
         if mode == 'browser':
-            driver = Driver(
-                uc=True,
-                headless2=headless,
-                agent=random.choice(USER_AGENTS),
-            )
-            for attempt in range(15):
-                try:
-                    driver.set_page_load_timeout(10)
-                    driver.get(url)
-                    url = driver.current_url
-                    if self._should_skip_url(url, skip_url_substrings):
-                        driver.quit()
-                        return None
-                except:
-                    driver.quit()
-                    logger.info(f"Timeout exception #{attempt}. Retrying...")
-                    sleep(5)
-                    driver = Driver(
-                        uc=True,
-                        headless2=headless,
-                        agent=random.choice(USER_AGENTS),
-                    )
-                    continue
-                else:
-                    break
-            else:
-                driver.quit()
-                logger.info("Timeout exception. Giving up.")
-                return None
-
-            new_url = self.check_for_substitute_url(url)
-            if self._should_skip_url(new_url, skip_url_substrings):
-                driver.quit()
-                return None
-
-            if url != new_url:
-                driver.quit()
-                driver = Driver(
+            def new_driver():
+                d = Driver(
                     uc=True,
                     headless2=headless,
                     agent=random.choice(USER_AGENTS),
                 )
-                url = new_url
-                driver.get(url)
+                d.set_page_load_timeout(10)
+                return d
 
-            # Sometimes we get annoying alerts (e.g., Flash animation
-            # timeouts), so we dismiss them if present.
-            try:
-                alert = driver.switch_to_alert()
-                alert.dismiss()
-            except:
-                pass
-
-            # ScienceDirect and Wiley fill in the article after the page loads, so
-            # wait for it before the HTML is read below.
-            timeout = 5
-            if ' - ScienceDirect' in driver.title:
+            def load(url):
+                # A slow page is read as far as it got rather than failing the article.
                 try:
-                    element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
-                    WebDriverWait(driver, timeout).until(element_present)
-                except TimeoutException:
-                    pass
-            elif 'Wiley Online Library' in driver.title:
-                try:
-                    element_present = EC.presence_of_element_located((By.ID, 'article__content'))
-                    WebDriverWait(driver, timeout).until(element_present)
-                except TimeoutException:
-                    pass
-
-            # Tables collapsed behind a "table-expand-inline" link are only in the
-            # page once the link is clicked, so click them all before reading it.
-            # A link that can't be clicked leaves that table collapsed; the page is
-            # still read.
-            for link in driver.find_elements(By.CLASS_NAME, 'table-expand-inline'):
-                try:
-                    driver.execute_script("arguments[0].scrollIntoView();", link)
-                    WebDriverWait(driver, timeout).until(EC.element_to_be_clickable(link))
-                    link.click()
-                except WebDriverException as e:
-                    logger.info(f"Could not expand a table on {url}: {type(e).__name__}")
-                sleep(0.5 + random.random() * 1)
-
-            for attempt in range(10):
-                try:
-                    html = driver.page_source
-                except:
-                    logger.info(f"Source Page #{attempt}. Retrying...")
-                    driver.quit()
-                    driver = Driver(
-                        uc=True,
-                        headless2=headless,
-                        agent=random.choice(USER_AGENTS),
-                    )
                     driver.get(url)
-                    sleep(2)
-                else:
-                    break
+                except TimeoutException:
+                    logger.info(f"Page load timed out on {url}; reading what loaded.")
 
-            driver.quit()
-            return html
+            driver = None
+            try:
+                driver = new_driver()
+                for attempt in range(15):
+                    try:
+                        driver.get(url)
+                        url = driver.current_url
+                    except:
+                        logger.info(f"Timeout exception #{attempt}. Retrying...")
+                        driver.quit()
+                        sleep(5)
+                        driver = new_driver()
+                    else:
+                        break
+                else:
+                    logger.info("Timeout exception. Giving up.")
+                    return None
+                if self._should_skip_url(url, skip_url_substrings):
+                    return None
+
+                new_url = self.check_for_substitute_url(url)
+                if self._should_skip_url(new_url, skip_url_substrings):
+                    return None
+                if url != new_url:
+                    driver.quit()
+                    driver = new_driver()
+                    url = new_url
+                    load(url)
+
+                # Sometimes we get annoying alerts (e.g., Flash animation
+                # timeouts), so we dismiss them if present.
+                try:
+                    alert = driver.switch_to_alert()
+                    alert.dismiss()
+                except:
+                    pass
+
+                # ScienceDirect and Wiley fill in the article after the page loads, so
+                # wait for it before the HTML is read below.
+                timeout = 5
+                if ' - ScienceDirect' in driver.title:
+                    try:
+                        element_present = EC.presence_of_element_located((By.ID, 'abstracts'))
+                        WebDriverWait(driver, timeout).until(element_present)
+                    except TimeoutException:
+                        pass
+                elif 'Wiley Online Library' in driver.title:
+                    try:
+                        element_present = EC.presence_of_element_located((By.ID, 'article__content'))
+                        WebDriverWait(driver, timeout).until(element_present)
+                    except TimeoutException:
+                        pass
+
+                # Tables collapsed behind a "table-expand-inline" link are only in the
+                # page once the link is clicked, so click them all before reading it.
+                # A link that can't be clicked leaves that table collapsed; the page is
+                # still read.
+                for link in driver.find_elements(By.CLASS_NAME, 'table-expand-inline'):
+                    try:
+                        driver.execute_script("arguments[0].scrollIntoView();", link)
+                        WebDriverWait(driver, timeout).until(EC.element_to_be_clickable(link))
+                        link.click()
+                    except WebDriverException as e:
+                        logger.info(f"Could not expand a table on {url}: {type(e).__name__}")
+                    sleep(0.5 + random.random() * 1)
+
+                html = None
+                for attempt in range(10):
+                    try:
+                        html = driver.page_source
+                    except:
+                        logger.info(f"Source Page #{attempt}. Retrying...")
+                        driver.quit()
+                        driver = new_driver()
+                        load(url)
+                        sleep(2)
+                    else:
+                        break
+                return html
+            finally:
+                # Every way out of the browser path, an exception included, closes Chrome.
+                if driver is not None:
+                    try:
+                        driver.quit()
+                    except Exception:
+                        pass
 
         elif mode == 'requests':
             headers = {'User-Agent': random.choice(USER_AGENTS)}
@@ -480,7 +486,7 @@ class Scraper:
             # For some publishers, we can do better than the returned HTML, so get the
             # XML version. A browser would download it rather than show it, so this
             # only happens here.
-            url = _plos_manuscript_url(r.url) or self.check_for_substitute_url(r.url)
+            url = _xml_url(r.url) or self.check_for_substitute_url(r.url)
             if url != r.url:
                 if self._should_skip_url(url, skip_url_substrings):
                     return None
@@ -650,8 +656,6 @@ class Scraper:
             return url + '?np=y'
         if 'springer.com' in url:
             return url + '/fulltext.html'
-        if 'frontiersin.org' in url:
-            return re.sub(r'/(full|abstract)/*$', r'/xml/nlm', url)
         return url
 
     
