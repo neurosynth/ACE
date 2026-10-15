@@ -1413,9 +1413,18 @@ class HighWireSource(Source):
         if not soup:
             return False
 
+        # Current pages carry no public URL and print their tables inline.
+        public_url = soup.find('meta', {'name': 'citation_public_url'})
+        if public_url is None:
+            tables = []
+            self._append_leaf_candidate_tables(soup, tables)
+            self.article.tables = tables
+            if not tables:
+                self.article.missing_source = True
+            return self.article
+
         # To download tables, we need the content URL and the number of tables
-        content_url = soup.find('meta', {
-                                'name': 'citation_public_url'})['content']
+        content_url = public_url['content']
 
         n_tables = len(soup.find_all('span', class_='table-label'))
 
