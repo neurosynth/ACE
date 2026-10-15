@@ -557,6 +557,22 @@ def test_sciencedirect_combined_coordinate_column_source(test_weird_data_path, s
     assert _count_valid_activations(article.tables) >= 1
 
 
+def test_highwire_page_without_public_url_parses_inline_tables(test_data_path, source_manager):
+    # Current science.org pages have no citation_public_url, so the expansion
+    # download is skipped and the table comes from the page itself.
+    html = open(join(test_data_path, 'highwire_inline_table.html')).read()
+    source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'HighWireSource'
+
+    article = source.parse_article(html, pmid='99900001', skip_metadata=True)
+
+    assert article is not None
+    assert len(article.tables) == 1
+    table = article.tables[0]
+    assert table.position == 1
+    assert table.n_activations == 2
+
+
 def test_springer_inline_table_fallback_source(test_weird_data_path, source_manager):
     pmid = '27007121'
     html = open(join(test_weird_data_path, pmid + '.html')).read()
