@@ -550,6 +550,23 @@ class Source(metaclass=abc.ABCMeta):
         else:
             return html
 
+    def _page_url(self, soup):
+        """The URL the page was served from, as the page itself states it:
+        <base href>, then the canonical link, then the publisher's URL metas.
+        Relative links on the page are resolved against it."""
+        base = soup.find('base', href=True)
+        if base:
+            return base['href']
+        canonical = soup.find('link', rel='canonical', href=True)
+        if canonical:
+            return canonical['href']
+        for attrs in ({'property': 'og:url'},
+                      {'name': 'citation_fulltext_html_url'}):
+            meta = soup.find('meta', attrs=attrs)
+            if meta and meta.get('content'):
+                return meta['content']
+        return None
+
     def _download_table(self, url):
         ''' For Sources that have tables in separate files, a helper for 
         downloading and extracting the table data. Also saves to file if desired.
@@ -2020,9 +2037,7 @@ class SpringerSource(Source):
             return False
 
         # Extract table; going to take the approach of opening and parsing the table via links
-        # To download tables, we need the content URL and the number of tables
-        content_meta = soup.find('meta', {'name': 'citation_fulltext_html_url'})
-        content_url = content_meta['content'] if content_meta else None
+        content_url = self._page_url(soup)
 
         # Find all links that match the Nature table URL pattern.
         table_links = soup.find_all('a', href=re.compile(r'/article(s?)/.*/tables/\d+'))
