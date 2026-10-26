@@ -168,6 +168,21 @@ def test_plos_source(test_data_path, source_manager):
     assert t.n_activations == 24  # Since there are data for 2 experiments
 
 @pytest.mark.vcr(record_mode="once")
+def test_springer_table_links_resolve_against_page_url(
+        test_data_path, source_manager, attempted_urls):
+    # This Nature page has no citation_fulltext_html_url; its table links are
+    # root-relative and the only statement of its own URL is the canonical link.
+    html = open(join(test_data_path, 'springer-nature-relative-tables.html')).read()
+    source = source_manager.identify_source(html)
+    assert source.__class__.__name__ == 'SpringerSource'
+    source.parse_article(html, pmid='42401715', skip_metadata=True)
+    # The first request is the table page; the rest are the publisher's
+    # cookie-check redirects.
+    assert attempted_urls[0] == (
+        'https://www.nature.com/articles/s41380-026-03719-9/tables/1')
+
+
+@pytest.mark.vcr(record_mode="once")
 def test_springer_source(test_data_path, source_manager):
     filename = join(test_data_path, 'springer.html')
     html = open(filename).read()
